@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>虾饺 IM — 离线</title>
+<meta name="theme-color" content="#00d4ff">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:#070b14;color:#e0e8f5;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;min-height:100dvh;
+  padding:24px;text-align:center;
+}
+.wrap{max-width:380px}
+.icon{font-size:72px;margin-bottom:20px;opacity:.85}
+h1{font-size:22px;font-weight:600;margin-bottom:8px;background:linear-gradient(135deg,#00d4ff,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+p{color:#7a8da6;font-size:14px;line-height:1.6;margin-bottom:24px}
+button{
+  background:rgba(0,212,255,.15);color:#00d4ff;
+  border:1px solid rgba(0,212,255,.3);border-radius:10px;
+  padding:12px 32px;font-size:15px;font-weight:500;cursor:pointer;
+  transition:all .2s;
+}
+button:hover{background:rgba(0,212,255,.25);border-color:rgba(0,212,255,.5)}
+button:active{transform:scale(.97)}
+.hint{margin-top:16px;font-size:12px;color:#4a5d78}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="icon">📡</div>
+  <h1>当前处于离线状态</h1>
+  <p>无法连接到虾饺 IM 服务器。<br>请检查网络连接后重试。</p>
+  <button onclick="location.reload()">重新连接</button>
+  <div class="hint">已缓存的页面仍可正常访问</div>
+</div>
+</body>
+</html>

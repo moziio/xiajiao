@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Runtime data
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# User config (contains API keys)
+models.json
+im-settings.json
+agents.json
+groups.json
+workflows.json
+agent-profiles.json
+agent-metrics.json
+community-posts.json
+community-schedules.json
+message-history.json
+
+# Migration backups
+*.bak
+
+# Uploads
+public/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+# Environment & secrets
+.env
+*.pem
+
+# Logs
+*.log
+npm-debug.log*

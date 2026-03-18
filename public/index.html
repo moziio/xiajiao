@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>虾饺 IM</title>
+  <link rel="icon" type="image/png" href="/favicon.png?v=2">
+  <link rel="icon" href="/favicon.ico?v=2" sizes="any">
+  <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00d4ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="虾饺 IM">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/collab-flow.css">
+  <link rel="stylesheet" id="hljsTheme" href="/css/highlight-dark.min.css">
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginPage" class="login-wrap">
+  <div class="login-box">
+    <h1 data-i18n="login.title">虾饺 IM</h1>
+    <p data-i18n="login.subtitle">AI Agent 智能协作平台</p>
+    <input id="nameInput" type="text" data-i18n-placeholder="login.namePlaceholder" placeholder="输入你的昵称" maxlength="20" autofocus>
+    <input id="ownerKeyInput" type="password" data-i18n-placeholder="login.keyPlaceholder" placeholder="管理密钥" maxlength="64" style="margin-top:-8px">
+    <div id="loginMsg" style="color:#ff3b5c;font-size:13px;min-height:20px;margin-top:4px"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button id="ownerLoginBtn" onclick="doOwnerLogin()" style="flex:1" data-i18n="login.ownerLogin">主人登录</button>
+      <button id="guestLoginBtn" onclick="doGuestLogin()" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--text2,#aaa)" data-i18n="login.guestLogin">访客进入</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appPage" class="app hidden">
+  <div id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h2 data-i18n="login.title">虾饺 IM</h2>
+      <span id="gwDot" class="status-dot offline" data-i18n-title="sidebar.gatewayTitle" title="Gateway 状态"></span>
+    </div>
+    <div id="ownerBadge" class="owner-badge hidden" data-i18n="sidebar.ownerBadge">&#9733; 主人模式</div>
+    <div class="sidebar-nav">
+      <button id="tabChats" class="active" onclick="switchTab('chats')" data-i18n="sidebar.chats">虾聊</button>
+      <button id="tabContacts" onclick="switchTab('contacts')" data-i18n="sidebar.contacts">通讯录</button>
+      <button id="tabCommunity" onclick="switchTab('community')" data-i18n="sidebar.activity">动态</button>
+      <button id="tabFavorites" onclick="switchTab('favorites')" data-i18n="sidebar.favorites">收藏</button>
+    </div>
+    <div id="panelChats" class="sidebar-panel"></div>
+    <div id="panelContacts" class="sidebar-panel hidden"></div>
+    <div id="panelCommunity" class="sidebar-panel hidden"></div>
+    <div id="panelFavorites" class="sidebar-panel hidden"></div>
+    <div id="onlineIndicator" class="online-indicator" onclick="toggleOnlinePanel()">
+      <span class="online-dot"></span>
+      <span id="onlineCount">0</span>
+    </div>
+    <div id="onlinePanel" class="online-panel hidden"></div>
+    <div class="sidebar-user" id="sidebarUser">
+      <div class="sidebar-user-avatar" id="userAvatarEl" onclick="editMyAvatar()" data-i18n-title="sidebar.editAvatar" title="修改头像"></div>
+      <div class="sidebar-user-name" id="userNameEl"></div>
+      <button id="settingsBtn" class="sidebar-user-settings hidden" onclick="openSettings()" data-i18n-title="sidebar.settings" title="设置"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+      <button id="logoutBtn" class="sidebar-user-logout hidden" onclick="doLogout()" data-i18n-title="sidebar.logout" title="退出登录">&#9211;</button>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div id="reconnectBanner" class="reconnect-banner hidden" onclick="reconnect()" data-i18n="chat.reconnect">连接已断开，点击重连</div>
+
+    <div id="welcomeScreen" class="welcome-screen">
+      <div class="welcome-icon">&#129302;</div>
+      <p data-i18n="chat.welcomeHint">从通讯录选择 Agent 开始对话</p>
+    </div>
+
+    <div id="chatView" class="hidden" style="display:flex;flex:1;min-height:0">
+      <div class="chat-main">
+        <div class="chat-header">
+          <button class="back-btn" onclick="showSidebar()">&larr;</button>
+          <div class="chat-header-info">
+            <div class="chat-header-name" id="chatName"></div>
+            <div class="chat-header-status" id="chatStatus"></div>
+          </div>
+          <div class="chat-header-members" id="memberTags"></div>
+        </div>
+        <div id="chatSearchPanel" class="chat-search-panel hidden">
+          <input type="text" id="chatSearchInput" placeholder="搜索消息..." autocomplete="off" />
+          <span class="chat-search-count" id="chatSearchCount"></span>
+          <button class="chat-search-close" onclick="closeChatSearch()">&times;</button>
+        </div>
+        <div id="trainToolbar" class="train-toolbar hidden"></div>
+        <div id="loadMoreBar" class="load-more-bar hidden"><span id="loadMoreText">加载更多...</span></div>
+        <div class="messages" id="messages"></div>
+        <div class="typing-indicator" id="typingIndicator"></div>
+        <div class="input-area">
+          <div id="mentionPopup" class="mention-popup hidden"></div>
+          <div class="compose-box" id="composeBox">
+            <div id="attachStrip" class="attach-strip hidden"></div>
+            <div class="input-row">
+              <input type="file" id="fileInput" hidden multiple accept="image/*,.pdf,.doc,.docx,.txt,.zip,.mp4,.webm,.mov">
+              <button class="input-btn btn-attach" onclick="document.getElementById('fileInput').click()" data-i18n-title="chat.attachTitle" title="发送文件">&#128206;</button>
+              <textarea id="msgInput" data-i18n-placeholder="chat.inputPlaceholder" placeholder="输入消息，@ 可选择 Agent..." rows="1"></textarea>
+              <button class="input-btn btn-send" id="sendBtn" onclick="sendMessage()" data-i18n-title="chat.sendTitle" title="发送">&#10148;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="groupSidePanel" class="group-side-panel"><div id="groupSideContent"></div></div>
+      <input type="file" id="kbFileInput" hidden accept=".md,.txt,.json,.csv,.yaml,.yml,.xml,.html,.css,.js,.ts,.py,.java,.go,.rs,.sql,.sh,.bat,.log,.ini,.cfg,.toml,.env,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.svg,.webp">
+    </div>
+
+    <!-- Activity Feed View -->
+    <div id="communityView" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-header-name" id="communityTitle" data-i18n="activity.title">Agent 动态</div>
+          <div class="chat-header-status" id="communitySubtitle" data-i18n="activity.subtitle">任务完成、系统告警、例会纪要</div>
+        </div>
+      </div>
+      <div class="community-tabs" id="communityTabs"></div>
+      <div class="community-feed" id="communityFeed"></div>
+    </div>
+
+    <!-- Metrics Dashboard -->
+    <div id="metricsView" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-header-name" data-i18n="community.growthBoard">成长看板</div>
+          <div class="chat-header-status" data-i18n="community.growthSubtitle">Agent 工作指标与成长数据</div>
+        </div>
+      </div>
+      <div class="metrics-dashboard" id="metricsDashboard"></div>
+    </div>
+
+    <!-- Favorites Detail View -->
+    <div id="favDetailView" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-header-name" id="favDetailName"></div>
+          <div class="chat-header-status" id="favDetailMeta"></div>
+        </div>
+        <div class="fav-detail-actions" id="favDetailActions"></div>
+      </div>
+      <div class="fav-detail-body" id="favDetailBody"></div>
+    </div>
+
+    <!-- Settings View -->
+    <div id="settingsView" class="hidden" style="display:flex;flex:1;min-height:0">
+      <div class="settings-nav" id="settingsNav"></div>
+      <div class="settings-content" id="settingsContent"></div>
+    </div>
+
+    <!-- Schedule View -->
+    <div id="scheduleView" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-header-name" data-i18n="community.schedules">定时例会</div>
+          <div class="chat-header-status" data-i18n="community.schedulesSubtitle">管理定时会议与自动任务</div>
+        </div>
+        <button id="createSchedBtn" class="btn-primary hidden" onclick="openCreateSchedule()" style="font-size:13px;padding:6px 14px" data-i18n="schedule.new">新建</button>
+      </div>
+      <div class="schedule-list" id="scheduleList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div id="manageModal" class="modal-overlay hidden"><div class="modal-content"></div></div>
+<div id="profileModal" class="modal-overlay hidden"><div class="modal-content"></div></div>
+<div id="postModal" class="modal-overlay hidden"><div class="modal-content"></div></div>
+
+<!-- Lightbox -->
+<div id="imgLightbox" class="lightbox hidden" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" />
+  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+</div>
+
+<!-- Layer 0: Infrastructure (sync — needed before other scripts) -->
+<script src="/js/marked.min.js"></script>
+<script src="/js/highlight.min.js"></script>
+<!-- Layer 0~3: defer for parallel download, execute in order after DOM parsed -->
+<script defer src="/js/i18n.js"></script>
+<script defer src="/js/lang/zh.js"></script>
+<script defer src="/js/lang/en.js"></script>
+<script defer src="/js/core/storage.js"></script>
+<script defer src="/js/core/format.js"></script>
+<script defer src="/js/core/searchable-select.js"></script>
+<script defer src="/js/core/api.js"></script>
+<script defer src="/js/core/dialog.js"></script>
+<script defer src="/js/state.js"></script>
+<script defer src="/js/login.js"></script>
+<script defer src="/js/chat.js"></script>
+<script defer src="/js/chat-mention.js"></script>
+<script defer src="/js/chat-sidebar.js"></script>
+<script defer src="/js/favorites.js"></script>
+<script defer src="/js/training.js"></script>
+<script defer src="/js/contacts.js"></script>
+<script defer src="/js/community.js"></script>
+<script defer src="/js/community-profile.js"></script>
+<script defer src="/js/schedules.js"></script>
+<script defer src="/js/rich-cards.js"></script>
+<script defer src="/js/workflows.js"></script>
+<script defer src="/js/soul-templates.js"></script>
+<script defer src="/js/settings.js"></script>
+<script defer src="/js/settings-models.js"></script>
+<script defer src="/js/settings-infra.js"></script>
+<script defer src="/js/manage-agent.js"></script>
+<script defer src="/js/manage-group.js"></script>
+<script defer src="/js/collab-flow.js"></script>
+<script defer src="/js/app.js"></script>
+</body>
+</html>

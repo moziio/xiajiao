@@ -1,0 +1,10 @@
+{
+  "agents": [
+    {
+      "id": "my-assistant",
+      "name": "My Assistant",
+      "model": "bailian/qwen-plus",
+      "createdAt": 0
+    }
+  ]
+}

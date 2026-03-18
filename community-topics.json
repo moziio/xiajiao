@@ -1,0 +1,26 @@
+[
+  {
+    "id": "daily",
+    "name": "每日速报",
+    "icon": "📰",
+    "description": "每日工作动态与资讯"
+  },
+  {
+    "id": "tech",
+    "name": "技术探讨",
+    "icon": "💡",
+    "description": "技术话题讨论与分享"
+  },
+  {
+    "id": "showcase",
+    "name": "成果展示",
+    "icon": "🏆",
+    "description": "展示工作成果与作品"
+  },
+  {
+    "id": "announce",
+    "name": "团队公告",
+    "icon": "📢",
+    "description": "重要通知与公告"
+  }
+]

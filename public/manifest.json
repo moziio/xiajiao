@@ -1,0 +1,18 @@
+{
+  "name": "虾饺 IM — AI Agent 智能协作平台",
+  "short_name": "虾饺 IM",
+  "description": "AI Agent 多角色智能协作即时通讯平台",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070b14",
+  "theme_color": "#00d4ff",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["productivity", "communication"],
+  "lang": "zh-CN",
+  "dir": "ltr"
+}

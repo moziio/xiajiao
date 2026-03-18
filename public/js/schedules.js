@@ -1,0 +1,25 @@
+/* OpenClaw IM — Metrics & Schedules Module (Layer 2) */
+
+function renderMetricsDashboard(allMetrics) {
+  if (!Object.keys(allMetrics).length) { metricsDashboard.innerHTML = '<div class="empty-hint">' + t('common.noData') + '</div>'; return; }
+  metricsDashboard.innerHTML = AGENTS.map(ag => { const m = allMetrics[ag.id] || {}; const avgR = m.ratings?.length ? (m.ratings.reduce((s, r) => s + r.score, 0) / m.ratings.length).toFixed(1) : '-'; const sagid = escJs(ag.id); return `<div class="metric-card"><div class="metric-card-header"><div class="metric-card-avatar" onclick="openProfile('${sagid}')" style="background:${ag.color}">${ag.emoji}</div><div class="metric-card-name">${esc(ag.name)}</div><div class="metric-card-rating">&#9733; ${avgR}</div></div><div class="metric-grid"><div class="metric-stat"><div class="metric-stat-value">${m.messages||0}</div><div class="metric-stat-label">${t('common.metrics.messages')}</div></div><div class="metric-stat"><div class="metric-stat-value">${m.tasks||0}</div><div class="metric-stat-label">${t('common.metrics.tasks')}</div></div><div class="metric-stat"><div class="metric-stat-value">${m.posts||0}</div><div class="metric-stat-label">${t('common.metrics.posts')}</div></div><div class="metric-stat"><div class="metric-stat-value">${m.comments||0}</div><div class="metric-stat-label">${t('common.metrics.comments')}</div></div><div class="metric-stat"><div class="metric-stat-value">${m.reviews||0}</div><div class="metric-stat-label">${t('common.metrics.reviews')}</div></div></div></div>`; }).join('');
+}
+
+function renderScheduleList() {
+  if (!schedulesList.length) { scheduleList.innerHTML = '<div class="empty-hint">' + t('schedule.noSchedules') + '</div>'; return; }
+  scheduleList.innerHTML = schedulesList.map(s => { const ssid = escJs(s.id); return `<div class="schedule-card"><button class="schedule-toggle ${s.enabled ? 'on' : 'off'}" onclick="toggleSchedule('${ssid}',${!s.enabled})"></button><div class="schedule-info"><div class="schedule-name">${esc(s.name)}</div><div class="schedule-cron">${esc(s.cron)}</div><div class="schedule-meta">${t('schedule.participants', {count: s.participants?.length || 0})} ${s.lastRun ? ' · ' + t('schedule.lastRun') + formatTime(s.lastRun) : ''}</div></div><div class="schedule-actions"><button onclick="runScheduleNow('${ssid}')" title="${t('schedule.triggered')}">&#9654;</button><button onclick="deleteSchedule('${ssid}')" title="${t('common.delete')}" class="danger">&#128465;</button></div></div>`; }).join('');
+}
+
+function openCreateSchedule() {
+  postModal.classList.remove('hidden');
+  postModal.querySelector('.modal-content').innerHTML = `<div class="modal-header"><h3>${t('schedule.createTitle')}</h3><button class="modal-close" onclick="postModal.classList.add('hidden')">&times;</button></div><div class="modal-body"><div class="manage-form"><label>${t('schedule.name')}</label><input id="schedName" placeholder="${t('schedule.namePlaceholder')}" /><label>${t('schedule.cronLabel')}</label><input id="schedCron" value="0 9 * * 1-5" placeholder="0 9 * * 1-5" /><div class="hint">${t('schedule.cronHint')}</div><label>${t('schedule.template')}</label><textarea id="schedTemplate" rows="3" placeholder="${t('schedule.templatePlaceholder')}">${t('schedule.templatePlaceholder')}</textarea><label>${t('schedule.agentLabel')}</label><div class="member-picker">${AGENTS.map(a => `<label class="member-check"><input type="checkbox" value="${escH(a.id)}" checked /> ${a.emoji} ${esc(a.name)}</label>`).join('')}</div><button class="btn-primary" onclick="submitSchedule()" style="margin-top:12px">${t('schedule.createBtn')}</button><div id="schedFormMsg" class="form-msg"></div></div></div>`;
+}
+async function submitSchedule() {
+  const name = $('#schedName').value.trim(), cron = $('#schedCron').value.trim(), template = $('#schedTemplate').value.trim();
+  const participants = [...postModal.querySelectorAll('.member-check input:checked')].map(c => c.value);
+  if (!name) { $('#schedFormMsg').textContent = t('schedule.fillName'); return; }
+  try { await authFetch('/api/schedules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, cron, template, participants }) }); postModal.classList.add('hidden'); showSchedules(); } catch (e) { $('#schedFormMsg').textContent = t('community.failPrefix') + e.message; }
+}
+async function toggleSchedule(id, enabled) { try { await authFetch('/api/schedules/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) }); showSchedules(); } catch {} }
+async function runScheduleNow(id) { try { await authFetch('/api/schedules/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); showToastMsg(t('schedule.triggered')); } catch {} }
+async function deleteSchedule(id) { if (!await appConfirm(t('common.deleteScheduleConfirm'))) return; try { await authFetch('/api/schedules/' + id, { method: 'DELETE' }); showSchedules(); } catch {} }

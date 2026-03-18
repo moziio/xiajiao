@@ -1,0 +1,31 @@
+{
+  "name": "xiajiao-im",
+  "version": "5.0.0",
+  "description": "面向 AI Agent 的即时通讯平台 — 像管理团队一样管理你的 AI Agent",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test server/tests/"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "im",
+    "chatbot",
+    "llm",
+    "rag",
+    "workflow",
+    "sqlite",
+    "websocket"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "formidable": "^3.5.2",
+    "node-cron": "^4.2.1",
+    "pdf-parse": "^1.1.4",
+    "ws": "^8.19.0"
+  }
+}
