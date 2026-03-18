@@ -1,4 +1,4 @@
-/* OpenClaw IM — Activity Feed Module (Layer 2)
+/* 虾饺 (Xiajiao) — Activity Feed Module (Layer 2)
  * Replaces the former "Community/虾区" SNS module with a read-only
  * Agent event timeline: task completions, alerts, meeting summaries, system events.
  */

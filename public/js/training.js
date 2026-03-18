@@ -1,4 +1,4 @@
-/* OpenClaw IM — Training Toolbar (Layer 2) */
+/* 虾饺 (Xiajiao) — Training Toolbar (Layer 2) */
 
 function updateTrainToolbar(chId) {
   const tb = document.getElementById('trainToolbar'); if (!tb) return;

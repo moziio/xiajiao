@@ -1,4 +1,4 @@
-/* OpenClaw IM — Settings: LLM Connection & Auth (Layer 2) */
+/* 虾饺 (Xiajiao) — Settings: LLM Connection & Auth (Layer 2) */
 
 let _gwStatus = { connected: false, ws: '', http: '', llmMode: 'direct' };
 

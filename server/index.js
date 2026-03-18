@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const nodeMajor = parseInt(process.versions.node.split('.')[0], 10);
 if (nodeMajor < 22) {
-  console.error(`\n[启动失败] 虾饺 IM 需要 Node.js 22 或更高版本（当前: v${process.versions.node}）\n请升级 Node.js 后重试: https://nodejs.org/\n`);
+  console.error(`\n[启动失败] 虾饺需要 Node.js 22 或更高版本（当前: v${process.versions.node}）\n请升级 Node.js 后重试: https://nodejs.org/\n`);
   process.exit(1);
 }
 
@@ -354,11 +354,11 @@ function ensureDesktopShortcut(url) {
   if (process.platform !== 'win32') return;
   try {
     const desktopDir = path.join(require('os').homedir(), 'Desktop');
-    const urlFile = path.join(desktopDir, '虾饺IM.url');
-    const batFile = path.join(desktopDir, '虾饺IM.bat');
+    const urlFile = path.join(desktopDir, '虾饺.url');
+    const batFile = path.join(desktopDir, '虾饺.bat');
     if (fs.existsSync(urlFile) || fs.existsSync(batFile)) return;
     fs.writeFileSync(urlFile, `[InternetShortcut]\nURL=${url}\nIconIndex=0\n`);
-    log.info('desktop shortcut created: 虾饺IM.url');
+    log.info('desktop shortcut created: 虾饺.url');
   } catch (err) {
     log.info('skip desktop shortcut:', err.message);
   }
@@ -390,7 +390,7 @@ function killPortHolder(port) {
 
 function onListening() {
   const url = `http://127.0.0.1:${cfg.PORT}`;
-  log.info(`虾饺 IM Server v5.0 — LLM Mode: ${llmMode}`);
+  log.info(`虾饺 v1.0 — LLM Mode: ${llmMode}`);
   log.info(`HTTP ${url}  WS ws://127.0.0.1:${cfg.PORT}/ws`);
 
   if (!process.env.IM_NO_OPEN) {

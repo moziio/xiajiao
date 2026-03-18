@@ -1,4 +1,4 @@
-/* OpenClaw IM — Global State & Constants (Layer 1) */
+/* 虾饺 (Xiajiao) — Global State & Constants (Layer 1) */
 
 let activeSettingsTab = 'general';
 

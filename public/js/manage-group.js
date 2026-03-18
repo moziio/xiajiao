@@ -1,4 +1,4 @@
-/* OpenClaw IM — Group Management (Layer 2) */
+/* 虾饺 (Xiajiao) — Group Management (Layer 2) */
 
 function renderGroupManager() {
   manageModal.querySelector('.modal-content').innerHTML=`

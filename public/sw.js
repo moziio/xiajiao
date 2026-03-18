@@ -1,6 +1,6 @@
-/* 虾饺 IM — Service Worker (offline-first for static, network-first for dynamic) */
+/* 虾饺 (Xiajiao) — Service Worker (offline-first for static, network-first for dynamic) */
 
-const CACHE_NAME = 'xiajiao-im-v1';
+const CACHE_NAME = 'xiajiao-v2';
 
 const PRECACHE = [
   '/',

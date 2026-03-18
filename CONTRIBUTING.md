@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你对虾饺 IM 的关注！欢迎任何形式的贡献：Issue 反馈、功能建议、代码提交、文档改进。
+感谢你对虾饺 (Xiajiao) 的关注！欢迎任何形式的贡献：Issue 反馈、功能建议、代码提交、文档改进。
 
 ## 开发环境
 
@@ -10,17 +10,11 @@
 ## 本地运行
 
 ```bash
-git clone https://github.com/your-username/xiajiao-im.git
-cd xiajiao-im
+git clone https://github.com/FengWanMin/xiajiao.git
+cd xiajiao
 npm install
-
-cp models.example.json models.json
-cp im-settings.example.json im-settings.json
-cp agents.example.json agents.json
-# 编辑 models.json，填入至少一个 provider 的 API Key
-
 npm start
-# 浏览器打开 http://localhost:18800
+# 浏览器打开 http://localhost:18800，进入 设置 → 模型管理 添加 API Key
 ```
 
 ## 运行测试
@@ -68,9 +62,9 @@ public/
 └── css/            # 样式
 ```
 
-详细架构说明见 `docs/technical-architecture.md`。
+详细架构说明见 [README](README.md#项目结构)。
 
 ## 需要帮助？
 
-- 在 [GitHub Issues](https://github.com/your-username/xiajiao-im/issues) 中提 Bug 或建议
-- 在 [GitHub Discussions](https://github.com/your-username/xiajiao-im/discussions) 中交流讨论
+- 在 [GitHub Issues](https://github.com/FengWanMin/xiajiao/issues) 中提 Bug 或建议
+- 在 [GitHub Discussions](https://github.com/FengWanMin/xiajiao/discussions) 中交流讨论

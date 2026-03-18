@@ -1,4 +1,4 @@
-/* OpenClaw IM — Agent Management (Layer 2) */
+/* 虾饺 (Xiajiao) — Agent Management (Layer 2) */
 
 // ── Modal Shell ──
 function openManagePanel(tab) { manageModal.classList.remove('hidden'); if (tab==='groups') renderGroupManager(); else renderAgentManager(); }

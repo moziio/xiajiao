@@ -1,4 +1,4 @@
-/* 虾饺 IM — Workflow Module */
+/* 虾饺 (Xiajiao) — Workflow Module */
 
 let _wfActiveRuns = {};
 

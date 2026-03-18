@@ -1,4 +1,4 @@
-/* OpenClaw IM — Agent Profile Modal (Layer 2) */
+/* 虾饺 (Xiajiao) — Agent Profile Modal (Layer 2) */
 
 async function openProfile(agentId) {
   profileModal.classList.remove('hidden');

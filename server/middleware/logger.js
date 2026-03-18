@@ -1,4 +1,4 @@
-/* OpenClaw IM — Structured Logger with Request ID (5.1) */
+/* 虾饺 (Xiajiao) — Structured Logger with Request ID (5.1) */
 
 let _counter = 0;
 

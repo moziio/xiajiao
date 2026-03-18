@@ -1,7 +1,7 @@
 {
-  "name": "xiajiao-im",
-  "version": "5.0.0",
-  "description": "面向 AI Agent 的即时通讯平台 — 像管理团队一样管理你的 AI Agent",
+  "name": "xiajiao",
+  "version": "1.0.0",
+  "description": "AI Agent 团队协作平台 — 像管理团队一样管理你的 AI Agent",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",

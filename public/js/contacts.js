@@ -1,4 +1,4 @@
-/* OpenClaw IM — Contacts Module */
+/* 虾饺 (Xiajiao) — Contacts Module */
 
 function getAgentCategories() { try { return JSON.parse(storageGet('im-agent-categories') || '[]'); } catch { return []; } }
 function setAgentCategories(cats) { storageSet('im-agent-categories', JSON.stringify(cats)); }

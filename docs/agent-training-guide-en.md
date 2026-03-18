@@ -2,13 +2,13 @@
 
 ## Overview
 
-OpenClaw IM provides a complete Agent training system that enables you to turn any Agent into a domain-specific expert. Training is flexible and supports two modes: **Admin Panel Configuration** and **Progressive Training in Chat**.
+Xiajiao provides a complete Agent training system that enables you to turn any Agent into a domain-specific expert. Training is flexible and supports two modes: **Admin Panel Configuration** and **Progressive Training in Chat**.
 
 ---
 
 ## Core Principles
 
-OpenClaw Agents acquire specialized capabilities through a **file injection** mechanism:
+Xiajiao Agents acquire specialized capabilities through a **file injection** mechanism:
 
 - Each Agent has its own workspace directory
 - Markdown files in the directory are automatically injected into the system prompt when a session starts
@@ -19,7 +19,7 @@ OpenClaw Agents acquire specialized capabilities through a **file injection** me
   - Other `.md` files — Domain knowledge documents
 
 ```
-User creates knowledge files → Files stored in Agent workspace → Gateway injects into system prompt → LLM responds based on knowledge
+User creates knowledge files → Files stored in Agent workspace → Auto-injected into system prompt → LLM responds based on knowledge
 ```
 
 ---

@@ -1,4 +1,4 @@
-/* OpenClaw IM — Formatting & Text Utilities (Layer 0) */
+/* 虾饺 (Xiajiao) — Formatting & Text Utilities (Layer 0) */
 
 function truncate(s, n) { return s.length > n ? s.slice(0, n) + '...' : s; }
 function stripMd(s) { if (!s) return ''; return s.replace(/```[\s\S]*?```/g, '[代码]').replace(/`([^`]+)`/g, '$1').replace(/!\[([^\]]*)\]\([^)]*\)/g, '[图片]').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/^#{1,6}\s+/gm, '').replace(/(\*\*|__)(.*?)\1/g, '$2').replace(/(\*|_)(.*?)\1/g, '$2').replace(/~~(.*?)~~/g, '$1').replace(/^>\s+/gm, '').replace(/^[-*+]\s+/gm, '').replace(/^\d+\.\s+/gm, '').replace(/\n+/g, ' ').trim(); }

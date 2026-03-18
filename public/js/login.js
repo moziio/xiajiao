@@ -1,4 +1,4 @@
-/* OpenClaw IM — Login & Auth Module */
+/* 虾饺 (Xiajiao) — Login & Auth Module */
 
 async function doOwnerLogin() {
   const name = nameInput.value.trim();

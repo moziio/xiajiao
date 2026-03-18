@@ -18,6 +18,7 @@ agent-metrics.json
 community-posts.json
 community-schedules.json
 message-history.json
+chat-history.json
 
 # Migration backups
 *.bak
@@ -29,6 +30,9 @@ public/uploads/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Internal dev notes
+docs/dev/
 
 # Editor
 .vscode/

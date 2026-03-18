@@ -1,4 +1,4 @@
-/* OpenClaw IM — Favorites Module (Layer 2) */
+/* 虾饺 (Xiajiao) — Favorites Module (Layer 2) */
 
 let _activeFavId = null;
 let _favCache = [];

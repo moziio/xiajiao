@@ -1,4 +1,4 @@
-/* OpenClaw IM — @Mention Popup (Layer 2) */
+/* 虾饺 (Xiajiao) — @Mention Popup (Layer 2) */
 
 msgInput.addEventListener('keydown', e => {
   if (mentionPopup.classList.contains('hidden')) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }

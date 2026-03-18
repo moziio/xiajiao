@@ -1,7 +1,7 @@
 if (typeof I18N === 'undefined') var I18N = {};
 I18N['zh'] = {
   login: {
-    title: '虾饺 IM',
+    title: '虾饺',
     subtitle: 'AI Agent 智能协作平台',
     namePlaceholder: '输入你的昵称',
     keyPlaceholder: '管理密钥',
@@ -399,6 +399,7 @@ I18N['zh'] = {
     pinDone: '已置顶',
     unpinDone: '已取消置顶',
     markRead: '标为已读',
+    clearMessages: '清空聊天记录',
     deleteChat: '删除会话',
     deleteChatDone: '会话已删除'
   },
@@ -584,13 +585,13 @@ I18N['zh'] = {
     maxTokens: '最大 Token',
     deleteModelConfirm: '确定删除此模型？',
     gatewayTitle: 'Gateway 连接',
-    gatewayDesc: '配置 OpenClaw Gateway 的连接参数',
+    gatewayDesc: '配置 LLM Gateway 的连接参数',
     gatewayWs: 'WebSocket 地址',
     gatewayHttp: 'HTTP 地址',
     gatewayToken: 'Token',
     gatewayConfig: 'Gateway 连接配置',
-    gatewayTokenPH: '从 openclaw.json 中获取',
-    directModeHint: '直连模式下，虾饺 IM 直接调用各厂商 API，无需依赖 OpenClaw Gateway',
+    gatewayTokenPH: 'Gateway 认证令牌',
+    directModeHint: '直连模式下，虾饺直接调用各厂商 API，无需经过 Gateway 代理',
     gwToolEvents: 'Gateway 工具事件透传',
     gwToolEventsHint: '开启后前端可实时展示 Gateway 模式下的工具调用过程',
     gatewayStatus: '连接状态',

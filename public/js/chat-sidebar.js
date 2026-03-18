@@ -1,4 +1,4 @@
-/* OpenClaw IM — Chat Side Panel (Layer 2) */
+/* 虾饺 (Xiajiao) — Chat Side Panel (Layer 2) */
 
 function getChannelNote(id) { return storageGet('im-note-' + id) || ''; }
 function saveChannelNote(id, note) { if (note) storageSet('im-note-' + id, note); else { try { localStorage.removeItem('im-note-' + id); } catch {} } }

@@ -1,4 +1,4 @@
-/* OpenClaw IM — Auth & Data Loaders (Layer 0) */
+/* 虾饺 (Xiajiao) — Auth & Data Loaders (Layer 0) */
 
 function authHeaders(extra) { const h = Object.assign({ 'Content-Type': 'application/json' }, extra || {}); if (ownerToken) h['Authorization'] = 'Bearer ' + ownerToken; return h; }
 function authFetch(url, opts) { if (!opts) opts = {}; if (ownerToken) { if (!opts.headers) opts.headers = {}; opts.headers['Authorization'] = 'Bearer ' + ownerToken; } return fetch(url, opts); }

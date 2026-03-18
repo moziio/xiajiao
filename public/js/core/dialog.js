@@ -1,4 +1,4 @@
-/* OpenClaw IM — Toast & Dialog (Layer 0) */
+/* 虾饺 (Xiajiao) — Toast & Dialog (Layer 0) */
 
 function showToastMsg(text, type) {
   const old = document.querySelector('.toast-notify');

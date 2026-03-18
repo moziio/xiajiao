@@ -1,4 +1,4 @@
-/* OpenClaw i18n Engine */
+/* 虾饺 (Xiajiao) i18n Engine */
 var I18N = window.I18N || {};
 let _lang = 'zh';
 

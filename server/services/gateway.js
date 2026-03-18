@@ -153,9 +153,9 @@ function handleGatewayMessage(msg) {
   if (msg.type === 'event' && msg.event === 'connect.challenge') {
     gwSendReq('connect', {
       minProtocol: 3, maxProtocol: 3,
-      client: { id: 'webchat', version: 'openclaw-im-server-5.0', platform: 'node', mode: 'webchat', instanceId: crypto.randomUUID() },
+      client: { id: 'webchat', version: 'xiajiao-server-1.0', platform: 'node', mode: 'webchat', instanceId: crypto.randomUUID() },
       role: 'operator', scopes: ['operator.admin'], caps: ['tool-events'],
-      auth: { token: cfg.getGatewayToken() }, userAgent: 'OpenClaw-IM-Server/5.0', locale: 'zh-CN'
+      auth: { token: cfg.getGatewayToken() }, userAgent: 'Xiajiao-Server/1.0', locale: 'zh-CN'
     }).then(result => {
       log.info('authenticated! server:', result?.server?.version);
       gwConnected = true; gwReconnectDelay = 1000;
@@ -368,7 +368,6 @@ async function applyConfig() {
       session: { dmScope: 'per-channel-peer' },
       gateway: { mode: 'local' }
     };
-    try { const ocj = JSON.parse(fs.readFileSync(cfg.OPENCLAW_JSON, 'utf8')); if (ocj.gateway) config.gateway = ocj.gateway; if (ocj.channels) config.channels = ocj.channels; if (ocj.plugins) config.plugins = ocj.plugins; } catch {}
     const raw = JSON.stringify(config, null, 2);
     const getResult = await gwSendReq('config.get', {});
     if (getResult?.hash) { await gwSendReq('config.apply', { raw, baseHash: getResult.hash, sessionKey: 'main' }); log.info('config: applied successfully'); }

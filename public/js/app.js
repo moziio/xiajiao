@@ -1,4 +1,4 @@
-/* OpenClaw IM Client v4.0 — Entry Point (Modular Edition)
+/* 虾饺 (Xiajiao) v1.0 — Entry Point (Modular Edition)
  * Modules loaded via <script> tags before this file:
  *   state.js → login.js → chat.js → contacts.js → community.js → settings.js → manage.js
  */

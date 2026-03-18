@@ -1,4 +1,4 @@
-/* OpenClaw IM — Settings: Provider & Model Management (Layer 2) */
+/* 虾饺 (Xiajiao) — Settings: Provider & Model Management (Layer 2) */
 let settingsProviders = {}, settingsModelsList = [];
 
 const API_PROTOCOL_MAP = {

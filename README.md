@@ -1,18 +1,20 @@
-# 虾饺 IM
+# 虾饺 (Xiajiao)
 
 **AI Agent 团队协作平台 — 4 个依赖 · 零外部服务 · `npm start` 即跑**
 
 > Manage your AI agents like managing a team — group chat, @mention, tool calling, memory, and collaboration flows.
 
+> **Xiajiao (虾饺)** — named after the Cantonese shrimp dumpling: small, delicate, but packed with flavor. Minimal dependencies, maximum capability.
+
 <!-- 截图占位：替换为实际截图后取消注释 -->
-<!-- ![虾饺 IM](docs/images/hero.png) -->
+<!-- ![虾饺](docs/images/hero.png) -->
 
 ---
 
-## 为什么选虾饺 IM？
+## 为什么选虾饺？
 
-|  | 虾饺 IM | Dify | Coze | FastGPT |
-|--|---------|------|------|---------|
+|  | 虾饺 | Dify | Coze | FastGPT |
+|--|------|------|------|---------|
 | npm 依赖 | **4 个** | 100+ | SaaS | 80+ |
 | 外部服务 | **无** | PostgreSQL + Redis + 向量库 | — | MongoDB + MySQL |
 | 启动方式 | **`npm start`** | `docker compose up` | 注册账号 | `docker compose up` |
@@ -22,7 +24,7 @@
 | Agent 记忆 | **✅ 三分类持久记忆** | ❌ | 变量 | ❌ |
 | RAG 知识库 | **✅ BM25 + 向量混合** | ✅ | ✅ | ✅ |
 
-**核心差异**：Dify / Coze 是 AI 应用开发平台；虾饺 IM 是 **AI Agent 团队协作平台**——把 Agent 当同事，不当工具。
+**核心差异**：Dify / Coze 是 AI 应用开发平台；虾饺是 **AI Agent 团队协作平台**——把 Agent 当同事，不当工具。
 
 ---
 
@@ -71,24 +73,17 @@
 
 - **Node.js >= 22.0.0**（使用原生 `node:sqlite` 模块）
 
-### 3 步启动
+### 快速启动
 
 ```bash
-# 1. 克隆 + 安装
-git clone https://github.com/your-username/xiajiao-im.git
-cd xiajiao-im && npm install
-
-# 2. 配置（至少填一个 API Key）
-cp models.example.json models.json
-cp im-settings.example.json im-settings.json
-cp agents.example.json agents.json
-# 编辑 models.json，填入你的 API Key
-
-# 3. 启动
+git clone https://github.com/FengWanMin/xiajiao.git
+cd xiajiao && npm install
 npm start
 ```
 
-浏览器打开 `http://localhost:18800`，用密码 `xiajiao-admin` 登录（可通过环境变量 `OWNER_KEY` 修改）。
+浏览器打开 `http://localhost:18800` → 默认密码 `xiajiao-admin` 登录 → **设置 → 模型管理** 添加 API Key → 开始使用。
+
+> 登录密码和 API Key 均可在设置页面中修改，无需手动编辑配置文件。
 
 ### 环境变量
 
@@ -97,13 +92,16 @@ npm start
 | `IM_PORT` | 服务端口 | `18800` |
 | `OWNER_KEY` | 管理员密码 | `xiajiao-admin` |
 | `LLM_MODE` | LLM 模式 (`direct` / `gateway`) | `direct` |
+| `GATEWAY_WS` | Gateway WebSocket 地址（仅 gateway 模式） | `ws://127.0.0.1:18789` |
+| `GATEWAY_HTTP` | Gateway HTTP 地址（仅 gateway 模式） | `http://127.0.0.1:18789` |
+| `GATEWAY_TOKEN` | Gateway 认证令牌（仅 gateway 模式） | — |
 
 ---
 
 ## 项目结构
 
 ```
-xiajiao-im/
+xiajiao/
 ├── server/                   # 后端
 │   ├── index.js              # HTTP + WebSocket 入口
 │   ├── middleware/            # 认证、日志、限流
@@ -197,4 +195,4 @@ xiajiao-im/
 
 ---
 
-> **虾饺 IM** — 你的 AI Agent 团队管理工具 🦐
+> **虾饺 (Xiajiao)** — 你的 AI Agent 团队管理工具 🦐

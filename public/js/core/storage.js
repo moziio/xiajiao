@@ -1,4 +1,4 @@
-/* OpenClaw IM — Storage Abstraction (Layer 0) */
+/* 虾饺 (Xiajiao) — Storage Abstraction (Layer 0) */
 
 function storageSet(key, val) {
   try { localStorage.setItem(key, val); } catch {}

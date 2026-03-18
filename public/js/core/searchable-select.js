@@ -1,4 +1,4 @@
-/* OpenClaw IM — Searchable Select & Model Categorization (Layer 0) */
+/* 虾饺 (Xiajiao) — Searchable Select & Model Categorization (Layer 0) */
 
 const MODEL_CATEGORIES = {
   image:       { icon: '\uD83C\uDFA8', zhLabel: '图像生成', enLabel: 'Image' },

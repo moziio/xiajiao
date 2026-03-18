@@ -1,4 +1,4 @@
-/* OpenClaw IM — Metrics & Schedules Module (Layer 2) */
+/* 虾饺 (Xiajiao) — Metrics & Schedules Module (Layer 2) */
 
 function renderMetricsDashboard(allMetrics) {
   if (!Object.keys(allMetrics).length) { metricsDashboard.innerHTML = '<div class="empty-hint">' + t('common.noData') + '</div>'; return; }

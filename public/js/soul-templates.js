@@ -1,4 +1,4 @@
-/* OpenClaw IM — Soul Templates Data (Layer 2) */
+/* 虾饺 (Xiajiao) — Soul Templates Data (Layer 2) */
 
 function getSoulTemplateLabel(key) {
   if (!key) return t('train.templateSelectLabel');

@@ -1,4 +1,4 @@
-/* OpenClaw IM — Rich Card Rendering (P3.2) */
+/* 虾饺 (Xiajiao) — Rich Card Rendering (P3.2) */
 
 /* ── Reply / Quote ── */
 let _replyTarget = null;

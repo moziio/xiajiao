@@ -1,4 +1,4 @@
-/* OpenClaw IM — Settings Panel Core (Layer 2) */
+/* 虾饺 (Xiajiao) — Settings Panel Core (Layer 2) */
 
 function openSettings(tab) {
   ['tabChats', 'tabContacts', 'tabCommunity', 'tabFavorites'].forEach(id => { const el = $('#' + id); if (el) el.className = ''; });
@@ -45,7 +45,7 @@ function renderSettingsGeneral(ct) {
   const currentLang = (window._i18nLang || 'zh');
   ct.innerHTML = '<div class="settings-section"><div class="settings-section-title">' + t('settings.general') + '</div>' +
     '<div class="settings-row"><div><div class="settings-label">' + t('settings.appName') + '</div></div><div class="settings-value">' +
-      '<input class="settings-input" id="stAppName" value="' + escH(storageGet('im-app-name') || '虾饺 IM') + '" onchange="saveGeneralSetting(\'appName\', this.value)"></div></div>' +
+      '<input class="settings-input" id="stAppName" value="' + escH(storageGet('im-app-name') || '虾饺') + '" onchange="saveGeneralSetting(\'appName\', this.value)"></div></div>' +
     '<div class="settings-row"><div><div class="settings-label">' + t('settings.theme') + '</div></div><div class="settings-value">' +
       '<select class="settings-select" onchange="applyTheme(this.value)"><option value="dark"' + (currentTheme === 'dark' ? ' selected' : '') + '>' + t('settings.themeDark') + '</option>' +
       '<option value="light"' + (currentTheme === 'light' ? ' selected' : '') + '>' + t('settings.themeLight') + '</option></select></div></div>' +

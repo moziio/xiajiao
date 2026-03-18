@@ -307,8 +307,8 @@ async function handle(req, res, urlPath) {
   if (urlPath === '/api/settings/about' && req.method === 'GET') {
     const llmMode = cfg.getLLMMode();
     return jsonRes(res, 200, {
-      version: '5.0.0',
-      appName: store.imSettings.appName || '虾饺 IM',
+      version: '1.0.0',
+      appName: store.imSettings.appName || '虾饺',
       port: cfg.PORT,
       nodeVersion: process.version,
       platform: process.platform,

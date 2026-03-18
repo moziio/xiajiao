@@ -12,13 +12,12 @@ function resolvePort() {
 const PORT = resolvePort();
 const GATEWAY_WS = process.env.GATEWAY_WS || 'ws://127.0.0.1:18789';
 const GATEWAY_HTTP = process.env.GATEWAY_HTTP || 'http://127.0.0.1:18789';
-const OPENCLAW_JSON = path.join(process.env.OPENCLAW_HOME || path.join(require('os').homedir(), '.openclaw'), 'openclaw.json');
 
 const ROOT_DIR = path.join(__dirname, '..');
 const AGENTS_FILE = path.join(ROOT_DIR, 'agents.json');
 const MODELS_FILE = path.join(ROOT_DIR, 'models.json');
 const DATA_DIR = path.join(ROOT_DIR, 'data');
-const DB_FILE = path.join(DATA_DIR, 'xiajiao-im.db');
+const DB_FILE = path.join(DATA_DIR, 'xiajiao.db');
 const HISTORY_FILE = path.join(ROOT_DIR, 'chat-history.json');
 const GROUPS_FILE = path.join(ROOT_DIR, 'groups.json');
 const POSTS_FILE = path.join(ROOT_DIR, 'community-posts.json');
@@ -49,8 +48,7 @@ const DEFAULT_TOPICS = [
 ];
 
 function getGatewayToken() {
-  if (process.env.GATEWAY_TOKEN) return process.env.GATEWAY_TOKEN;
-  try { return JSON.parse(fs.readFileSync(OPENCLAW_JSON, 'utf8')).gateway.auth.token; } catch { return ''; }
+  return process.env.GATEWAY_TOKEN || '';
 }
 
 function getLLMMode() {
@@ -62,7 +60,7 @@ function getLLMMode() {
 }
 
 module.exports = {
-  PORT, GATEWAY_WS, GATEWAY_HTTP, OPENCLAW_JSON,
+  PORT, GATEWAY_WS, GATEWAY_HTTP,
   ROOT_DIR, AGENTS_FILE, MODELS_FILE, DATA_DIR, DB_FILE, HISTORY_FILE,
   GROUPS_FILE, POSTS_FILE, TOPICS_FILE, PROFILES_FILE,
   METRICS_FILE, SCHEDULES_FILE, SETTINGS_FILE, WORKFLOWS_FILE, UPLOADS_DIR, PUBLIC_DIR,

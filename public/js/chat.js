@@ -1,4 +1,4 @@
-/* OpenClaw IM — Chat Core Module (Layer 2) */
+/* 虾饺 (Xiajiao) — Chat Core Module (Layer 2) */
 
 // ── Active Conversations ──
 function getActiveChannels() {
@@ -22,6 +22,23 @@ function togglePin(chId) {
 }
 function channelClick(chId) { switchChannel(chId); }
 function markAsRead(chId) { unreadCounts.delete(chId); renderChatList(); closeChatMenu(); }
+async function clearChannelMessages(chId) {
+  closeChatMenu();
+  if (!chId) return;
+  if (!await appConfirm(t('rich.clearConfirm'))) return;
+  try {
+    var r = await (await authFetch('/api/messages/channel/' + encodeURIComponent(chId), { method: 'DELETE' })).json();
+    if (r.ok) {
+      var favs = getFavorites();
+      var remaining = favs.filter(function(f) { return f.channel !== chId; });
+      if (remaining.length !== favs.length) saveFavorites(remaining);
+      allMessages = allMessages.filter(function(m) { return chId === 'group' ? (m.channel !== 'group' && m.channel) : m.channel !== chId; });
+      if (activeChannel === chId) { messagesEl.innerHTML = ''; _renderedOffset = 0; _channelHasMore[chId] = false; }
+      renderChatList();
+      showToastMsg(t('rich.channelCleared'));
+    }
+  } catch (e) { showToastMsg(e.message, 'error'); }
+}
 async function deleteChat(chId) {
   closeChatMenu();
   try { await authFetch('/api/messages/channel/' + encodeURIComponent(chId), { method: 'DELETE' }); } catch {}
@@ -49,7 +66,7 @@ function showChatMenu(e, chId) {
   const pinned = getPinnedChannels(), isPinned = pinned.includes(chId), unread = unreadCounts.get(chId) || 0;
   const safeChId = escJs(chId);
   const menu = document.createElement('div'); menu.id = 'chatCtxMenu'; menu.className = 'ctx-menu';
-  menu.innerHTML = `<div class="ctx-item" onclick="togglePin('${safeChId}')"><span class="ctx-icon">${isPinned ? '\u{274C}' : '\u{1F4CC}'}</span>${isPinned ? t('ctx.unpin') : t('ctx.pin')}</div>${unread > 0 ? `<div class="ctx-item" onclick="markAsRead('${safeChId}')"><span class="ctx-icon">\u{2705}</span>${t('ctx.markRead')}</div>` : ''}${canManage() ? `<div class="ctx-item ctx-danger" onclick="deleteChat('${safeChId}')"><span class="ctx-icon">\u{1F5D1}\uFE0F</span>${t('ctx.deleteChat')}</div>` : ''}`;
+  menu.innerHTML = `<div class="ctx-item" onclick="togglePin('${safeChId}')"><span class="ctx-icon">${isPinned ? '\u{274C}' : '\u{1F4CC}'}</span>${isPinned ? t('ctx.unpin') : t('ctx.pin')}</div>${unread > 0 ? `<div class="ctx-item" onclick="markAsRead('${safeChId}')"><span class="ctx-icon">\u{2705}</span>${t('ctx.markRead')}</div>` : ''}${canManage() ? `<div class="ctx-item ctx-danger" onclick="clearChannelMessages('${safeChId}')"><span class="ctx-icon">\u{1F9F9}</span>${t('ctx.clearMessages')}</div><div class="ctx-item ctx-danger" onclick="deleteChat('${safeChId}')"><span class="ctx-icon">\u{1F5D1}\uFE0F</span>${t('ctx.deleteChat')}</div>` : ''}`;
   document.body.appendChild(menu);
   requestAnimationFrame(() => {
     const r = menu.getBoundingClientRect();

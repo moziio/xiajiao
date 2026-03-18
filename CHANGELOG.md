@@ -1,6 +1,6 @@
-# Changelog
+# Changelog — 虾饺 (Xiajiao)
 
-## v5.0.0 (2026-03-18) — 首次开源发布
+## v1.0.0 (2026-03-18) — 首次开源发布
 
 ### 核心能力
 - **Tool Calling** — 统一工具调用框架 + ToolRegistry + 5 个内置工具（web_search / rag_query / memory_write / memory_search / call_agent）
