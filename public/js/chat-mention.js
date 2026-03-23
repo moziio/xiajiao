@@ -4,7 +4,7 @@ msgInput.addEventListener('keydown', e => {
   if (mentionPopup.classList.contains('hidden')) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
   else { if (e.key === 'ArrowDown'||e.key === 'ArrowUp') { e.preventDefault(); navigateMention(e.key==='ArrowDown'?1:-1); } else if (e.key==='Enter'||e.key==='Tab') { e.preventDefault(); selectHighlightedMention(); } else if (e.key==='Escape') { e.preventDefault(); hideMentionPopup(); } }
 });
-msgInput.addEventListener('input', () => { msgInput.style.height = 'auto'; msgInput.style.height = Math.min(msgInput.scrollHeight, 160)+'px'; checkMentionTrigger(); clearTimeout(typingTimer); if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'typing' })); });
+msgInput.addEventListener('input', () => { msgInput.style.height = 'auto'; msgInput.style.height = Math.min(msgInput.scrollHeight, 160)+'px'; checkMentionTrigger(); clearTimeout(typingTimer); if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'typing', channel: activeChannel })); });
 chatName.addEventListener('click', () => { if (chatName.classList.contains('editable') && activeChannel && !renaming) startRenameChannel(); });
 
 function insertMention(id) {
@@ -15,7 +15,7 @@ let mentionStart = -1, mentionHighlight = 0;
 function checkMentionTrigger() {
   const val = msgInput.value, cur = msgInput.selectionStart; let at = -1;
   if (isDirectAgent(activeChannel)) { hideMentionPopup(); return; }
-  for (let i = cur-1; i >= 0; i--) { if (val[i]==='@' && (i===0||val[i-1]===' '||val[i-1]==='\n')) { at = i; break; } if (val[i]===' '||val[i]==='\n') break; }
+  for (let i = cur-1; i >= 0; i--) { if (val[i]==='@') { at = i; break; } if (val[i]===' '||val[i]==='\n') break; }
   if (at === -1) { hideMentionPopup(); return; }
   mentionStart = at; const q = val.substring(at+1, cur).toLowerCase();
   const grp = customGroups.find(g => g.id === activeChannel);

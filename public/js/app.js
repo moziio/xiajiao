@@ -54,6 +54,7 @@ function handleMessage(msg) {
       if (msg.groups) customGroups = msg.groups;
       updateGatewayDot(msg.gatewayConnected);
       _loadServerPrefs();
+      if (msg.channelMap) _extChannelMap = msg.channelMap;
       renderChatList(); renderContacts(); updateOnlineIndicator();
       if (typeof loadWorkflows === 'function') {
         loadWorkflows().then(() => {
@@ -101,12 +102,28 @@ function handleMessage(msg) {
     case 'agent_lifecycle': handleAgentLifecycle(msg); break;
     case 'tool_call_start': if (typeof handleToolCallStart === 'function') handleToolCallStart(msg); break;
     case 'tool_call_end': if (typeof handleToolCallEnd === 'function') handleToolCallEnd(msg); break;
-    case 'agent_error': clearAgentTyping(); setSendBtnStop(false); addSystemMsg(t('common.agentError', {error: msg.error}), activeChannel || 'group'); break;
+    case 'agent_error': {
+      clearAgentTyping(); setSendBtnStop(false);
+      const errCh = msg.channel || activeChannel || 'group';
+      addSystemMsg(msg.error || t('common.fail'), errCh, true);
+      const toastLine = (msg.error || t('common.fail')).split('\n')[0];
+      showToastMsg(toastLine, 'error');
+      if (errCh !== activeChannel) { unreadCounts.set(errCh, (unreadCounts.get(errCh) || 0) + 1); renderChatList(); }
+      break;
+    }
+    case 'agent_info': {
+      const infoCh = msg.channel || activeChannel || 'group';
+      addSystemMsg('💡 ' + (msg.info || ''), infoCh, false);
+      break;
+    }
     case 'error': showToastMsg(msg.error || t('common.fail'), 'error'); break;
     case 'agents_update': if (msg.agents) updateAgentList(msg.agents); break;
     case 'groups_update': if (msg.groups) { customGroups = msg.groups; renderChatList(); renderContacts(); } break;
     case 'collab_chain_waiting': if (typeof handleCollabChainWaiting === 'function') handleCollabChainWaiting(msg); break;
     case 'collab_flow_update': if (typeof handleCollabFlowUpdate === 'function') handleCollabFlowUpdate(msg); break;
+    case 'task_scheduler_update':
+      if (activeTab === 'community' && lastCommunityView === 'schedules') { loadTasks().then(renderScheduleList); }
+      break;
     case 'community_update':
       if (activeTab === 'community' && communityView.style.display !== 'none') { refreshCommunityFeed(); }
       else { communityUnread++; updateCommunityBadge(); }
@@ -124,7 +141,7 @@ function handleMessage(msg) {
       break;
     case 'guest_chat_toggle': _guestCanChat = !!msg.guestCanChat; break;
     case 'gateway_status': updateGatewayDot(msg.connected); if (msg.agents) updateAgentList(msg.agents); break;
-    case 'typing': if (msg.userId !== me?.id) showTyping(msg.userName); break;
+    case 'typing': if (msg.userId !== me?.id && (!msg.channel || msg.channel === activeChannel)) showTyping(msg.userName); break;
     case 'workflow_start':
     case 'workflow_step':
     case 'workflow_waiting':
@@ -212,17 +229,12 @@ async function _loadServerPrefs() {
 
 // ── Service Worker Registration ──
 if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (ev) => {
+    if (ev.data?.type === 'sw-activated') window.location.reload();
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'activated' && navigator.serviceWorker.controller) {
-            showToastMsg(typeof t === 'function' ? t('app.swUpdated') : '应用已更新，刷新获取最新版本', 'info');
-          }
-        });
-      });
-    }).catch(() => {});
+      if (reg.active) reg.update();
+  }).catch(() => {});
   });
 }

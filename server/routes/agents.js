@@ -17,6 +17,8 @@ function getAvailableModels() {
     return (store.localModels.models || []).map(m => ({
       id: m.id, name: m.name || m.id, provider: m.provider,
       reasoning: m.reasoning || false, input: m.input || ['text'],
+      output: m.output || undefined, api: m.api || undefined,
+      capabilities: m.capabilities || store.detectCapabilities(m),
       contextWindow: m.contextWindow, maxTokens: m.maxTokens
     }));
   } catch { return []; }
@@ -57,6 +59,8 @@ async function createAgent({ id, name, description, model }) {
   const agentEntry = { id, name, model: model || '', workspace, createdAt: Date.now() };
   store.localAgents.push(agentEntry);
   store.saveAgents();
+  gw.refreshKnownAgents();
+  gw.broadcast({ type: 'agents_update', agents: gw.knownAgents });
   await gw.applyConfig();
   gw.emitCommunityEvent('agent_created', { id, name });
   return { ok: true, agent: { id, name, model: model || null } };
@@ -76,6 +80,8 @@ async function updateAgent(id, { name, description, model, tools, autoInjectMemo
     fs.writeFileSync(path.join(ws, 'SOUL.md'), description || '');
   }
   store.saveAgents();
+  gw.refreshKnownAgents();
+  gw.broadcast({ type: 'agents_update', agents: gw.knownAgents });
   await gw.applyConfig();
   return { ok: true, agent: { id, name: agent.name, model: agent.model || null } };
 }
@@ -115,6 +121,7 @@ async function deleteAgent(id, cascade) {
     store.saveAgents();
   }
   gw.refreshKnownAgents();
+  gw.broadcast({ type: 'agents_update', agents: gw.knownAgents });
   return result;
 }
 
@@ -150,6 +157,29 @@ function writeWorkspaceFile(id, filename, content) {
   if (filename.includes('..') || path.isAbsolute(filename)) throw new Error('invalid filename');
   const ws = resolveWorkspace(id);
   fs.mkdirSync(ws, { recursive: true });
+
+  const contentBuf = Buffer.from(content || '', 'utf8');
+  const ext = path.extname(filename).toLowerCase();
+  const maxSize = ext === '.pdf' ? rag.LIMITS.MAX_PDF_FILE_SIZE : rag.LIMITS.MAX_TEXT_FILE_SIZE;
+  if (contentBuf.length > maxSize) {
+    const limitMB = (maxSize / 1024 / 1024).toFixed(0);
+    throw new Error(`文件过大（${(contentBuf.length / 1024 / 1024).toFixed(1)}MB），最大 ${limitMB}MB`);
+  }
+
+  const check = rag.shouldIndex(filename);
+  if (!check.ok && check.reason && check.reason.startsWith('unsupported')) {
+    throw new Error(check.reason === 'unsupported_office'
+      ? '暂不支持 Office 文档，后续版本将支持'
+      : check.reason === 'unsupported_image'
+        ? '暂不支持图片 OCR，后续版本将支持'
+        : '不支持此文件类型');
+  }
+
+  const entries = fs.existsSync(ws) ? fs.readdirSync(ws).filter(f => !f.startsWith('.') && rag.canIndex(f)) : [];
+  if (!entries.includes(filename) && entries.length >= rag.LIMITS.MAX_FILES_PER_AGENT) {
+    throw new Error(`文件数量已达上限（${rag.LIMITS.MAX_FILES_PER_AGENT} 个），请删除部分文件后再上传`);
+  }
+
   fs.writeFileSync(path.join(ws, filename), content || '');
   rag.indexFile(id, filename).catch(e => log.warn('async index error:', e.message));
   return { ok: true };
@@ -290,7 +320,7 @@ async function handle(req, res, urlPath) {
       const meta = toolRegistry.getMeta(name) || {};
       const schema = toolRegistry._getSchema(name);
       const status = _getToolStatus(name, searchCfg);
-      return { name, description: schema?.description || '', icon: meta.icon || '🔧', risk: meta.risk || 'low', category: meta.category || 'general', requireApproval: !!meta.requireApproval, status };
+      return { name, description: schema?.description || '', icon: meta.icon || '🔧', risk: meta.risk || 'low', category: meta.category || 'general', requireApproval: !!meta.requireApproval, defaultDeny: !!meta.defaultDeny, status };
     });
     return jsonRes(res, 200, { tools });
   }
@@ -413,6 +443,7 @@ function _getToolStatus(name, searchCfg) {
     if (provider === 'auto' || provider === 'duckduckgo') return 'ready';
     return searchCfg.apiKey ? 'ready' : 'needs_config';
   }
+  if (name.startsWith('mcp:')) return 'ready';
   return 'ready';
 }
 

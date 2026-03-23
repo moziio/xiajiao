@@ -1,0 +1,82 @@
+/**
+ * Channel Connector 模板
+ *
+ * 使用方式：
+ *   1. 复制本文件，去掉 .example 后缀（如 dingtalk-stream.js）
+ *   2. 实现 start() 函数（必须）和 sendReply() 函数（可选）
+ *   3. 重启服务，connector 会自动加载
+ *   4. 在对应 preset JSON 中设置 "protocol": "dingtalk-stream"
+ *
+ * 文件名（去掉 .js）即为 connector 名称，用于 preset 的 protocol 字段。
+ * 以 _ 开头的文件会被跳过（如本模板）。
+ */
+
+const { createLogger } = require('../../middleware/logger');
+
+/**
+ * 启动 connector（必须实现）
+ *
+ * @param {object} ctx - 上下文对象，由 channel-engine 提供
+ *   ctx.channelId   - Channel ID
+ *   ctx.config      - 用户配置（appId, appSecret 等，来自 Channel 配置表单）
+ *   ctx.log         - 日志器
+ *   ctx.abort       - AbortSignal，Channel 停止时触发
+ *   ctx.onInbound(rawMessage)          - 推送入站消息（消息格式由 preset 的 inbound 映射处理）
+ *   ctx.updateStatus('connected')      - 更新状态：connected / connecting / error / disconnected
+ *   ctx.getToken()                     - 获取 OAuth Token（如果 preset 配置了 auth）
+ *   ctx.mountRoute(method, path, fn)   - 注册 HTTP 路由（webhook 模式用）
+ *   ctx.unmountRoute(method, path)     - 注销 HTTP 路由
+ *   ctx.heartbeat.start(fn, intervalMs) - 启动心跳
+ *   ctx.heartbeat.stop()               - 停止心跳
+ *   ctx.scheduleReconnect(fn)          - 调度重连（指数退避）
+ *
+ * @param {object} config - 合并后的完整配置（preset JSON + 用户配置）
+ */
+async function start(ctx, config) {
+  const log = ctx.log || createLogger('my-connector');
+  const userCfg = ctx.config || {};
+
+  // ── 1. 初始化 SDK / 建立连接 ──
+  // const sdk = require('some-sdk');
+  // const client = new sdk.Client({ appKey: userCfg.appKey, ... });
+
+  // ── 2. 订阅消息事件 ──
+  // client.on('message', (data) => {
+  //   ctx.onInbound(data);
+  //   // onInbound 之后，channel-engine 会用 preset 的 inbound 配置
+  //   // 从 data 中提取 userId / text / msgId 等字段
+  // });
+
+  // ── 3. 启动连接 ──
+  // await client.start();
+  ctx.updateStatus('connected');
+  log.info('connector started');
+
+  // ── 4. 停止清理 ──
+  ctx.abort.addEventListener('abort', () => {
+    // client.disconnect();
+    log.info('connector stopped');
+  }, { once: true });
+}
+
+/**
+ * 发送回复（可选实现）
+ *
+ * 如果不实现此函数，channel-engine 会使用 preset 的 outbound 配置
+ * 通过 HTTP 发送回复（适用于大部分平台）。
+ *
+ * 实现此函数的场景：
+ *   - SDK 提供了专用的发送方法（如飞书 client.im.v1.message.create）
+ *   - 需要维护会话映射（如 chatId）
+ *   - HTTP 方式无法满足需求
+ *
+ * @param {object} ctx    - 同 start() 的 ctx
+ * @param {string} userId - 外部用户 ID
+ * @param {string} text   - 回复文本
+ */
+async function sendReply(ctx, userId, text) {
+  // const client = ctx._myClient;
+  // await client.sendMessage(userId, text);
+}
+
+module.exports = { start, sendReply };

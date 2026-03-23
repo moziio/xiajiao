@@ -117,6 +117,65 @@ async function handle(req, res, urlPath, query) {
     return jsonRes(res, 200, { ok: true });
   }
 
+  // ── Scheduled Tasks (M13) ──
+  if (urlPath === '/api/tasks' && req.method === 'GET') {
+    if (!guardAdmin(req, res)) return;
+    const ts = global.taskScheduler;
+    if (!ts) return jsonRes(res, 200, { tasks: [] });
+    const typeFilter = query.get('type');
+    const tasks = ts.listTasks(typeFilter ? { type: typeFilter } : undefined);
+    return jsonRes(res, 200, { tasks });
+  }
+  if (urlPath === '/api/tasks' && req.method === 'POST') {
+    if (!guardAdmin(req, res)) return;
+    const body = await readBody(req);
+    const ts = global.taskScheduler;
+    if (!ts) return jsonRes(res, 500, { error: 'task-scheduler not ready' });
+    try {
+      const task = ts.createTask(body);
+      return jsonRes(res, 200, { ok: true, task });
+    } catch (e) { return jsonRes(res, 400, { error: e.message }); }
+  }
+  if (urlPath === '/api/tasks/run' && req.method === 'POST') {
+    if (!guardAdmin(req, res)) return;
+    const body = await readBody(req);
+    const ts = global.taskScheduler;
+    if (!ts) return jsonRes(res, 500, { error: 'not ready' });
+    try {
+      ts.runNow(body.id);
+      return jsonRes(res, 200, { ok: true });
+    } catch (e) { return jsonRes(res, 400, { error: e.message }); }
+  }
+  const taskMatch = urlPath.match(/^\/api\/tasks\/([^/]+)$/);
+  if (taskMatch && req.method === 'GET') {
+    if (!guardAdmin(req, res)) return;
+    const ts = global.taskScheduler;
+    if (!ts) return jsonRes(res, 404, { error: 'not found' });
+    const info = ts.getTaskStatus(taskMatch[1]);
+    if (!info) return jsonRes(res, 404, { error: 'task not found' });
+    return jsonRes(res, 200, { task: info });
+  }
+  if (taskMatch && req.method === 'PUT') {
+    if (!guardAdmin(req, res)) return;
+    const body = await readBody(req);
+    const ts = global.taskScheduler;
+    if (!ts) return jsonRes(res, 500, { error: 'not ready' });
+    try {
+      if (body.enabled === true) ts.enableTask(taskMatch[1]);
+      else if (body.enabled === false) ts.disableTask(taskMatch[1]);
+      const hasUpdate = ['name', 'scheduleKind', 'scheduleExpr', 'targetId', 'payload', 'deleteAfterRun'].some(k => k in body);
+      if (hasUpdate) ts.updateTask(taskMatch[1], body);
+      return jsonRes(res, 200, { ok: true });
+    } catch (e) { return jsonRes(res, 400, { error: e.message }); }
+  }
+  if (taskMatch && req.method === 'DELETE') {
+    if (!guardAdmin(req, res)) return;
+    const ts = global.taskScheduler;
+    if (!ts) return jsonRes(res, 500, { error: 'not ready' });
+    ts.deleteTask(taskMatch[1]);
+    return jsonRes(res, 200, { ok: true });
+  }
+
   return false;
 }
 

@@ -3,14 +3,8 @@
   "defaultModel": "",
   "guestCanChat": true,
   "llmMode": "direct",
-  "toolModels": {
-    "imageGeneration": "",
-    "imageAutoIntercept": false
-  },
   "rag": {
     "enabled": false,
-    "embeddingModel": "text-embedding-v3",
-    "embeddingProvider": "",
     "topK": 5,
     "chunkSize": 500,
     "chunkOverlap": 50

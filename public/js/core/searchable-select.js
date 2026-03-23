@@ -9,28 +9,44 @@ const MODEL_CATEGORIES = {
   multimodal:  { icon: '\uD83C\uDF10', zhLabel: '多模态',   enLabel: 'Multimodal' },
   tts:         { icon: '\uD83D\uDD0A', zhLabel: '语音合成', enLabel: 'TTS' },
   asr:         { icon: '\uD83C\uDF99\uFE0F', zhLabel: '语音识别', enLabel: 'ASR' },
+  embedding:   { icon: '\uD83D\uDCCC', zhLabel: '向量化',   enLabel: 'Embedding' },
+  video:       { icon: '\uD83C\uDFAC', zhLabel: '视频生成', enLabel: 'Video' },
   translation: { icon: '\uD83C\uDF0D', zhLabel: '翻译',     enLabel: 'Translation' },
   chat:        { icon: '\uD83D\uDCAC', zhLabel: '对话',     enLabel: 'Chat' },
   thirdparty:  { icon: '\uD83D\uDD17', zhLabel: '第三方',   enLabel: '3rd Party' },
 };
 
 function getModelCategory(model) {
-  const id = ((typeof model === 'string' ? model : model.id) || '').toLowerCase();
+  const rawId = ((typeof model === 'string' ? model : model.id) || '').toLowerCase();
+  const id = rawId.includes('/') ? rawId.split('/').pop() : rawId;
   const m = typeof model === 'object' ? model : {};
+  const caps = m.capabilities;
+
+  if (caps && caps.length) {
+    if (caps.includes('image_gen')) return 'image';
+    if (caps.includes('tts')) return 'tts';
+    if (caps.includes('stt')) return 'asr';
+    if (caps.includes('embedding')) return 'embedding';
+    if (caps.includes('video_gen')) return 'video';
+  }
 
   if (m.output && m.output.includes('image')) return 'image';
-  if (m.api && /image/.test(m.api)) return 'image';
-  if (/wanx|dall-e|z-image|image-edit|image-plus|image-max|image-pro|image-2/.test(id)) return 'image';
+  if (m.api && /dashscope-image|openai-image|dashscope-multimodal|chat-image/.test(m.api)) return 'image';
+  if (/\b(wanx|dall-e|dalle|z-image|qwen-image|gpt-4o-image|gemini-image|stable-diffusion|sdxl|midjourney|mj-|imagen|t2i|txt2img|image-gen|flux|kolors|ideogram|playground-v|cogview|seedream|hunyuan-image)\b/.test(id)) return 'image';
 
   if (/coder|code/.test(id)) return 'code';
   if (/vl-|vision|ocr|qvq/.test(id)) return 'vision';
   if (/omni/.test(id)) return 'multimodal';
-  if (/tts|s2s/.test(id)) return 'tts';
-  if (/asr/.test(id)) return 'asr';
+  if (/tts|s2s|speech-[0-9]|cosyvoice|sambert|eleven[_-]|elevenlabs|text-to-speech/.test(id)) return 'tts';
+  if (/asr|stt|whisper|paraformer|sensevoice|speech-to-text|transcri/.test(id)) return 'asr';
+  if (/\b(embed|embedding|bge-|m3e|gte-|e5-|voyage-|text-embedding)\b/.test(id)) return 'embedding';
   if (/livetranslate|mt-/.test(id)) return 'translation';
   if (/math/.test(id)) return 'math';
-  if (/deep-search/.test(id)) return 'reasoning';
+  if (/deep-search|deep-research/.test(id)) return 'reasoning';
   if (/deepseek-r1|qwq|thinking/.test(id)) return 'reasoning';
+
+  if (caps && caps.includes('image_understand') && /vl|vision/.test(id)) return 'vision';
+
   if (/deepseek|minimax|kimi|glm|gui-plus/.test(id)) return 'thirdparty';
 
   return 'chat';

@@ -231,3 +231,14 @@
   0%, 100% { opacity: 1; }
   50% { opacity: .4; }
 }
+
+/* Chain button status indicators */
+#chainBtn.has-flow { color: rgba(139,92,246,.9); }
+#chainBtn.has-flow:hover { color: rgba(139,92,246,1); background: rgba(139,92,246,.1); }
+#chainBtn.flow-running {
+  color: #ffa500;
+  background: rgba(255,165,0,.08);
+  animation: flowPulseOrange 2s ease-in-out infinite;
+  border-radius: 50%;
+}
+#chainBtn.flow-running:hover { color: #ffa500; background: rgba(255,165,0,.15); }

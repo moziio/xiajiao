@@ -4,11 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>虾饺</title>
-  <link rel="icon" type="image/png" href="/favicon.png?v=2">
-  <link rel="icon" href="/favicon.ico?v=2" sizes="any">
-  <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
+  <script>
+  // Purge legacy SW caches on upgrade
+  if ('caches' in window) {
+    caches.keys().then(function(keys) {
+      keys.filter(function(k) { return k.indexOf('shrimp-') !== 0; }).forEach(function(k) { caches.delete(k); });
+    });
+  }
+  </script>
   <meta name="theme-color" content="#00d4ff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,10 +32,11 @@
 <!-- Login -->
 <div id="loginPage" class="login-wrap">
   <div class="login-box">
+    <img src="/logo.png" alt="虾饺" style="width:72px;height:72px;margin-bottom:12px;border-radius:16px">
     <h1 data-i18n="login.title">虾饺</h1>
     <p data-i18n="login.subtitle">AI Agent 智能协作平台</p>
-    <input id="nameInput" type="text" data-i18n-placeholder="login.namePlaceholder" placeholder="输入你的昵称" maxlength="20" autofocus>
-    <input id="ownerKeyInput" type="password" data-i18n-placeholder="login.keyPlaceholder" placeholder="管理密钥" maxlength="64" style="margin-top:-8px">
+    <input id="nameInput" type="text" data-i18n-placeholder="login.namePlaceholder" placeholder="请输入昵称" maxlength="20" autofocus>
+    <input id="ownerKeyInput" type="password" data-i18n-placeholder="login.keyPlaceholder" placeholder="请输入密码" maxlength="64" style="margin-top:-8px">
     <div id="loginMsg" style="color:#ff3b5c;font-size:13px;min-height:20px;margin-top:4px"></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button id="ownerLoginBtn" onclick="doOwnerLogin()" style="flex:1" data-i18n="login.ownerLogin">主人登录</button>
@@ -41,6 +49,7 @@
 <div id="appPage" class="app hidden">
   <div id="sidebar" class="sidebar">
     <div class="sidebar-header">
+      <img src="/logo.png" alt="虾饺" style="width:28px;height:28px;border-radius:6px;flex-shrink:0">
       <h2 data-i18n="login.title">虾饺</h2>
       <span id="gwDot" class="status-dot offline" data-i18n-title="sidebar.gatewayTitle" title="Gateway 状态"></span>
     </div>
@@ -157,10 +166,10 @@
     <div id="scheduleView" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0">
       <div class="chat-header">
         <div class="chat-header-info">
-          <div class="chat-header-name" data-i18n="community.schedules">定时例会</div>
-          <div class="chat-header-status" data-i18n="community.schedulesSubtitle">管理定时会议与自动任务</div>
+          <div class="chat-header-name" data-i18n="schedule.viewTitle">⏰ 定时任务</div>
+          <div class="chat-header-status" data-i18n="schedule.viewSubtitle">Agent 自动执行 · 群组定时讨论 · 工作流定期运行</div>
         </div>
-        <button id="createSchedBtn" class="btn-primary hidden" onclick="openCreateSchedule()" style="font-size:13px;padding:6px 14px" data-i18n="schedule.new">新建</button>
+        <button id="createTaskBtn" class="btn-primary hidden" onclick="openCreateTask()" style="font-size:13px;padding:6px 14px" data-i18n="schedule.newTaskBtn">+ 新建任务</button>
       </div>
       <div class="schedule-list" id="scheduleList"></div>
     </div>
@@ -207,6 +216,7 @@
 <script defer src="/js/settings.js"></script>
 <script defer src="/js/settings-models.js"></script>
 <script defer src="/js/settings-infra.js"></script>
+<script defer src="/js/settings-channels.js"></script>
 <script defer src="/js/manage-agent.js"></script>
 <script defer src="/js/manage-group.js"></script>
 <script defer src="/js/collab-flow.js"></script>

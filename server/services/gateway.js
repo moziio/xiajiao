@@ -201,7 +201,7 @@ function handleAgentEvent(payload) {
   const { stream, data } = payload;
   const { channel, agentId } = resolveChannel(payload.sessionKey, payload.runId);
   if (stream === 'assistant' && data) {
-    const run = activeGwRuns.get(channel);
+    const run = payload.runId ? activeGwRuns.get(payload.runId) : null;
     if (run) run.currentText = data.text || '';
     broadcast({ type: 'agent_stream', channel, agentId, runId: payload.runId || null, text: data.text || '', delta: data.delta || '' });
   }
@@ -254,13 +254,16 @@ function handleChatEvent(payload) {
 
     if (imageGen.isEnabled() && imageGen.hasMarker(text)) {
       (async () => {
-        try { text = await imageGen.processText(text); } catch (err) { log.error('image-gen: error:', err.message); }
+        const onProgress = (info) => {
+          broadcast({ type: 'agent_stream', channel, agentId, runId, text: info.currentText, delta: '', _imageProgress: true });
+        };
+        try { text = await imageGen.processText(text, onProgress); } catch (err) { log.error('image-gen: error:', err.message); }
         const entry = { id: 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), type: 'agent', agent: agentId, channel, text, ts: Date.now(), runId };
         store.addMessage(entry);
         broadcast({ type: 'message', message: entry });
         store.bumpMetric(agentId, 'messages'); store.bumpMetric(agentId, 'tasks');
         emitCommunityEvent('agent_task_complete', { agentId, text });
-        if (runId) runIdChannelMap.delete(runId); activeGwRuns.delete(channel);
+        if (runId) { runIdChannelMap.delete(runId); activeGwRuns.delete(runId); }
       })();
       return;
     }
@@ -270,12 +273,12 @@ function handleChatEvent(payload) {
     broadcast({ type: 'message', message: entry });
     store.bumpMetric(agentId, 'messages'); store.bumpMetric(agentId, 'tasks');
     emitCommunityEvent('agent_task_complete', { agentId, text });
-    if (runId) runIdChannelMap.delete(runId); activeGwRuns.delete(channel);
+    if (runId) { runIdChannelMap.delete(runId); activeGwRuns.delete(runId); }
   }
   if (state === 'error') {
     broadcast({ type: 'agent_error', channel, error: errorMessage || 'Agent error' });
     emitCommunityEvent('agent_error', { agentId, error: errorMessage || 'unknown' });
-    if (runId) runIdChannelMap.delete(runId); activeGwRuns.delete(channel);
+    if (runId) { runIdChannelMap.delete(runId); activeGwRuns.delete(runId); }
   }
 }
 
@@ -310,8 +313,8 @@ async function sendToGateway(channel, agentId, text) {
     const runId = result?.runId;
     if (runId) {
       runIdChannelMap.set(runId, { channel, agentId, ts: Date.now() });
-      activeGwRuns.set(channel, { runId, sessionKey, agentId, ts: Date.now() });
-      setTimeout(() => { runIdChannelMap.delete(runId); if (activeGwRuns.get(channel)?.runId === runId) activeGwRuns.delete(channel); }, 600000);
+      activeGwRuns.set(runId, { channel, runId, sessionKey, agentId, ts: Date.now() });
+      setTimeout(() => { runIdChannelMap.delete(runId); activeGwRuns.delete(runId); }, 600000);
     }
     return { ok: true, runId, sessionKey };
   } catch (err) {
@@ -321,24 +324,28 @@ async function sendToGateway(channel, agentId, text) {
 }
 
 async function cancelGwRun(channel) {
-  const run = activeGwRuns.get(channel);
-  if (!run) return { ok: false, error: 'no active run' };
-  const partialText = run.currentText;
-  try { await gwSendReq('chat.cancel', { runId: run.runId, sessionKey: run.sessionKey }); } catch {}
-  activeGwRuns.delete(channel);
-  if (run.runId) runIdChannelMap.delete(run.runId);
+  const matching = [...activeGwRuns.entries()].filter(([, v]) => v.channel === channel);
+  if (!matching.length) return { ok: false, error: 'no active run' };
 
-  if (partialText && partialText.trim()) {
-    const entry = {
-      id: 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-      type: 'agent', agent: run.agentId, channel,
-      text: partialText, ts: Date.now(), runId: run.runId,
-    };
-    store.addMessage(entry);
-    broadcast({ type: 'message', message: entry });
+  for (const [key, run] of matching) {
+    const partialText = run.currentText;
+    try { await gwSendReq('chat.cancel', { runId: run.runId, sessionKey: run.sessionKey }); } catch {}
+    activeGwRuns.delete(key);
+    if (run.runId) runIdChannelMap.delete(run.runId);
+
+    if (partialText && partialText.trim()) {
+      const entry = {
+        id: 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        type: 'agent', agent: run.agentId, channel,
+        text: partialText, ts: Date.now(), runId: run.runId,
+      };
+      store.addMessage(entry);
+      broadcast({ type: 'message', message: entry });
+    }
+
+    broadcast({ type: 'agent_lifecycle', channel, agentId: run.agentId, runId: run.runId, phase: 'end' });
   }
 
-  broadcast({ type: 'agent_lifecycle', channel, agentId: run.agentId, runId: run.runId, phase: 'end' });
   return { ok: true };
 }
 

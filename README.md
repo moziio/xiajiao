@@ -1,198 +1,401 @@
-# 虾饺 (Xiajiao)
+<p align="center">
+  <!-- Replace with actual logo -->
+  <!-- <img src="docs/images/logo.png" alt="Xiajiao IM" width="120" /> -->
+  <h1 align="center">🦐 Xiajiao IM</h1>
+</p>
 
-**AI Agent 团队协作平台 — 4 个依赖 · 零外部服务 · `npm start` 即跑**
+<p align="center">
+  <strong>Your AI Agent Team — One <code>npm start</code> Away</strong>
+</p>
 
-> Manage your AI agents like managing a team — group chat, @mention, tool calling, memory, and collaboration flows.
+<p align="center">
+  A lightweight, self-hosted, open-source platform to run AI agents as a team — group chat, @mention routing, tool calling, persistent memory, and collaboration flows.<br/>
+  No Docker. No PostgreSQL. No Redis. Just <code>npm start</code>.
+</p>
 
-> **Xiajiao (虾饺)** — named after the Cantonese shrimp dumpling: small, delicate, but packed with flavor. Minimal dependencies, maximum capability.
+<p align="center">
+  <strong>English</strong> · <a href="./README.zh-CN.md">简体中文</a>
+</p>
 
-<!-- 截图占位：替换为实际截图后取消注释 -->
-<!-- ![虾饺](docs/images/hero.png) -->
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> ·
+  <a href="#-why-xiajiao">Why Xiajiao</a> ·
+  <a href="#-features">Features</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen?style=flat-square" alt="Node.js" />
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/npm_deps-6-orange?style=flat-square" alt="Dependencies" />
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
+  <img src="https://img.shields.io/badge/SQLite-built--in-blueviolet?style=flat-square" alt="SQLite" />
+</p>
+
+<p align="center">
+  <img src="docs/images/hero-light-top.png" alt="Xiajiao IM — AI agents collaborating in a group chat" width="800" />
+</p>
+
+<p align="center">
+  <em>@mention an agent → Get a real-time response → Hand off to another agent — all in one chat.</em>
+</p>
+
+<details>
+<summary><strong>🎬 Watch it in action (35s demo)</strong></summary>
+<br/>
+<p align="center">
+  <img src="docs/images/demo.gif" alt="Xiajiao IM — Collaboration flow demo" width="800" />
+</p>
+<p align="center">
+  <em>One message triggers an entire agent collaboration chain — writing, editing, and translating in real time.</em>
+</p>
+</details>
+
+<details>
+<summary><strong>📸 More screenshots</strong></summary>
+
+<br/>
+
+<table>
+<tr>
+<td width="50%" align="center">
+  <strong>Agent writes a poem</strong><br/><br/>
+  <img src="docs/images/hero-light-middle.png" alt="Agent collaboration — poem analysis and handoff" width="400" />
+</td>
+<td width="50%" align="center">
+  <strong>Another agent translates it</strong><br/><br/>
+  <img src="docs/images/hero-light-translation.png" alt="Agent translates poem to English" width="400" />
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+  <strong>Tool Calling in action</strong><br/><br/>
+  <img src="docs/images/tool-calling.png" alt="Tool Calling — memory search and write" width="400" />
+</td>
+<td width="50%" align="center">
+  <strong>Collaboration flow panel</strong><br/><br/>
+  <img src="docs/images/collab-flow.png" alt="Visual collaboration pipeline" width="400" />
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+  <strong>Agent contacts</strong><br/><br/>
+  <img src="docs/images/contacts-light.png" alt="Agent contacts list" width="400" />
+</td>
+<td width="50%" align="center">
+  <strong>Clean login</strong><br/><br/>
+  <img src="docs/images/login-light.png" alt="Login page" width="400" />
+</td>
+</tr>
+</table>
+
+</details>
+
+> **Xiajiao (虾饺)** — named after the Cantonese shrimp dumpling: small, delicate, but packed with flavor.  
+> Minimal dependencies, maximum capability.
 
 ---
 
-## 为什么选虾饺？
+## ⚡ Quick Start
 
-|  | 虾饺 | Dify | Coze | FastGPT |
-|--|------|------|------|---------|
-| npm 依赖 | **4 个** | 100+ | SaaS | 80+ |
-| 外部服务 | **无** | PostgreSQL + Redis + 向量库 | — | MongoDB + MySQL |
-| 启动方式 | **`npm start`** | `docker compose up` | 注册账号 | `docker compose up` |
-| 多 Agent 群聊 | **✅** | ❌ | ❌ | ❌ |
-| Agent 间协作 | **✅ 协作链 + 可视化** | 工作流 | Bot 编排 | ❌ |
-| Tool Calling | **✅ 5 个内置工具** | ✅ | ✅ 100+ 插件 | ✅ |
-| Agent 记忆 | **✅ 三分类持久记忆** | ❌ | 变量 | ❌ |
-| RAG 知识库 | **✅ BM25 + 向量混合** | ✅ | ✅ | ✅ |
+### Option 1: npm (recommended)
 
-**核心差异**：Dify / Coze 是 AI 应用开发平台；虾饺是 **AI Agent 团队协作平台**——把 Agent 当同事，不当工具。
-
----
-
-## 功能全景
-
-### IM 核心
-- 多 Agent 私聊 / 群聊，@mention 精确路由
-- Markdown 渲染 + 代码高亮 + Mermaid 图表
-- 富媒体消息（文本、代码块、表格、图片、操作按钮）
-- 消息搜索（FTS5 全文检索）、编辑、删除、回复
-- 频道草稿、置顶、未读计数
-
-### Agent 能力
-- **Tool Calling** — 5 个内置工具，实时调用时间线 UI
-  - `web_search`：6 种搜索引擎（auto / DuckDuckGo / Brave / Kimi / Perplexity / Grok）
-  - `rag_query`：知识库语义检索
-  - `memory_write` / `memory_search`：持久记忆读写
-  - `call_agent`：跨 Agent 调用（3 层嵌套保护）
-- **Agent 记忆** — 三分类（语义 / 情景 / 程序性），embedding 去重，混合搜索，自动注入 Prompt
-- **RAG 知识库** — BM25 + 向量混合检索，RRF 融合，LLM 重排序，分层分块（200 字小块 + 800 字大块）
-- **AI 文生图** — DashScope 集成，对话中自动识别画图意图
-
-### 协作
-- **协作链** — 群组内 Agent 自动接力，上一个输出成为下一个输入
-- **协作流可视化** — 实时状态面板 + 历史回放 + 人工干预（确认 / 终止 / 编辑）
-- **工作流编排** — 多步骤、条件分支、错误处理（重试 / 跳过 / 回退）、人工审批
-- **定时例会** — Cron 表达式驱动，Agent 定期汇报
-
-### 多模型支持
-兼容 OpenAI 兼容 API 的所有厂商：
-- OpenAI (GPT-4o) / Anthropic (Claude) / 通义千问 / GLM / Kimi / MiniMax / DeepSeek 等
-- DashScope 图像生成
-
-### 基础设施
-- **SQLite 持久化** — `node:sqlite`（WAL + FTS5），一个 db 文件搞定一切
-- **RBAC 权限** — owner > admin > member > guest 四级
-- **安全** — CSRF 防护、速率限制、错误脱敏、Token 主动撤销
-- **PWA** — Service Worker + 离线页
-- **中英双语** — i18n 内置
-
----
-
-## 快速开始
-
-### 环境要求
-
-- **Node.js >= 22.0.0**（使用原生 `node:sqlite` 模块）
-
-### 快速启动
+**Prerequisite:** Node.js >= 22.0.0
 
 ```bash
-git clone https://github.com/FengWanMin/xiajiao.git
+git clone https://github.com/moziio/xiajiao.git
 cd xiajiao && npm install
 npm start
 ```
 
-浏览器打开 `http://localhost:18800` → 默认密码 `xiajiao-admin` 登录 → **设置 → 模型管理** 添加 API Key → 开始使用。
+### Option 2: Docker
 
-> 登录密码和 API Key 均可在设置页面中修改，无需手动编辑配置文件。
-
-### 环境变量
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `IM_PORT` | 服务端口 | `18800` |
-| `OWNER_KEY` | 管理员密码 | `xiajiao-admin` |
-| `LLM_MODE` | LLM 模式 (`direct` / `gateway`) | `direct` |
-| `GATEWAY_WS` | Gateway WebSocket 地址（仅 gateway 模式） | `ws://127.0.0.1:18789` |
-| `GATEWAY_HTTP` | Gateway HTTP 地址（仅 gateway 模式） | `http://127.0.0.1:18789` |
-| `GATEWAY_TOKEN` | Gateway 认证令牌（仅 gateway 模式） | — |
-
----
-
-## 项目结构
-
-```
-xiajiao/
-├── server/                   # 后端
-│   ├── index.js              # HTTP + WebSocket 入口
-│   ├── middleware/            # 认证、日志、限流
-│   ├── routes/               # API 路由（10 个模块）
-│   ├── services/             # 核心服务
-│   │   ├── llm.js            # LLM 调用 + Tool Calling 循环
-│   │   ├── rag.js            # RAG 检索引擎
-│   │   ├── memory.js         # Agent 记忆
-│   │   ├── workflow.js       # 工作流引擎
-│   │   ├── collab-flow.js    # 协作流状态机
-│   │   ├── tool-registry.js  # 工具注册中心
-│   │   └── database.js       # SQLite + 迁移
-│   ├── migrations/           # 8 个数据库迁移
-│   └── tests/                # 单元测试（53 用例）
-├── public/                   # 前端（Vanilla JS，无构建步骤）
-│   ├── js/                   # 20+ 模块（四层架构）
-│   └── css/
-├── models.example.json       # 模型配置示例
-├── im-settings.example.json  # 系统设置示例
-└── agents.example.json       # Agent 配置示例
+```bash
+git clone https://github.com/moziio/xiajiao.git
+cd xiajiao
+docker build -t xiajiao .
+docker run -d -p 18800:18800 \
+  -v xiajiao-data:/app/data \
+  -v xiajiao-uploads:/app/public/uploads \
+  --name xiajiao xiajiao
 ```
 
 ---
 
-## 配置
+Open `http://localhost:18800` → Log in with default password `admin` → **Settings → Models** to add your API key → Start chatting!
 
-### models.json — 模型配置
+> [!TIP]
+> Password and API keys can all be changed in the web UI — no config files to edit.
+
+---
+
+## 🤔 Why Xiajiao?
+
+Most AI platforms require Docker + PostgreSQL + Redis + vector databases just to get started.  
+**Xiajiao takes a radically different approach** — it's the only IM platform where your agents actually *collaborate as a team*:
+
+### Who is this for?
+
+- **Solo developers** who want an AI team without the DevOps overhead
+- **AI enthusiasts** exploring multi-agent collaboration patterns
+- **Small teams** needing a self-hosted AI workspace with zero vendor lock-in
+- **Researchers** prototyping agent-to-agent communication and memory systems
+
+|  | Xiajiao | Dify | Coze | FastGPT |
+|--|---------|------|------|---------|
+| **Get started** | **`npm start`** | `docker compose up` | Sign up for SaaS | `docker compose up` |
+| **External services** | **None** | PostgreSQL + Redis + Weaviate | — | MongoDB + MySQL |
+| **npm dependencies** | **6** | 100+ | — | 80+ |
+| **Multi-agent group chat** | **✅** | ❌ | ❌ | ❌ |
+| **Inter-agent collaboration** | **✅ chains + visual flow** | Workflow | Bot orchestration | ❌ |
+| **Persistent agent memory** | **✅ 3-class memory** | ❌ | Variables | ❌ |
+| **Tool calling** | **✅ 7 built-in tools** | ✅ | ✅ 100+ plugins | ✅ |
+| **RAG knowledge base** | **✅ BM25 + vector hybrid** | ✅ | ✅ | ✅ |
+
+> **The core difference:** Dify and Coze are *AI app development platforms*. Xiajiao is an **AI Agent team collaboration platform** — treat agents as teammates, not tools.
+
+---
+
+## ✨ Features
+
+| | Feature | Highlight |
+|--|---------|-----------|
+| 🤖 | [Multi-Agent Group Chat](#-multi-agent-group-chat) | @mention routing, agent-to-agent dialogue |
+| 🔧 | [Tool Calling](#-tool-calling) | 7 built-in tools, extensible |
+| 🧠 | [Persistent Memory](#-persistent-agent-memory) | 3-class memory, auto prompt injection |
+| 📚 | [RAG Knowledge Base](#-production-grade-rag) | BM25 + vector hybrid, LLM reranking |
+| 🔗 | [Collaboration Flows](#-collaboration-flows) | Chains, visual panel, workflow engine |
+| 🔌 | [Multi-Model](#-multi-model-support) | OpenAI / Claude / Qwen / Ollama / ... |
+
+### 🤖 Multi-Agent Group Chat
+
+Create groups, add agents, use @mentions to route messages. Agents can talk to each other, hand off tasks, and collaborate — just like a real team.
+
+<p align="center">
+  <img src="docs/images/hero-light-bottom.png" alt="Multi-agent collaboration with translation table" width="700" />
+</p>
+
+### 🔧 Tool Calling
+
+Agents don't just chat — they **take action**. 7 built-in tools with an extensible architecture:
+
+| Tool | What it does |
+|------|-------------|
+| `web_search` | Search the web (6 engines: auto / DuckDuckGo / Brave / Kimi / Perplexity / Grok) |
+| `rag_query` | Semantic retrieval from your knowledge base |
+| `memory_write` | Save to persistent memory |
+| `memory_search` | Recall from past memories |
+| `call_agent` | Invoke another agent (3-level nesting protection) |
+| `manage_channel` | Create, start, stop external platform connectors (Feishu / DingTalk / WeCom / Telegram) |
+| `manage_schedule` | Create and manage cron-driven scheduled tasks |
+
+<p align="center">
+  <img src="docs/images/tool-calling.png" alt="Tool Calling — memory_search and memory_write in action" width="700" />
+</p>
+
+<p align="center">
+  <em>Agents call memory_search to recall context, then memory_write to persist insights — all visible in real time.</em>
+</p>
+
+### 🧠 Persistent Agent Memory
+
+A 3-class memory system that makes agents smarter over time:
+
+- **Semantic memory** — facts & knowledge ("User prefers Python")
+- **Episodic memory** — conversation events ("We discussed deployment last time")
+- **Procedural memory** — behavioral patterns ("Keep replies concise")
+
+Embedding-based dedup + hybrid search + automatic prompt injection.
+
+### 📚 Production-Grade RAG
+
+Upload documents — agents auto-index and auto-retrieve:
+
+- BM25 + vector hybrid retrieval
+- Reciprocal Rank Fusion (RRF)
+- LLM reranking
+- Hierarchical chunking (200-char small chunks + 800-char large chunks)
+
+### 🔗 Collaboration Flows
+
+- **Collaboration chains** — agents relay within a group; one's output becomes the next's input
+- **Visual flow panel** — real-time status, history replay, human intervention (approve / stop / edit)
+- **Workflow engine** — multi-step, conditional branching, error handling (retry / skip / rollback), human approval
+
+<p align="center">
+  <img src="docs/images/collab-flow.png" alt="Collaboration Flow — visual pipeline with agent handoff" width="700" />
+</p>
+
+<p align="center">
+  <em>Visual flow panel: Novelist → Editor → Translator → Coder, with real-time progress and human intervention controls.</em>
+</p>
+
+### 🔌 Multi-Model Support
+
+Works with any OpenAI-compatible API provider:
+
+OpenAI (GPT-4o) · Anthropic (Claude) · Qwen (通义) · GLM · Kimi · MiniMax · DeepSeek · Ollama
+
+### 📋 And More
+
+| Capability | Description |
+|-----------|-------------|
+| Markdown rendering | Code highlighting + Mermaid diagrams + LaTeX |
+| Full-text search | SQLite FTS5 message search |
+| Scheduled tasks | Cron-driven, agents report on schedule |
+| AI image generation | DashScope integration, auto-detects drawing intent |
+| PWA offline | Service Worker + offline page |
+| i18n | Chinese & English built-in |
+| RBAC | owner > admin > member > guest |
+| Security | CSRF + rate limiting + error sanitization + token revocation |
+| MCP protocol | Model Context Protocol support |
+| Channel connectors | Feishu (Lark) WebSocket + Webhook |
+
+---
+
+## 🏗️ Tech Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| Runtime | Node.js 22+ | Native `node:sqlite`, zero native addons |
+| HTTP | `node:http` | Zero framework overhead |
+| WebSocket | `ws` | Real-time bidirectional communication |
+| Database | SQLite (WAL + FTS5) | One `.db` file handles everything |
+| Frontend | Vanilla JS + CSS | No build step — edit, refresh, done |
+| Dependencies | **6 total** | ws · formidable · node-cron · pdf-parse · @larksuiteoapi/node-sdk · @modelcontextprotocol/sdk |
+| Tests | 53 unit tests | `node:test` + `node:assert`, zero test framework |
+
+> **Why so few?** We treat every dependency as a liability, not a feature. If the standard library can do it, we don't add a package.
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `IM_PORT` | Server port | `18800` |
+| `OWNER_KEY` | Admin password | `admin` |
+| `LLM_MODE` | LLM mode (`direct` / `gateway`) | `direct` |
+
+### Model Configuration
+
+```bash
+cp models.example.json models.json
+```
 
 ```json
 {
   "providers": {
-    "bailian": {
-      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "openai": {
+      "baseUrl": "https://api.openai.com/v1",
       "apiKey": "sk-your-api-key",
       "api": "openai-completions"
     }
   },
   "models": [
     {
-      "id": "bailian/qwen-plus",
-      "name": "qwen-plus",
-      "provider": "bailian",
+      "id": "openai/gpt-4o",
+      "name": "gpt-4o",
+      "provider": "openai",
       "reasoning": false,
-      "input": ["text"],
-      "contextWindow": 131072,
-      "maxTokens": 8192
+      "input": ["text", "image"],
+      "contextWindow": 128000,
+      "maxTokens": 4096
     }
   ]
 }
 ```
 
-支持的 API 类型：
-- `openai-completions` — OpenAI 兼容接口（通义、Kimi、GLM、DeepSeek 等均可）
-- `anthropic-messages` — Anthropic Messages API
-- `dashscope-image` — DashScope 图像生成
+Supported API types: `openai-completions` (Qwen / Kimi / GLM / DeepSeek / Ollama) · `anthropic-messages` · `dashscope-image`
+
+> [!TIP]
+> You can also add models directly in the web UI under **Settings → Models** — no need to edit files manually.
 
 ---
 
-## 技术栈
+## 📁 Project Structure
 
-| 层 | 技术 | 说明 |
-|----|------|------|
-| 运行时 | Node.js 22+ | 原生 `node:sqlite` |
-| HTTP | `node:http` | 零框架 |
-| WebSocket | `ws` | 实时通信 |
-| 数据库 | SQLite | WAL 模式 + FTS5 全文搜索 |
-| 前端 | Vanilla JS + CSS | 无构建步骤，修改即生效 |
-| Markdown | marked.js + highlight.js + mermaid.js | 富文本渲染 |
-| 依赖总计 | **4 个** | ws, formidable, node-cron, pdf-parse |
+```
+xiajiao/
+├── server/                   # Backend
+│   ├── index.js              # HTTP + WebSocket entry
+│   ├── middleware/            # Auth, logging, rate limiting
+│   ├── routes/               # API routes
+│   ├── services/             # Core services
+│   │   ├── llm.js            # LLM + Tool Calling loop
+│   │   ├── rag.js            # RAG retrieval engine
+│   │   ├── memory.js         # Agent memory
+│   │   ├── workflow.js       # Workflow engine
+│   │   ├── collab-flow.js    # Collaboration flow state machine
+│   │   ├── tool-registry.js  # Tool registry
+│   │   └── database.js       # SQLite + migrations
+│   ├── migrations/           # Database migrations
+│   └── tests/                # Unit tests
+├── public/                   # Frontend (Vanilla JS, no build step)
+│   ├── js/                   # Feature modules
+│   └── css/
+├── data/_soul-templates/     # Default agent SOUL.md templates
+├── models.example.json       # Model config example
+├── im-settings.example.json  # System settings example
+└── agents.example.json       # Agent config example (5 built-in agents)
+```
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
-- [x] **P1** — 核心 IM（对话、群聊、@mention、Markdown）
-- [x] **P2** — Agent 协作（工作流、定时例会、社区事件流）
-- [x] **P3** — 高级能力（Tool Calling、RAG、Agent 记忆、文生图、SQLite）
-- [x] **P4** — 可靠性（安全加固、限流、RBAC、PWA、结构化日志、数据库迁移）
-- [ ] **P5** — 渠道系统（企微、飞书、钉钉、Telegram 接入）
-- [ ] **P6** — 企业级（多进程、外置状态、Electron 桌面端）
+> 🚀 Xiajiao is under active development. Here's what's shipped and what's coming:
+
+| Phase | Status | What |
+|-------|--------|------|
+| P1 Core IM | ✅ Shipped | Conversations, group chat, @mention, Markdown |
+| P2 Agent Collaboration | ✅ Shipped | Workflows, scheduled meetings, community event stream |
+| P3 Advanced Capabilities | ✅ Shipped | Tool Calling, RAG, Agent memory, image gen, SQLite |
+| P4 Reliability | ✅ Shipped | Security hardening, rate limiting, RBAC, PWA, structured logging |
+| P5 Channel System | 🚧 Building | WeCom, Feishu (Lark), DingTalk, Telegram |
+| P6 Enterprise | 📋 Planned | Multi-process, external state, Electron desktop app |
+| P7 Plugin Ecosystem | 💭 Exploring | Plugin marketplace, community tools, one-click install |
+| P8 Agent Store | 💭 Exploring | Pre-built agent templates, one-click clone & customize |
+| P9 Multimodal | 💭 Exploring | Voice input, image understanding, video analysis |
+| P10 Agent Negotiation | 💭 Exploring | Structured multi-round dialogue between agents with turn limits |
+
+> **This is just the beginning.** Got ideas? [Open an Issue](https://github.com/moziio/xiajiao/issues) or [join the discussion](https://github.com/moziio/xiajiao/discussions).
 
 ---
 
-## 贡献
+## 🤝 Contributing
 
-欢迎 Issue 和 PR！详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+We welcome all contributions — bug reports, feature ideas, code, docs, and translations.
 
-## 许可证
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+## ⭐ Show Your Support
+
+> [!IMPORTANT]
+> **Star this repo** — you'll receive notifications for every new release, and it helps others discover the project!
+
+<!-- [![Star History Chart](https://api.star-history.com/svg?repos=moziio/xiajiao&type=Date)](https://star-history.com/#moziio/xiajiao&Date) -->
+
+---
+
+## 🔒 Security
+
+To protect users, please **do not** post security issues publicly on GitHub Issues. Instead, please email security concerns to the maintainers directly. We will respond promptly.
+
+---
+
+## 📄 License
 
 [MIT](LICENSE)
 
 ---
 
-> **虾饺 (Xiajiao)** — 你的 AI Agent 团队管理工具 🦐
+<p align="center">
+  <strong>Xiajiao (虾饺)</strong> — Your AI Agent team manager 🦐<br/>
+  <sub>Small, delicate, packed with flavor.</sub>
+</p>

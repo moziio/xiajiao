@@ -6,6 +6,19 @@ const gw = require('../services/gateway');
 const rag = require('../services/rag');
 const { guardOwner, isOwnerReq, jsonRes, readBody } = require('../middleware/auth');
 
+function _cleanOrphanedAgentModels(removedIds) {
+  store.loadAgents();
+  let dirty = false;
+  for (const ag of store.localAgents) {
+    if (ag.model && removedIds.has(ag.model)) { ag.model = ''; dirty = true; }
+  }
+  if (dirty) {
+    store.saveAgents();
+    gw.refreshKnownAgents();
+    gw.broadcast({ type: 'agents_update', agents: gw.knownAgents });
+  }
+}
+
 async function handle(req, res, urlPath) {
   if (urlPath === '/api/settings' && req.method === 'GET') {
     if (!guardOwner(req, res)) return true;
@@ -35,7 +48,6 @@ async function handle(req, res, urlPath) {
     if (body.gatewayToken !== undefined) store.imSettings.gatewayToken = body.gatewayToken;
     if (body.llmMode !== undefined) store.imSettings.llmMode = body.llmMode;
     if (body.port !== undefined) store.imSettings.port = parseInt(body.port, 10) || 18800;
-    if (body.toolModels !== undefined) store.imSettings.toolModels = body.toolModels;
     if (body.gatewayToolEvents !== undefined) store.imSettings.gatewayToolEvents = !!body.gatewayToolEvents;
     store.saveSettings();
     return jsonRes(res, 200, { ok: true });
@@ -62,14 +74,23 @@ async function handle(req, res, urlPath) {
     const body = await readBody(req);
     if (!body.baseUrl) throw new Error('baseUrl required');
     const baseUrl = body.baseUrl.replace(/\/+$/, '');
-    const headers = { 'Content-Type': 'application/json' };
-    if (body.apiKey) headers['Authorization'] = 'Bearer ' + body.apiKey;
+    const apiType = body.api || 'openai-completions';
+
+    const AUTH_HEADERS = {
+      'anthropic-messages': (key) => ({ 'x-api-key': key, 'anthropic-version': '2023-06-01' }),
+      _default: (key) => ({ 'Authorization': 'Bearer ' + key }),
+    };
+    const makeHeaders = () => {
+      const h = { 'Content-Type': 'application/json' };
+      if (body.apiKey) Object.assign(h, (AUTH_HEADERS[apiType] || AUTH_HEADERS._default)(body.apiKey));
+      return h;
+    };
 
     const tryDiscover = async (url) => {
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 15000);
+      const timer = setTimeout(() => ctrl.abort(), 10000);
       try {
-        const resp = await fetch(url, { headers, signal: ctrl.signal });
+        const resp = await fetch(url, { headers: makeHeaders(), signal: ctrl.signal });
         clearTimeout(timer);
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const json = await resp.json();
@@ -82,20 +103,18 @@ async function handle(req, res, urlPath) {
       } catch (e) { clearTimeout(timer); throw e; }
     };
 
-    try {
-      const models = await tryDiscover(baseUrl + '/models');
-      return jsonRes(res, 200, { ok: true, models });
-    } catch (primaryErr) {
-      if (baseUrl.includes('dashscope.aliyuncs.com') && !baseUrl.includes('compatible-mode')) {
-        try {
-          const fallbackUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1/models';
-          const models = await tryDiscover(fallbackUrl);
-          return jsonRes(res, 200, { ok: true, models });
-        } catch {}
-        return jsonRes(res, 400, { error: 'Failed to discover models: ' + primaryErr.message + '. 该 DashScope 端点不支持模型列表接口，请尝试使用 https://dashscope.aliyuncs.com/compatible-mode/v1 或手动添加模型' });
-      }
-      return jsonRes(res, 400, { error: 'Failed to discover models: ' + (primaryErr.message || primaryErr) });
+    const candidates = [baseUrl + '/models'];
+    if (!baseUrl.endsWith('/v1')) candidates.push(baseUrl + '/v1/models');
+    if (baseUrl.includes('dashscope.aliyuncs.com') && !baseUrl.includes('compatible-mode'))
+      candidates.push('https://dashscope.aliyuncs.com/compatible-mode/v1/models');
+
+    for (const url of candidates) {
+      try {
+        const models = await tryDiscover(url);
+        if (models.length) return jsonRes(res, 200, { ok: true, models });
+      } catch {}
     }
+    return jsonRes(res, 200, { ok: true, models: [], noDiscover: true });
   }
 
   const provMatch = urlPath.match(/^\/api\/settings\/providers\/([^/]+)$/);
@@ -115,13 +134,37 @@ async function handle(req, res, urlPath) {
     if (!guardOwner(req, res)) return;
     store.loadModels();
     const pid = provMatch[1];
+    const removedModelIds = new Set((store.localModels.models || []).filter(m => m.provider === pid).map(m => m.id));
     delete store.localModels.providers[pid];
     store.localModels.models = (store.localModels.models || []).filter(m => m.provider !== pid);
     store.saveModels();
+    if (removedModelIds.size) _cleanOrphanedAgentModels(removedModelIds);
     return jsonRes(res, 200, { ok: true });
   }
 
   // ── Models CRUD ──
+  if (urlPath === '/api/settings/models/batch' && req.method === 'POST') {
+    if (!guardOwner(req, res)) return;
+    const body = await readBody(req);
+    const items = body.models;
+    if (!Array.isArray(items) || !items.length) throw new Error('models array required');
+    store.loadModels();
+    const existing = new Set((store.localModels.models || []).map(m => m.id));
+    let added = 0, skipped = 0;
+    for (const b of items) {
+      if (!b.id || !b.provider) { skipped++; continue; }
+      if (existing.has(b.id)) { skipped++; continue; }
+      const entry = { id: b.id, name: b.name || b.id, provider: b.provider, reasoning: b.reasoning || false, input: b.input || ['text'], contextWindow: b.contextWindow || 128000, maxTokens: b.maxTokens || 4096 };
+      if (b.output) entry.output = b.output;
+      if (b.api) entry.api = b.api;
+      entry.capabilities = b.capabilities || store.detectCapabilities(entry);
+      store.localModels.models.push(entry);
+      existing.add(b.id);
+      added++;
+    }
+    store.saveModels();
+    return jsonRes(res, 200, { ok: true, added, skipped });
+  }
   if (urlPath === '/api/settings/models' && req.method === 'POST') {
     if (!guardOwner(req, res)) return;
     const body = await readBody(req);
@@ -131,32 +174,68 @@ async function handle(req, res, urlPath) {
     const modelEntry = { id: body.id, name: body.name || body.id, provider: body.provider, reasoning: body.reasoning || false, input: body.input || ['text'], contextWindow: body.contextWindow || 128000, maxTokens: body.maxTokens || 4096 };
     if (body.output) modelEntry.output = body.output;
     if (body.api) modelEntry.api = body.api;
+    modelEntry.capabilities = body.capabilities || store.detectCapabilities(modelEntry);
     store.localModels.models.push(modelEntry);
+    store.saveModels();
+    return jsonRes(res, 200, { ok: true, capabilities: modelEntry.capabilities });
+  }
+  const modelSettMatch = urlPath.match(/^\/api\/settings\/models\/(.+)$/);
+  if (modelSettMatch && req.method === 'PUT') {
+    if (!guardOwner(req, res)) return;
+    const body = await readBody(req);
+    store.loadModels();
+    const mid = decodeURIComponent(modelSettMatch[1]);
+    const model = (store.localModels.models || []).find(m => m.id === mid);
+    if (!model) throw new Error('model not found');
+    if (body.name !== undefined) model.name = body.name;
+    if (body.capabilities !== undefined) model.capabilities = body.capabilities;
+    if (body.input !== undefined) model.input = body.input;
+    if (body.output !== undefined) model.output = body.output;
+    if (body.contextWindow !== undefined) model.contextWindow = body.contextWindow;
+    if (body.maxTokens !== undefined) model.maxTokens = body.maxTokens;
     store.saveModels();
     return jsonRes(res, 200, { ok: true });
   }
-  const modelSettMatch = urlPath.match(/^\/api\/settings\/models\/(.+)$/);
   if (modelSettMatch && req.method === 'DELETE') {
     if (!guardOwner(req, res)) return;
     store.loadModels();
     const mid = decodeURIComponent(modelSettMatch[1]);
     store.localModels.models = (store.localModels.models || []).filter(m => m.id !== mid);
     store.saveModels();
+    _cleanOrphanedAgentModels(new Set([mid]));
     return jsonRes(res, 200, { ok: true });
   }
 
-  // ── Tool Models ──
-  if (urlPath === '/api/settings/tool-models' && req.method === 'GET') {
+  // toolModels API removed — unified into capabilityRouting via /api/settings/routing
+
+  // ── Capability Routing (new unified approach) ──
+  if (urlPath === '/api/settings/routing' && req.method === 'GET') {
     if (!guardOwner(req, res)) return;
-    return jsonRes(res, 200, { toolModels: store.imSettings.toolModels || {} });
+    const routing = store.getCapabilityRouting();
+    return jsonRes(res, 200, { routing, capabilities: store.ALL_CAPABILITIES });
   }
-  if (urlPath === '/api/settings/tool-models' && req.method === 'PUT') {
+  if (urlPath === '/api/settings/routing' && req.method === 'PUT') {
     if (!guardOwner(req, res)) return;
     const body = await readBody(req);
-    const safeBody = {}; for (const k of Object.keys(body)) { if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') safeBody[k] = body[k]; }
-    store.imSettings.toolModels = Object.assign(store.imSettings.toolModels || {}, safeBody);
-    store.saveSettings();
+    const safeRouting = {};
+    for (const cap of store.ALL_CAPABILITIES) {
+      if (body[cap] !== undefined) safeRouting[cap] = body[cap];
+    }
+    if (body.strategy !== undefined) safeRouting.strategy = body.strategy;
+    store.setCapabilityRouting(safeRouting);
     return jsonRes(res, 200, { ok: true });
+  }
+
+  // ── Agent Capabilities Resolution ──
+  const agentCapsMatch = urlPath.match(/^\/api\/settings\/agent-capabilities\/([^/]+)$/);
+  if (agentCapsMatch && req.method === 'GET') {
+    if (!guardOwner(req, res)) return;
+    store.loadAgents();
+    const agentId = decodeURIComponent(agentCapsMatch[1]);
+    const agent = store.localAgents.find(a => a.id === agentId);
+    if (!agent) return jsonRes(res, 404, { error: 'agent not found' });
+    const resolved = store.resolveAgentCapabilities(agent);
+    return jsonRes(res, 200, { agentId, capabilities: resolved });
   }
 
   // ── RAG Settings ──
@@ -164,15 +243,10 @@ async function handle(req, res, urlPath) {
     if (!guardOwner(req, res)) return;
     const rag = store.imSettings.rag || {};
     return jsonRes(res, 200, {
-      enabled: rag.enabled !== false,
-      embeddingModel: rag.embeddingModel || 'text-embedding-v3',
-      embeddingProvider: rag.embeddingProvider || '',
-      embeddingApiKey: rag.embeddingApiKey ? '***' + rag.embeddingApiKey.slice(-6) : '',
-      embeddingBaseUrl: rag.embeddingBaseUrl || '',
-      topK: rag.topK || 5,
+      enabled: rag.enabled === true,
+      topK: rag.topK || 3,
       chunkSize: rag.chunkSize || 500,
       chunkOverlap: rag.chunkOverlap || 50,
-      hasCustomKey: !!rag.embeddingApiKey,
     });
   }
   if (urlPath === '/api/settings/rag' && req.method === 'PUT') {
@@ -181,11 +255,7 @@ async function handle(req, res, urlPath) {
     if (!store.imSettings.rag) store.imSettings.rag = {};
     const rag = store.imSettings.rag;
     if (body.enabled !== undefined) rag.enabled = !!body.enabled;
-    if (body.embeddingModel !== undefined) rag.embeddingModel = body.embeddingModel;
-    if (body.embeddingProvider !== undefined) rag.embeddingProvider = body.embeddingProvider;
-    if (body.embeddingApiKey !== undefined) rag.embeddingApiKey = body.embeddingApiKey;
-    if (body.embeddingBaseUrl !== undefined) rag.embeddingBaseUrl = body.embeddingBaseUrl;
-    if (body.topK !== undefined) rag.topK = parseInt(body.topK, 10) || 5;
+    if (body.topK !== undefined) rag.topK = parseInt(body.topK, 10) || 3;
     if (body.chunkSize !== undefined) rag.chunkSize = parseInt(body.chunkSize, 10) || 500;
     if (body.chunkOverlap !== undefined) rag.chunkOverlap = parseInt(body.chunkOverlap, 10) || 50;
     store.saveSettings();
@@ -227,6 +297,97 @@ async function handle(req, res, urlPath) {
     if (body.apiKey !== undefined) ws.apiKey = body.apiKey;
     if (body.baseUrl !== undefined) ws.baseUrl = body.baseUrl;
     if (body.braveMode !== undefined) ws.braveMode = body.braveMode;
+    store.saveSettings();
+    return jsonRes(res, 200, { ok: true });
+  }
+
+  // ── MCP Servers ──
+  if (urlPath === '/api/settings/mcp' && req.method === 'GET') {
+    if (!guardOwner(req, res)) return;
+    const mcpServers = store.imSettings.mcpServers || {};
+    const mcpManager = require('../services/mcp-manager');
+    const status = mcpManager.getStatus();
+    const sanitized = {};
+    for (const [id, cfg] of Object.entries(mcpServers)) {
+      sanitized[id] = {
+        command: cfg.command || '',
+        args: cfg.args || [],
+        url: cfg.url || '',
+        transport: cfg.transport || 'stdio',
+        enabled: cfg.enabled !== false,
+        hasEnv: !!(cfg.env && Object.keys(cfg.env).length),
+        hasHeaders: !!(cfg.headers && Object.keys(cfg.headers).length),
+        ...(status[id] || { status: cfg.enabled === false ? 'disabled' : 'disconnected', toolCount: 0, tools: [] }),
+      };
+    }
+    return jsonRes(res, 200, { servers: sanitized });
+  }
+  if (urlPath === '/api/settings/mcp' && req.method === 'PUT') {
+    if (!guardOwner(req, res)) return;
+    const body = await readBody(req);
+    if (!body.id) return jsonRes(res, 400, { error: 'id required' });
+    if (['__proto__', 'constructor', 'prototype'].includes(body.id)) return jsonRes(res, 400, { error: 'invalid id' });
+    const transport = body.transport || (body.url ? 'http' : 'stdio');
+    if (transport !== 'stdio' && transport !== 'http') return jsonRes(res, 400, { error: 'transport must be stdio or http' });
+    if (!store.imSettings.mcpServers) store.imSettings.mcpServers = {};
+    const existing = store.imSettings.mcpServers[body.id] || {};
+    const entry = {
+      transport: transport || existing.transport || 'stdio',
+      enabled: body.enabled !== undefined ? body.enabled : (existing.enabled !== false),
+    };
+    if (entry.transport === 'http') {
+      entry.url = body.url || existing.url || '';
+      if (body.headers !== undefined) entry.headers = body.headers;
+      else if (existing.headers) entry.headers = existing.headers;
+    } else {
+      entry.command = body.command || existing.command || '';
+      entry.args = body.args !== undefined ? body.args : (existing.args || []);
+      if (body.env !== undefined) entry.env = body.env;
+      else if (existing.env) entry.env = existing.env;
+    }
+    store.imSettings.mcpServers[body.id] = entry;
+    store.saveSettings();
+    return jsonRes(res, 200, { ok: true });
+  }
+  if (urlPath === '/api/settings/mcp/status' && req.method === 'GET') {
+    if (!guardOwner(req, res)) return;
+    const mcpManager = require('../services/mcp-manager');
+    return jsonRes(res, 200, { status: mcpManager.getStatus(), connectedCount: mcpManager.getConnectedCount(), totalTools: mcpManager.getTotalToolCount() });
+  }
+  const _MCP_UNSAFE_IDS = ['__proto__', 'constructor', 'prototype'];
+  const mcpConnMatch = urlPath.match(/^\/api\/settings\/mcp\/([^/]+)\/connect$/);
+  if (mcpConnMatch && req.method === 'POST') {
+    if (!guardOwner(req, res)) return;
+    const sid = decodeURIComponent(mcpConnMatch[1]);
+    if (_MCP_UNSAFE_IDS.includes(sid)) return jsonRes(res, 400, { error: 'invalid id' });
+    const cfg_entry = store.imSettings.mcpServers?.[sid];
+    if (!cfg_entry) return jsonRes(res, 404, { error: 'server not found' });
+    const mcpManager = require('../services/mcp-manager');
+    try {
+      const result = await mcpManager.reconnect(sid, cfg_entry);
+      return jsonRes(res, 200, { ok: true, ...result });
+    } catch (e) {
+      return jsonRes(res, 200, { ok: false, error: e.message });
+    }
+  }
+  const mcpDiscMatch = urlPath.match(/^\/api\/settings\/mcp\/([^/]+)\/disconnect$/);
+  if (mcpDiscMatch && req.method === 'POST') {
+    if (!guardOwner(req, res)) return;
+    const sid = decodeURIComponent(mcpDiscMatch[1]);
+    if (_MCP_UNSAFE_IDS.includes(sid)) return jsonRes(res, 400, { error: 'invalid id' });
+    const mcpManager = require('../services/mcp-manager');
+    try { await mcpManager.disconnect(sid); } catch {}
+    return jsonRes(res, 200, { ok: true });
+  }
+  const mcpIdMatch = urlPath.match(/^\/api\/settings\/mcp\/([^/]+)$/);
+  if (mcpIdMatch && req.method === 'DELETE') {
+    if (!guardOwner(req, res)) return;
+    const sid = decodeURIComponent(mcpIdMatch[1]);
+    if (_MCP_UNSAFE_IDS.includes(sid)) return jsonRes(res, 400, { error: 'invalid id' });
+    if (!store.imSettings.mcpServers?.[sid]) return jsonRes(res, 404, { error: 'server not found' });
+    const mcpManager = require('../services/mcp-manager');
+    try { await mcpManager.disconnect(sid); } catch {}
+    delete store.imSettings.mcpServers[sid];
     store.saveSettings();
     return jsonRes(res, 200, { ok: true });
   }

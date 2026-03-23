@@ -1,5 +1,5 @@
-/* 虾饺 (Xiajiao) — Settings: Provider & Model Management (Layer 2) */
-let settingsProviders = {}, settingsModelsList = [];
+/* 虾饺 (Xiajiao) — Settings: Unified Model & Capability Management (Layer 2) */
+let settingsProviders = {}, settingsModelsList = [], capabilityRouting = {};
 
 const API_PROTOCOL_MAP = {
   'openai-completions': 'OpenAI Chat Completions (/v1/chat/completions) — 通用兼容协议，适用于 OpenAI、DashScope、DeepSeek、Moonshot 等',
@@ -8,20 +8,281 @@ const API_PROTOCOL_MAP = {
   'google-generative-ai': 'Google Generative AI — Gemini 系列模型专用协议',
   'ollama': 'Ollama 本地推理 — 本地运行开源模型'
 };
+
+function _imageApiOptions() {
+  return [
+    { val: '', label: t('settings.apiDefault') },
+    { val: 'chat-image', label: 'Chat Completions 文生图 — 通用，适配大多数服务商' },
+    { val: 'openai-image', label: 'OpenAI Images API — DALL-E 等 /images/generations 接口' },
+    { val: 'dashscope-multimodal', label: 'DashScope 原生多模态 — 阿里百炼 qwen-image 专用' },
+    { val: 'dashscope-image', label: 'DashScope 异步文生图 — 阿里百炼 wanx 旧模型专用' },
+  ];
+}
+
+const CAPABILITY_META = {
+  chat: { icon: '💬', label: '对话', desc: '文本对话和问答' },
+  image_gen: { icon: '🎨', label: '文生图', desc: '根据文本描述生成图片' },
+  image_understand: { icon: '👁️', label: '图像理解', desc: '理解和分析图片内容' },
+  video_gen: { icon: '🎬', label: '文生视频', desc: '根据文本生成视频' },
+  tts: { icon: '🔊', label: '语音合成', desc: '将文本转换为语音' },
+  stt: { icon: '🎤', label: '语音识别', desc: '将语音转换为文本' },
+  embedding: { icon: '📐', label: '向量化', desc: '文本向量嵌入' }
+};
+
+const ALL_CAPABILITIES = ['chat', 'image_gen', 'image_understand', 'video_gen', 'tts', 'stt', 'embedding'];
+const DISABLED_CAPABILITIES = ['video_gen', 'tts', 'stt'];
+
 function getApiProtocolDesc(api) { return API_PROTOCOL_MAP[api] || api; }
 
+function detectCapabilities(model) {
+  const caps = [];
+  const name = (model.name || '').toLowerCase();
+  const rawId = (model.id || '').toLowerCase();
+  const id = rawId.includes('/') ? rawId.split('/').pop() : rawId;
+  const nameId = name + ' ' + id;
+  const hasImageOutput = model.output && model.output.includes('image');
+  const hasVideoOutput = model.output && model.output.includes('video');
+  const hasAudioOutput = model.output && model.output.includes('audio');
+  const hasImageInput = model.input && model.input.includes('image');
+  const hasAudioInput = model.input && model.input.includes('audio');
+  const api = (model.api || '').toLowerCase();
+
+  const isPureImageGenByName = /\b(wanx|dall-e|dalle|stable-diffusion|sdxl|midjourney|mj-|imagen|t2i|txt2img|image-gen|flux|kolors|ideogram|playground-v|z-image|qwen-image|cogview|seedream|hunyuan-image)\b/.test(nameId);
+  const isMultimodalImageByName = /\b(gpt-4o-image|gemini-image)\b/.test(nameId);
+
+  const isVideoGenByName = /\b(video-gen|t2v|txt2video|sora|runway|kling|cogvideo|pika|gen-2|luma|minimax-video|vidu|animate)\b/.test(nameId) ||
+    (/\bvideo\b/.test(nameId) && !/understand|vision|input/.test(nameId));
+
+  const isTtsByName = /\b(tts|s2s|cosyvoice|sambert|text-to-speech|elevenlabs|eleven-|azure-tts|edge-tts)\b/.test(nameId) ||
+    /\bspeech-\d/.test(nameId) ||
+    /\beleven_/.test(nameId) ||
+    (/(speech|voice)/.test(nameId) && /gen|synth|output/.test(nameId));
+
+  const isSttByName = /\b(stt|asr|whisper|paraformer|sensevoice|speech-to-text|transcri|recognition)\b/.test(nameId);
+
+  const isEmbeddingByName = /\b(embed|embedding|bge-|m3e|gte-|e5-|voyage-|cohere-embed|text-embedding|vectoriz)\b/.test(nameId);
+
+  const isImageUnderstandByName = /\b(vl|vision|visual|gpt-4v|gpt-4-vision|gemini.*vision|gemini-pro-v|glm-4v|yi-vision|internvl|llava|cogvlm|minicpm-v|qwen.*vl)\b/.test(nameId) ||
+    (hasImageInput && !hasImageOutput);
+
+  // 优先级：精确API → 专用名称 → 具体能力(TTS/STT/Video/Embedding) → 宽泛image → 默认chat
+  if (api === 'dashscope-image' || api === 'openai-image' || api === 'dashscope-multimodal' || api === 'chat-image' || isPureImageGenByName) {
+    caps.push('image_gen');
+  } else if (api.includes('tts') || hasAudioOutput || isTtsByName) {
+    caps.push('tts');
+  } else if (api.includes('stt') || api.includes('transcription') || hasAudioInput || isSttByName) {
+    caps.push('stt');
+  } else if (api.includes('video') || hasVideoOutput || isVideoGenByName) {
+    caps.push('video_gen');
+  } else if (api.includes('embedding') || isEmbeddingByName) {
+    caps.push('embedding');
+  } else if (isMultimodalImageByName || (hasImageOutput && !isPureImageGenByName)) {
+    caps.push('chat');
+    caps.push('image_gen');
+  } else {
+    caps.push('chat');
+    if (hasImageInput || isImageUnderstandByName) caps.push('image_understand');
+  }
+  return caps;
+}
+
+// 搜索下拉组件
+function renderCapSearchSelect(cap, modelsWithCap, routedModelId, defaultLabel) {
+  const uid = 'capSel_' + cap;
+  const routedModel = routedModelId ? modelsWithCap.find(m => m.id === routedModelId) : null;
+  const displayText = routedModel ? (routedModel.name || routedModelId) + ' (' + routedModel.provider + ')' : defaultLabel;
+  return `<div class="cap-search-select" id="${uid}">
+    <div class="cap-search-trigger" onclick="toggleCapSearch('${cap}')">${escH(displayText)}<span class="cap-search-arrow">▼</span></div>
+    <div class="cap-search-dropdown hidden">
+      <input type="text" class="cap-search-input" placeholder="${t('settings.searchModel')}" oninput="filterCapOptions('${cap}', this.value)">
+      <div class="cap-search-options"></div>
+    </div>
+  </div>`;
+}
+
+function toggleCapSearch(cap) {
+  const uid = 'capSel_' + cap;
+  const el = document.getElementById(uid);
+  if (!el) return;
+  const dd = el.querySelector('.cap-search-dropdown');
+  const wasHidden = dd.classList.contains('hidden');
+  document.querySelectorAll('.cap-search-dropdown').forEach(d => d.classList.add('hidden'));
+  if (wasHidden) {
+    dd.classList.remove('hidden');
+    const input = dd.querySelector('.cap-search-input');
+    if (input) { input.value = ''; input.focus(); }
+    filterCapOptions(cap, '');
+  }
+}
+
+function filterCapOptions(cap, query) {
+  const uid = 'capSel_' + cap;
+  const el = document.getElementById(uid);
+  if (!el) return;
+  const container = el.querySelector('.cap-search-options');
+  const modelsWithCap = settingsModelsList.filter(m => getModelCapabilities(m).includes(cap));
+  const routedModelId = capabilityRouting[cap];
+  const q = query.toLowerCase().trim();
+  const defaultLabel = cap === 'chat' ? t('settings.capFollowDefault') : t('settings.capNone');
+
+  let h = '';
+  let matchCount = 0;
+  // 默认选项仅在无搜索词或匹配默认标签时显示
+  if (!q || defaultLabel.toLowerCase().includes(q)) {
+    h += `<div class="cap-search-option${!routedModelId ? ' selected' : ''}" onclick="selectCapOption('${cap}', '')">${escH(defaultLabel)}</div>`;
+    matchCount++;
+  }
+  for (const m of modelsWithCap) {
+    const label = (m.name || m.id) + ' (' + m.provider + ')';
+    if (q && !label.toLowerCase().includes(q) && !m.id.toLowerCase().includes(q)) continue;
+    h += `<div class="cap-search-option${routedModelId === m.id ? ' selected' : ''}" onclick="selectCapOption('${cap}', '${escJs(m.id)}')">${escH(label)}</div>`;
+    matchCount++;
+  }
+  container.innerHTML = matchCount > 0 ? h : `<div class="cap-search-empty">${t('settings.noMatch')}</div>`;
+}
+
+function selectCapOption(cap, modelId) {
+  document.querySelectorAll('.cap-search-dropdown').forEach(d => d.classList.add('hidden'));
+  setCapRoute(cap, modelId);
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.cap-search-select')) {
+    document.querySelectorAll('.cap-search-dropdown').forEach(d => d.classList.add('hidden'));
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.cap-search-dropdown').forEach(d => d.classList.add('hidden'));
+  }
+});
+
+function getModelCapabilities(model) {
+  try {
+    const caps = detectCapabilities(model);
+    return Array.isArray(caps) ? caps : [];
+  } catch { return []; }
+}
+
 async function renderSettingsModels(ct) {
-  ct.innerHTML = '<div class="settings-section"><div class="settings-section-title">' + t('settings.providerTitle') + '</div><div class="settings-section-desc">' + t('settings.providerDesc') + '</div><div id="stProviderList"></div>' +
-    '<button class="settings-btn settings-btn-outline" onclick="toggleAddProvider()" style="margin-top:8px">' + t('settings.addProvider') + '</button><div id="stAddProviderForm" class="hidden" style="margin-top:12px"></div></div>' +
+  ct.innerHTML = '<div class="settings-section"><div class="settings-section-title">' + t('settings.capDashboardTitle') + '</div>' +
+    '<div class="settings-section-desc">' + t('settings.capDashboardDesc') + '</div>' +
+    '<div id="stCapabilityDashboard"></div></div>' +
+    '<div class="settings-section"><div class="settings-section-title">' + t('settings.providerTitle') + '</div>' +
+    '<div class="settings-section-desc">' + t('settings.providerDesc') + '</div><div id="stProviderList"></div>' +
+    '<button class="settings-btn settings-btn-outline" onclick="toggleAddProvider()" style="margin-top:8px">' + t('settings.addProvider') + '</button>' +
+    '<div id="stAddProviderForm" class="hidden" style="margin-top:12px"></div></div>' +
     '<div class="settings-section"><div class="settings-section-title">' + t('settings.modelsTitle') + '</div><div id="stModelList"></div>' +
-    '<button class="settings-btn settings-btn-outline" onclick="toggleAddModel()" style="margin-top:8px">' + t('settings.addModel') + '</button><div id="stAddModelForm" class="hidden" style="margin-top:12px"></div></div>';
+    '<button class="settings-btn settings-btn-outline" onclick="toggleAddModel()" style="margin-top:8px">' + t('settings.addModel') + '</button>' +
+    '<div id="stAddModelForm" class="hidden" style="margin-top:12px"></div></div>';
   await loadSettingsProviders();
+  await loadCapabilityRouting();
 }
 
 async function loadSettingsProviders() {
   try { const r = await (await authFetch('/api/settings/providers')).json(); settingsProviders = r.providers || {}; settingsModelsList = r.models || []; } catch { settingsProviders = {}; settingsModelsList = []; }
-  renderProviderList(); renderModelList();
+  try { renderProviderList(); } catch (e) { console.error('renderProviderList error:', e); }
+  try { renderModelList(); } catch (e) { console.error('renderModelList error:', e); }
 }
+
+async function loadCapabilityRouting() {
+  try {
+    const r = await (await authFetch('/api/settings/routing')).json();
+    capabilityRouting = r.routing || {};
+  } catch { capabilityRouting = {}; }
+  renderCapabilityDashboard();
+}
+
+function renderCapabilityDashboard() {
+  const el = document.getElementById('stCapabilityDashboard');
+  if (!el) return;
+
+  const strategy = capabilityRouting.strategy || {};
+  const preferDedicated = strategy.preferDedicated === true;
+
+  let h = '<div class="cap-dashboard">';
+  h += '<div class="cap-strategy-row">' +
+    '<span class="cap-strategy-label">' + t('settings.capStrategy') + '</span>' +
+    '<label class="cap-strategy-toggle"><input type="checkbox" id="stCapPreferDedicated"' + (preferDedicated ? ' checked' : '') + ' onchange="updateCapStrategy()">' +
+    '<span>' + t('settings.capPreferDedicated') + '</span></label>' +
+    '<span class="cap-strategy-hint">' + t('settings.capStrategyHint') + '</span></div>';
+  h += '<div class="cap-grid">';
+
+  for (const cap of ALL_CAPABILITIES) {
+    const meta = CAPABILITY_META[cap];
+    const isDisabled = DISABLED_CAPABILITIES.includes(cap);
+
+    if (isDisabled) {
+      h += '<div class="cap-card cap-card-disabled" data-cap="' + cap + '">' +
+        '<div class="cap-card-header">' +
+        '<span class="cap-card-icon">' + meta.icon + '</span>' +
+        '<div class="cap-card-info"><div class="cap-card-name">' + meta.label + '</div>' +
+        '<div class="cap-card-desc">' + meta.desc + '</div></div></div>' +
+        '<div class="cap-card-status cap-status-disabled">' + t('settings.capDisabled') + '</div>' +
+        '<div class="cap-coming-soon">' + t('settings.capComingSoon') + '</div>' +
+        '</div>';
+      continue;
+    }
+
+    const routedModelId = capabilityRouting[cap];
+    const routedModel = routedModelId ? settingsModelsList.find(m => m.id === routedModelId) : null;
+    const modelsWithCap = settingsModelsList.filter(m => getModelCapabilities(m).includes(cap));
+    const hasModels = modelsWithCap.length > 0;
+
+    let statusClass = 'cap-status-none';
+    let statusText = t('settings.capNotConfigured');
+    let routedIsAuto = false;
+    if (routedModel) {
+      statusClass = 'cap-status-ok';
+      statusText = routedModel.name || routedModelId;
+      routedIsAuto = !routedModel.capabilities;
+    } else if (cap === 'chat' && settingsModelsList.some(m => getModelCapabilities(m).includes('chat'))) {
+      statusClass = 'cap-status-ok';
+      statusText = t('settings.capFollowDefault');
+    }
+
+    h += '<div class="cap-card" data-cap="' + cap + '">' +
+      '<div class="cap-card-header">' +
+      '<span class="cap-card-icon">' + meta.icon + '</span>' +
+      '<div class="cap-card-info"><div class="cap-card-name">' + meta.label + '</div>' +
+      '<div class="cap-card-desc">' + meta.desc + '</div></div></div>' +
+      '<div class="cap-card-status ' + statusClass + '">' + statusText + '</div>' +
+      (routedIsAuto ? '<div class="cap-auto-warn">' + t('settings.capAutoRouteWarn') + '</div>' : '');
+
+    if (hasModels) {
+      const defaultLabel = cap === 'chat' ? t('settings.capFollowDefault') : t('settings.capNone');
+      h += renderCapSearchSelect(cap, modelsWithCap, routedModelId, defaultLabel);
+    } else {
+      h += '<div class="cap-no-model">' + t('settings.capNoModel') + '</div>';
+    }
+    h += '</div>';
+  }
+  h += '</div></div>';
+  el.innerHTML = h;
+}
+
+async function setCapRoute(cap, modelId) {
+  const body = {};
+  body[cap] = modelId || null;
+  try {
+    await authFetch('/api/settings/routing', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    capabilityRouting[cap] = modelId || null;
+    showToastMsg(t('settings.saved'));
+    renderCapabilityDashboard();
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+async function updateCapStrategy() {
+  const preferDedicated = document.getElementById('stCapPreferDedicated')?.checked;
+  try {
+    await authFetch('/api/settings/routing', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ strategy: { preferDedicated } }) });
+    capabilityRouting.strategy = { preferDedicated };
+    showToastMsg(t('settings.saved'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+let _modelListFilter = { provider: '', search: '' };
 
 function renderProviderList() {
   const el = document.getElementById('stProviderList'); if (!el) return;
@@ -30,17 +291,45 @@ function renderProviderList() {
   el.innerHTML = pids.map(pid => {
     const p = settingsProviders[pid]; const mc = settingsModelsList.filter(m => m.provider === pid).length;
     const spid = escJs(pid);
-    return '<div class="provider-card" id="prov-' + escH(pid) + '"><div class="provider-card-header"><div><div class="provider-card-name">' + escH(pid) + ' <span class="provider-model-count">' + t('settings.modelCount', {count: mc}) + '</span></div>' +
+    const provModels = settingsModelsList.filter(m => m.provider === pid);
+    const capCounts = {};
+    provModels.forEach(m => { getModelCapabilities(m).forEach(c => { capCounts[c] = (capCounts[c] || 0) + 1; }); });
+    const capBadges = Object.entries(capCounts).map(([c, n]) => {
+      const meta = CAPABILITY_META[c];
+      return '<span class="prov-cap-badge" title="' + escH(meta?.label || c) + '">' + (meta?.icon || '') + ' ' + n + '</span>';
+    }).join('');
+    const isActive = _modelListFilter.provider === pid;
+
+    return '<div class="provider-card' + (isActive ? ' active' : '') + '" id="prov-' + escH(pid) + '">' +
+      '<div class="provider-card-header" onclick="filterModelsByProvider(\'' + spid + '\')" style="cursor:pointer">' +
+      '<div><div class="provider-card-name">' + escH(pid) + ' <span class="provider-model-count">' + t('settings.modelCount', {count: mc}) + '</span></div>' +
       '<div class="provider-card-url">' + escH(p.baseUrl) + '</div>' +
       '<div style="margin-top:3px"><span class="provider-api-badge" data-api="' + escH(p.api || 'openai-completions') + '" title="' + escH(getApiProtocolDesc(p.api || 'openai-completions')) + '">' + esc(p.api || 'openai-completions') + '</span></div>' +
-      '<div class="provider-card-key">API Key: ' + maskKey(p.apiKey) + '</div></div>' +
-      '<div class="provider-card-actions"><button class="settings-btn settings-btn-outline" onclick="quickAddModelForProvider(\'' + spid + '\')" title="' + t('settings.addModel') + '">+</button>' +
+      '<div class="provider-card-key">API Key: ' + maskKey(p.apiKey) + '</div>' +
+      '<div class="prov-cap-badges">' + capBadges + '</div></div>' +
+      '<div class="provider-card-actions" onclick="event.stopPropagation()">' +
+      '<button class="settings-btn settings-btn-outline" onclick="quickAddModelForProvider(\'' + spid + '\')" title="' + t('settings.addModel') + '">+</button>' +
       '<button class="settings-btn settings-btn-outline" onclick="refreshProviderModels(\'' + spid + '\')" title="' + t('settings.refreshModels') + '">&#x1F504;</button>' +
       '<button class="settings-btn settings-btn-outline" onclick="editProvider(\'' + spid + '\')">' + t('settings.editProvider') + '</button>' +
       '<button class="settings-btn settings-btn-danger" onclick="deleteProvider(\'' + spid + '\')">' + t('settings.deleteProvider') + '</button></div></div>' +
       '<div id="provQuickAdd-' + escH(pid) + '" class="hidden"></div>' +
       '<div id="provEdit-' + escH(pid) + '"></div></div>';
   }).join('');
+}
+
+function filterModelsByProvider(pid) {
+  const wasActive = _modelListFilter.provider === pid;
+  if (wasActive) {
+    _modelListFilter.provider = '';
+  } else {
+    _modelListFilter.provider = pid;
+  }
+  renderProviderList();
+  renderModelList();
+  if (!wasActive) {
+    const toolbar = document.querySelector('.model-list-toolbar');
+    if (toolbar) toolbar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function editProvider(pid) {
@@ -59,12 +348,18 @@ function editProvider(pid) {
 
 async function saveProviderEdit(pid) {
   const url = document.getElementById('epUrl-' + pid)?.value; const key = document.getElementById('epKey-' + pid)?.value; const api = document.getElementById('epApi-' + pid)?.value;
-  try { await authFetch('/api/settings/providers/' + pid, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ baseUrl: url, apiKey: key, api }) }); showToastMsg(t('settings.saved')); await loadSettingsProviders(); loadModels(); } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+  try { await authFetch('/api/settings/providers/' + pid, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ baseUrl: url, apiKey: key, api }) }); showToastMsg(t('settings.saved')); await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard(); } catch (e) { showToastMsg(t('common.fail'), 'error'); }
 }
 
 async function deleteProvider(pid) {
   if (!await appConfirm(t('settings.deleteProviderConfirm'))) return;
-  try { await authFetch('/api/settings/providers/' + pid, { method: 'DELETE' }); showToastMsg(t('settings.saved')); await loadSettingsProviders(); loadModels(); } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+  try {
+    await authFetch('/api/settings/providers/' + pid, { method: 'DELETE' });
+    showToastMsg(t('settings.saved'));
+    if (_modelListFilter.provider === pid) { _modelListFilter.provider = ''; _modelListFilter.search = ''; }
+    await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard();
+    try { const r = await (await authFetch('/api/agents')).json(); if (r.agents) updateAgentList(r.agents); } catch {}
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
 }
 
 const PROVIDER_PRESETS = [
@@ -119,14 +414,19 @@ async function submitAddProvider() {
     await authFetch('/api/settings/providers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, baseUrl, apiKey, api }) });
   } catch (e) { showToastMsg(t('common.fail') + ': ' + e.message, 'error'); return; }
 
+  await loadSettingsProviders();
+  await loadModels();
+  renderCapabilityDashboard();
+
   resultEl.innerHTML = '<div style="padding:12px;color:var(--text3);font-size:13px">' + t('settings.discovering') + '</div>';
   try {
-    const r = await (await authFetch('/api/settings/providers/discover', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ baseUrl, apiKey }) })).json();
+    const r = await (await authFetch('/api/settings/providers/discover', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ baseUrl, apiKey, api }) })).json();
     const models = (r.error ? [] : r.models) || [];
     if (!models.length) {
+      const formEl = document.getElementById('stAddProviderForm');
+      if (formEl) formEl.classList.add('hidden');
+      quickAddModelForProvider(id);
       showToastMsg(t('settings.providerSavedNoDiscover'));
-      document.getElementById('stAddProviderForm').classList.add('hidden');
-      await loadSettingsProviders(); loadModels();
       return;
     }
     window._apDiscoverData = { id, baseUrl, apiKey, api, models, alreadySaved: true };
@@ -141,9 +441,10 @@ async function submitAddProvider() {
     h += '</div><button class="settings-btn settings-btn-primary" onclick="confirmAddProvider()" style="margin-top:10px;width:100%">' + t('settings.confirmAdd') + '</button></div>';
     resultEl.innerHTML = h;
   } catch (e) {
+    const formEl = document.getElementById('stAddProviderForm');
+    if (formEl) formEl.classList.add('hidden');
+    quickAddModelForProvider(id);
     showToastMsg(t('settings.providerSavedNoDiscover'));
-    document.getElementById('stAddProviderForm').classList.add('hidden');
-    await loadSettingsProviders(); loadModels();
   }
 }
 
@@ -153,19 +454,30 @@ async function confirmAddProvider() {
   const d = window._apDiscoverData; if (!d) return;
   try {
     const checks = document.querySelectorAll('.ap-model-check:checked');
-    for (const cb of checks) { const m = d.models[parseInt(cb.dataset.idx)]; if (!m) continue; const modelId = d.id + '/' + m.id; try { await authFetch('/api/settings/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: modelId, name: m.name || m.id, provider: d.id, input: ['text'], contextWindow: m.contextWindow || 128000, maxTokens: m.maxTokens || 8192 }) }); } catch {} }
-    showToastMsg(t('settings.providerAdded', { count: checks.length }));
-    document.getElementById('stAddProviderForm').classList.add('hidden');
-    window._apDiscoverData = null;
-    await loadSettingsProviders(); loadModels();
-  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+    const models = [];
+    for (const cb of checks) {
+      const m = d.models[parseInt(cb.dataset.idx)];
+      if (!m) continue;
+      models.push({ id: d.id + '/' + m.id, name: m.name || m.id, provider: d.id, input: ['text'], contextWindow: m.contextWindow || 128000, maxTokens: m.maxTokens || 8192 });
+    }
+    if (models.length) {
+      const r = await (await authFetch('/api/settings/models/batch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ models }) })).json();
+      showToastMsg(t('settings.providerAdded', { count: r.added || models.length }) + (r.skipped ? ' (' + r.skipped + ' ' + t('settings.skipped') + ')' : ''));
+    }
+  } catch (e) { showToastMsg(t('common.fail') + ': ' + (e.message || ''), 'error'); }
+  const formEl = document.getElementById('stAddProviderForm');
+  if (formEl) formEl.classList.add('hidden');
+  window._apDiscoverData = null;
+  await loadSettingsProviders();
+  await loadModels();
+  renderCapabilityDashboard();
 }
 
 async function refreshProviderModels(pid) {
   const p = settingsProviders[pid]; if (!p) return;
   showToastMsg(t('settings.discovering'));
   try {
-    const r = await (await authFetch('/api/settings/providers/discover', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ baseUrl: p.baseUrl, apiKey: p.apiKey }) })).json();
+    const r = await (await authFetch('/api/settings/providers/discover', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ baseUrl: p.baseUrl, apiKey: p.apiKey, api: p.api }) })).json();
     if (r.error || !(r.models || []).length) {
       showToastMsg(t('settings.discoverFailTip'), 'warn');
       quickAddModelForProvider(pid);
@@ -173,55 +485,228 @@ async function refreshProviderModels(pid) {
     }
     const models = r.models;
     const existing = new Set(settingsModelsList.filter(m => m.provider === pid).map(m => m.id));
-    let added = 0;
-    for (const m of models) { const modelId = pid + '/' + m.id; if (existing.has(modelId)) continue; try { await authFetch('/api/settings/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: modelId, name: m.name || m.id, provider: pid, input: ['text'], contextWindow: m.contextWindow || 128000, maxTokens: m.maxTokens || 8192 }) }); added++; } catch {} }
-    showToastMsg(t('settings.modelsRefreshed', { added, total: models.length }));
-    await loadSettingsProviders(); loadModels();
+    const newModels = models.filter(m => !existing.has(pid + '/' + m.id)).map(m => ({ id: pid + '/' + m.id, name: m.name || m.id, provider: pid, input: ['text'], contextWindow: m.contextWindow || 128000, maxTokens: m.maxTokens || 8192 }));
+    if (newModels.length) {
+      const br = await (await authFetch('/api/settings/models/batch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ models: newModels }) })).json();
+      showToastMsg(t('settings.modelsRefreshed', { added: br.added || newModels.length, total: models.length }));
+    } else {
+      showToastMsg(t('settings.modelsRefreshed', { added: 0, total: models.length }));
+    }
+    await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard();
   } catch (e) { showToastMsg(t('settings.discoverFailTip'), 'warn'); quickAddModelForProvider(pid); }
 }
 
 function renderModelList() {
   const el = document.getElementById('stModelList'); if (!el) return;
   if (!settingsModelsList.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">' + t('common.noData') + '</div>'; return; }
-  const byProv = {}; settingsModelsList.forEach(m => { (byProv[m.provider] = byProv[m.provider] || []).push(m); });
-  let h = '';
+
+  // 筛选器和搜索栏
+  const pids = Object.keys(settingsProviders);
+  let h = '<div class="model-list-toolbar">';
+  h += '<div class="model-filter-tags">' +
+    '<span class="model-filter-tag' + (!_modelListFilter.provider ? ' active' : '') + '" onclick="clearModelFilter()">' + t('settings.filterAll') + '</span>';
+  pids.forEach(pid => {
+    const count = settingsModelsList.filter(m => m.provider === pid).length;
+    h += '<span class="model-filter-tag' + (_modelListFilter.provider === pid ? ' active' : '') + '" onclick="filterModelsByProvider(\'' + escJs(pid) + '\')">' + escH(pid) + ' (' + count + ')</span>';
+  });
+  h += '</div>';
+  h += '<div class="model-search-wrap">';
+  h += '<input type="text" class="model-search-input" id="stModelSearch" placeholder="' + t('settings.searchModelPlaceholder') + '" value="' + escH(_modelListFilter.search) + '" oninput="onModelSearchInput(this.value)">';
+  if (_modelListFilter.search) {
+    h += '<span class="model-search-clear" onclick="clearModelSearch()" title="' + t('common.clear') + '">&times;</span>';
+  }
+  h += '</div></div>';
+
+  // 筛选模型
+  let filtered = settingsModelsList;
+  if (_modelListFilter.provider) {
+    filtered = filtered.filter(m => m.provider === _modelListFilter.provider);
+  }
+  if (_modelListFilter.search) {
+    const q = _modelListFilter.search.toLowerCase();
+    filtered = filtered.filter(m => (m.name || '').toLowerCase().includes(q) || (m.id || '').toLowerCase().includes(q));
+  }
+
+  if (!filtered.length) {
+    h += '<div class="model-list-empty">' + t('settings.noMatchingModels') + '</div>';
+    el.innerHTML = h;
+    return;
+  }
+
+  // 按 Provider 分组
+  const byProv = {}; filtered.forEach(m => { (byProv[m.provider] = byProv[m.provider] || []).push(m); });
+  const FOLD_THRESHOLD = 15;
+
   for (const [pid, models] of Object.entries(byProv)) {
-    h += '<div style="margin-bottom:16px"><div style="font-size:13px;color:var(--text3);margin-bottom:6px;font-weight:600">' + escH(pid) + '</div>';
-    models.forEach(m => {
-      const cat = getModelCategory(m);
-      const catInfo = MODEL_CATEGORIES[cat];
-      h += '<div class="model-row"><div class="model-row-name">' + escH(m.name) + '</div>' +
-        '<span class="model-row-cap" title="' + escH(catInfo ? catInfo.zhLabel : cat) + '">' + (catInfo ? catInfo.icon : '') + '</span>' +
-        '<div class="model-row-id">' + escH(m.id) + '</div>' +
-        '<div class="model-row-caps">' + (m.input || ['text']).map(c => '<span class="model-row-cap">' + c + '</span>').join('') + '</div>' +
-        '<button class="settings-btn settings-btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteSettingsModel(\'' + escJs(m.id) + '\')">&times;</button></div>';
-    });
+    const shouldFold = models.length > FOLD_THRESHOLD;
+    const foldId = 'modelFold-' + pid.replace(/[^a-zA-Z0-9]/g, '_');
+    
+    h += '<div class="model-group">';
+    h += '<div class="model-group-header">' + escH(pid) + ' <span class="model-group-count">(' + models.length + ')</span></div>';
+    
+    const visibleModels = shouldFold ? models.slice(0, FOLD_THRESHOLD) : models;
+    const hiddenModels = shouldFold ? models.slice(FOLD_THRESHOLD) : [];
+
+    visibleModels.forEach(m => { h += renderModelRow(m); });
+
+    if (hiddenModels.length > 0) {
+      h += '<div id="' + foldId + '" class="model-fold-hidden">';
+      hiddenModels.forEach(m => { h += renderModelRow(m); });
+      h += '</div>';
+      h += '<div class="model-fold-toggle" onclick="toggleModelFold(\'' + foldId + '\', this)">' +
+        '<span class="fold-text">' + t('settings.showMore', {count: hiddenModels.length}) + '</span></div>';
+    }
     h += '</div>';
   }
+
+  h += '<div class="model-list-summary">' + t('settings.totalModels', {count: filtered.length}) + '</div>';
   el.innerHTML = h;
+}
+
+function renderModelRow(m) {
+  const caps = getModelCapabilities(m);
+  const isAutoDetected = !m.capabilities;
+  const capTags = caps.map(c => {
+    const meta = CAPABILITY_META[c];
+    if (isAutoDetected) {
+      return '<span class="model-cap-tag cap-auto" title="' + escH(t('settings.capAutoHint')) + '">' + (meta?.icon || '') + ' ' + (meta?.label || c) + '</span>';
+    }
+    return '<span class="model-cap-tag" title="' + escH(meta?.label || c) + '">' + (meta?.icon || '') + ' ' + (meta?.label || c) + '</span>';
+  }).join('');
+  const encodedId = encodeURIComponent(m.id);
+  const autoHint = isAutoDetected ? '<span class="cap-auto-hint" title="' + escH(t('settings.capAutoHintFull')) + '">⚡' + t('settings.capAutoLabel') + '</span>' : '';
+  return '<div class="model-row"><div class="model-row-name">' + escH(m.name) + autoHint + '</div>' +
+    '<div class="model-row-caps">' + capTags + '</div>' +
+    '<button class="settings-btn settings-btn-outline" style="padding:4px 10px;font-size:11px" onclick="editModelCapabilities(\'' + encodedId + '\')" title="' + t('settings.editCaps') + '">✏️</button>' +
+    '<button class="settings-btn settings-btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteSettingsModel(\'' + encodedId + '\')">&times;</button></div>';
+}
+
+function clearModelFilter() {
+  _modelListFilter.provider = '';
+  _modelListFilter.search = '';
+  renderProviderList();
+  renderModelList();
+}
+
+function clearModelSearch() {
+  _modelListFilter.search = '';
+  renderModelList();
+  const input = document.getElementById('stModelSearch');
+  if (input) input.focus();
+}
+
+let _modelSearchTimer = null;
+function onModelSearchInput(value) {
+  _modelListFilter.search = value;
+  if (_modelSearchTimer) clearTimeout(_modelSearchTimer);
+  _modelSearchTimer = setTimeout(() => {
+    renderModelList();
+    const input = document.getElementById('stModelSearch');
+    if (input) { input.focus(); input.setSelectionRange(value.length, value.length); }
+  }, 200);
+}
+
+function toggleModelFold(foldId, btn) {
+  const el = document.getElementById(foldId);
+  if (!el) return;
+  const isHidden = el.classList.contains('model-fold-hidden');
+  if (isHidden) {
+    el.classList.remove('model-fold-hidden');
+    btn.querySelector('.fold-text').textContent = t('settings.showLess');
+  } else {
+    el.classList.add('model-fold-hidden');
+    const count = el.querySelectorAll('.model-row').length;
+    btn.querySelector('.fold-text').textContent = t('settings.showMore', {count});
+  }
+}
+
+function editModelCapabilities(encodedModelId) {
+  const modelId = decodeURIComponent(encodedModelId);
+  const model = settingsModelsList.find(m => m.id === modelId);
+  if (!model) return;
+  const currentCaps = getModelCapabilities(model);
+
+  let h = '<div class="edit-caps-form"><div class="edit-caps-title">' + t('settings.editCapsTitle') + ': ' + escH(model.name) + '</div>';
+  h += '<div class="cap-checkbox-list">';
+  for (const cap of ALL_CAPABILITIES) {
+    const meta = CAPABILITY_META[cap];
+    h += '<label class="cap-checkbox-item"><input type="checkbox" class="edit-cap-check" data-cap="' + cap + '"' + (currentCaps.includes(cap) ? ' checked' : '') + '>' +
+      '<span class="cap-cb-icon">' + meta.icon + '</span>' +
+      '<span class="cap-cb-label">' + meta.label + '</span></label>';
+  }
+  h += '</div>';
+  h += '<div class="edit-caps-actions"><button class="settings-btn settings-btn-primary" onclick="saveModelCapabilities(\'' + encodedModelId + '\')">' + t('common.save') + '</button>' +
+    '<button class="settings-btn settings-btn-outline" onclick="closeEditCapsDialog()">' + t('common.cancel') + '</button></div></div>';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.id = 'editCapsOverlay';
+  overlay.innerHTML = '<div class="dialog-box">' + h + '</div>';
+  overlay.onclick = (e) => { if (e.target === overlay) closeEditCapsDialog(); };
+  document.body.appendChild(overlay);
+}
+
+function closeEditCapsDialog() {
+  const overlay = document.getElementById('editCapsOverlay');
+  if (overlay) overlay.remove();
+}
+
+async function saveModelCapabilities(encodedModelId) {
+  const modelId = decodeURIComponent(encodedModelId);
+  const checks = document.querySelectorAll('.edit-cap-check:checked');
+  const caps = Array.from(checks).map(cb => cb.dataset.cap);
+  if (!caps.length) { showToastMsg(t('settings.capAtLeastOne'), 'error'); return; }
+  try {
+    await authFetch('/api/settings/models/' + encodedModelId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capabilities: caps })
+    });
+    const model = settingsModelsList.find(m => m.id === modelId);
+    if (model) model.capabilities = caps;
+    closeEditCapsDialog();
+    renderModelList();
+    renderCapabilityDashboard();
+    showToastMsg(t('settings.saved'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
 }
 
 function quickAddModelForProvider(pid) {
   const el = document.getElementById('provQuickAdd-' + pid); if (!el) return;
   if (!el.classList.contains('hidden')) { el.classList.add('hidden'); el.innerHTML = ''; return; }
   el.classList.remove('hidden');
+
+  const apiOpts = _imageApiOptions().map(a => '<option value="' + a.val + '">' + a.label + '</option>').join('');
+
   el.innerHTML = '<div class="add-form" style="margin-top:8px;border:none;padding:8px 0"><div class="add-form-row">' +
-    '<input class="settings-input" id="qaId-' + pid + '" placeholder="' + t('settings.modelIdPlaceholder') + ' (e.g. qwen-max)">' +
-    '<input class="settings-input" id="qaName-' + pid + '" placeholder="' + t('settings.modelNamePlaceholder') + '">' +
-    '<button class="settings-btn settings-btn-primary" onclick="submitQuickAddModel(\'' + escJs(pid) + '\')" style="white-space:nowrap">' + t('settings.addModel') + '</button></div></div>';
+    '<input class="settings-input" id="qaId-' + pid + '" placeholder="' + t('settings.modelIdPlaceholder') + '">' +
+    '<input class="settings-input" id="qaName-' + pid + '" placeholder="' + t('settings.modelNamePlaceholder') + '" style="opacity:0.7">' +
+    '<select class="settings-select" id="qaApi-' + pid + '" style="min-width:140px">' + apiOpts + '</select>' +
+    '<button class="settings-btn settings-btn-primary" onclick="submitQuickAddModel(\'' + escJs(pid) + '\')" style="white-space:nowrap">' + t('settings.addModel') + '</button></div>' +
+    '<div style="color:#888;font-size:12px;margin-top:4px">💡 对话模型保持默认即可；文生图模型请选择对应 API 类型。如服务商不兼容，可通过 one-api 等中转工具接入。</div></div>';
 }
 
 async function submitQuickAddModel(pid) {
   const rawId = document.getElementById('qaId-' + pid)?.value?.trim();
   const name = document.getElementById('qaName-' + pid)?.value?.trim();
+  const api = document.getElementById('qaApi-' + pid)?.value;
   if (!rawId) { showToastMsg(t('settings.fillRequired'), 'error'); return; }
   const id = rawId.includes('/') ? rawId : pid + '/' + rawId;
+
+  const body = { id, name: name || rawId, provider: pid, input: ['text'], contextWindow: 128000, maxTokens: 8192 };
+  if (api === 'dashscope-image' || api === 'openai-image') {
+    body.output = ['image'];
+    body.api = api;
+  } else if (api) {
+    body.api = api;
+  }
+
   try {
-    await authFetch('/api/settings/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, name: name || rawId, provider: pid, input: ['text'], contextWindow: 128000, maxTokens: 8192 }) });
+    await authFetch('/api/settings/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
     showToastMsg(t('settings.saved'));
     const el = document.getElementById('provQuickAdd-' + pid);
     if (el) { el.classList.add('hidden'); el.innerHTML = ''; }
-    await loadSettingsProviders(); loadModels();
+    await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard();
   } catch (e) { showToastMsg(t('common.fail'), 'error'); }
 }
 
@@ -230,55 +715,81 @@ function toggleAddModel() {
   el.classList.toggle('hidden');
   if (!el.classList.contains('hidden')) {
     const provOpts = Object.keys(settingsProviders).map(p => '<option value="' + escH(p) + '">' + escH(p) + '</option>').join('');
-    el.innerHTML = '<div class="add-form"><div class="add-form-title">' + t('settings.addModel') + '</div><div class="add-form-row"><select class="settings-select" id="amProv" style="min-width:120px"><option value="">' + t('settings.selectProvider') + '</option>' + provOpts + '</select><input class="settings-input" id="amId" placeholder="' + t('settings.modelIdPlaceholder') + '"></div><div class="add-form-row"><input class="settings-input" id="amName" placeholder="' + t('settings.modelNamePlaceholder') + '"><input class="settings-input" id="amCtx" placeholder="' + t('settings.contextWindow') + '" type="number" value="128000" style="width:120px"><button class="settings-btn settings-btn-primary" onclick="submitAddModel()">' + t('settings.addModel') + '</button></div></div>';
+    const apiOpts = _imageApiOptions().map(a => '<option value="' + a.val + '">' + a.label + '</option>').join('');
+
+    el.innerHTML = '<div class="add-form"><div class="add-form-title">' + t('settings.addModel') + '</div><div class="add-form-row">' +
+      '<select class="settings-select" id="amProv" style="min-width:120px"><option value="">' + t('settings.selectProvider') + '</option>' + provOpts + '</select>' +
+      '<input class="settings-input" id="amId" placeholder="' + t('settings.modelIdPlaceholder') + '"></div>' +
+      '<div class="add-form-row"><input class="settings-input" id="amName" placeholder="' + t('settings.modelNamePlaceholder') + '" style="opacity:0.7">' +
+      '<select class="settings-select" id="amApi" style="min-width:120px">' + apiOpts + '</select>' +
+      '<button class="settings-btn settings-btn-primary" onclick="submitAddModel()">' + t('settings.addModel') + '</button></div>' +
+      '<div style="color:#888;font-size:12px;margin-top:4px">💡 对话模型保持默认即可；文生图模型请选择对应 API 类型。如服务商不兼容，可通过 one-api 等中转工具接入。</div></div>';
   }
 }
 
 async function submitAddModel() {
-  const provider = document.getElementById('amProv')?.value; const rawId = document.getElementById('amId')?.value?.trim(); const name = document.getElementById('amName')?.value?.trim(); const ctx = parseInt(document.getElementById('amCtx')?.value) || 128000;
+  const provider = document.getElementById('amProv')?.value;
+  const rawId = document.getElementById('amId')?.value?.trim();
+  const name = document.getElementById('amName')?.value?.trim();
+  const api = document.getElementById('amApi')?.value;
   if (!provider || !rawId) { showToastMsg(t('common.fail'), 'error'); return; }
   const id = rawId.includes('/') ? rawId : provider + '/' + rawId;
-  try { await authFetch('/api/settings/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, name: name || rawId, provider, contextWindow: ctx, maxTokens: 4096 }) }); showToastMsg(t('settings.saved')); document.getElementById('stAddModelForm').classList.add('hidden'); await loadSettingsProviders(); loadModels(); } catch (e) { showToastMsg(t('common.fail'), 'error'); }
-}
 
-async function deleteSettingsModel(mid) {
-  if (!await appConfirm(t('settings.deleteModelConfirm'))) return;
-  try { await authFetch('/api/settings/models/' + encodeURIComponent(mid), { method: 'DELETE' }); showToastMsg(t('settings.saved')); await loadSettingsProviders(); loadModels(); } catch (e) { showToastMsg(t('common.fail'), 'error'); }
-}
+  const body = { id, name: name || rawId, provider, contextWindow: 128000, maxTokens: 4096 };
+  if (api === 'dashscope-image' || api === 'openai-image') {
+    body.output = ['image'];
+    body.api = api;
+  } else if (api) {
+    body.api = api;
+  }
 
-// ── Tool Models Settings ──
-let _toolModels = {};
-
-async function renderSettingsTools(ct) {
-  ct.innerHTML =
-    '<div class="settings-section"><div class="settings-section-title">🔍 互联网搜索</div>' +
-    '<div class="settings-section-desc">默认使用"自动"模式（DuckDuckGo + 模型总结），无需任何配置。也可切换为其他搜索引擎。</div>' +
-    '<div id="stWebSearchContent"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div></div>' +
-    '<div class="settings-section" style="margin-top:20px"><div class="settings-section-title">' + t('settings.toolModelsTitle') + '</div>' +
-    '<div class="settings-section-desc">' + t('settings.toolModelsDesc') + '</div>' +
-    '<div id="stToolModelsContent"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div></div>' +
-    '<div class="settings-section" style="margin-top:20px"><div class="settings-section-title">' + t('settings.ragTitle') + '</div>' +
-    '<div class="settings-section-desc">' + t('settings.ragDesc') + '</div>' +
-    '<div id="stRagContent"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div></div>';
-  _loadWebSearchSettings();
   try {
-    const r = await (await authFetch('/api/settings/tool-models')).json();
-    _toolModels = r.toolModels || {};
-    await loadSettingsProviders();
-    _renderToolModelsForm();
-  } catch (e) { document.getElementById('stToolModelsContent').innerHTML = t('common.loadFail'); }
-  _loadRagSettings();
+    await authFetch('/api/settings/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    showToastMsg(t('settings.saved'));
+    document.getElementById('stAddModelForm').classList.add('hidden');
+    await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard();
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
 }
+
+async function deleteSettingsModel(encodedMid) {
+  const mid = decodeURIComponent(encodedMid);
+  if (!await appConfirm(t('settings.deleteModelConfirm'))) return;
+  try {
+    await authFetch('/api/settings/models/' + encodedMid, { method: 'DELETE' });
+    showToastMsg(t('settings.saved'));
+    await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard();
+    try { const r = await (await authFetch('/api/agents')).json(); if (r.agents) updateAgentList(r.agents); } catch {}
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Tools Settings (Web Search, RAG) ──
+// ══════════════════════════════════════════════════════════════
 
 const _WS_PROVIDERS = [
-  { id: 'auto',       label: '自动（推荐）',    hint: '免费 · DuckDuckGo 搜索 + 当前模型总结，无需任何配置', needsKey: false, needsBase: false, needsBrave: false },
-  { id: 'duckduckgo', label: 'DuckDuckGo',      hint: '免费 · 无需 API Key，仅返回搜索结果（无总结）', needsKey: false, needsBase: false, needsBrave: false },
+  { id: 'auto',       label: '自动（推荐）',    hint: '免费 · DuckDuckGo → Bing 自动降级 + LLM 总结，国内外均可用', needsKey: false, needsBase: false, needsBrave: false },
+  { id: 'duckduckgo', label: 'DuckDuckGo',      hint: '免费 · 无需 API Key，仅返回搜索结果（国内需代理）', needsKey: false, needsBase: false, needsBrave: false },
+  { id: 'bing',       label: 'Bing（必应）',    hint: '免费 · 国内可直接访问 · 无需 API Key', needsKey: false, needsBase: false, needsBrave: false },
   { id: 'kimi',       label: 'Kimi（月之暗面）', hint: '国内友好 · 中文搜索优秀 · <a href="https://platform.moonshot.cn" target="_blank" style="color:var(--cyan)">platform.moonshot.cn</a>', needsKey: true, needsBase: true, needsBrave: false },
   { id: 'brave',      label: 'Brave Search',     hint: '免费额度 · <a href="https://brave.com/search/api" target="_blank" style="color:var(--cyan)">brave.com/search/api</a>', needsKey: true, needsBase: false, needsBrave: true },
   { id: 'perplexity', label: 'Perplexity',       hint: '高质量 · 支持 OpenRouter 中转 · <a href="https://perplexity.ai" target="_blank" style="color:var(--cyan)">perplexity.ai</a>', needsKey: true, needsBase: true, needsBrave: false },
   { id: 'grok',       label: 'Grok (xAI)',       hint: '实时搜索 · 带引用 · <a href="https://x.ai" target="_blank" style="color:var(--cyan)">x.ai</a>', needsKey: true, needsBase: false, needsBrave: false },
 ];
 let _wsCfg = {};
+
+async function renderSettingsTools(ct) {
+  ct.innerHTML =
+    '<div class="settings-section"><div class="settings-section-title">🔍 ' + t('settings.webSearchTitle') + '</div>' +
+    '<div class="settings-section-desc">' + t('settings.webSearchDesc') + '</div>' +
+    '<div id="stWebSearchContent"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div></div>' +
+    '<div class="settings-section" style="margin-top:20px"><div class="settings-section-title">' + t('settings.ragTitle') + '</div>' +
+    '<div class="settings-section-desc">' + t('settings.ragDesc') + '</div>' +
+    '<div id="stRagContent"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div></div>';
+  await loadSettingsProviders();
+  await loadCapabilityRouting();
+  _loadWebSearchSettings();
+  _loadRagSettings();
+}
 
 async function _loadWebSearchSettings() {
   const el = document.getElementById('stWebSearchContent'); if (!el) return;
@@ -298,7 +809,7 @@ function _renderWebSearchForm(el) {
   const opts = _WS_PROVIDERS.map(p =>
     '<option value="' + p.id + '"' + (p.id === curProv ? ' selected' : '') + '>' + p.label + '</option>'
   ).join('');
-  h += '<div class="settings-row"><div><div class="settings-label">搜索服务商</div>' +
+  h += '<div class="settings-row"><div><div class="settings-label">' + t('settings.wsProvider') + '</div>' +
     '<div style="font-size:11px;color:var(--text3)" id="stWsHint">' + provMeta.hint + '</div></div>' +
     '<div class="settings-value"><select class="settings-select" id="stWsProvider" onchange="_onWsProviderChange()">' + opts + '</select></div></div>';
 
@@ -307,7 +818,7 @@ function _renderWebSearchForm(el) {
   h += '</div>';
 
   h += '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-    '<button class="settings-btn settings-btn-primary" onclick="_saveWebSearch()">保存</button></div>';
+    '<button class="settings-btn settings-btn-primary" onclick="_saveWebSearch()">' + t('common.save') + '</button></div>';
   h += '</div>';
   el.innerHTML = h;
 }
@@ -317,18 +828,18 @@ function _renderWsDynFields(provMeta, cfg) {
   if (provMeta.needsKey) {
     h += '<div class="settings-row"><div><div class="settings-label">API Key</div></div>' +
       '<div class="settings-value"><input class="settings-input" id="stWsApiKey" type="password" placeholder="' +
-      (cfg.hasKey ? cfg.apiKey : '填入 API Key') + '" style="width:260px"></div></div>';
+      (cfg.hasKey ? cfg.apiKey : t('settings.wsApiKeyPH')) + '" style="width:260px"></div></div>';
   }
   if (provMeta.needsBase) {
     const basePlaceholder = provMeta.id === 'kimi' ? 'https://api.moonshot.cn/v1' :
       provMeta.id === 'perplexity' ? 'https://api.perplexity.ai 或 OpenRouter 地址' : '';
-    h += '<div class="settings-row"><div><div class="settings-label">Base URL（可选）</div>' +
-      '<div style="font-size:11px;color:var(--text3)">留空使用默认地址</div></div>' +
+    h += '<div class="settings-row"><div><div class="settings-label">Base URL' + t('settings.wsBaseUrlOpt') + '</div>' +
+      '<div style="font-size:11px;color:var(--text3)">' + t('settings.wsBaseUrlHint') + '</div></div>' +
       '<div class="settings-value"><input class="settings-input" id="stWsBaseUrl" value="' +
       escH(cfg.baseUrl || '') + '" placeholder="' + escH(basePlaceholder) + '" style="width:260px"></div></div>';
   }
   if (provMeta.needsBrave) {
-    h += '<div class="settings-row"><div><div class="settings-label">搜索模式</div></div>' +
+    h += '<div class="settings-row"><div><div class="settings-label">' + t('settings.wsBraveMode') + '</div></div>' +
       '<div class="settings-value"><select class="settings-select" id="stWsBraveMode">' +
       '<option value="web"' + ((cfg.braveMode || 'web') === 'web' ? ' selected' : '') + '>Web Search</option>' +
       '<option value="llm-context"' + (cfg.braveMode === 'llm-context' ? ' selected' : '') + '>LLM Context</option>' +
@@ -372,56 +883,92 @@ async function _loadRagSettings() {
 }
 
 function _renderRagForm(el, cfg) {
-  const provOpts = Object.keys(settingsProviders || {}).map(p =>
-    '<option value="' + escH(p) + '"' + (p === cfg.embeddingProvider ? ' selected' : '') + '>' + escH(p) + '</option>'
-  ).join('');
+  const embeddingModels = settingsModelsList.filter(m => getModelCapabilities(m).includes('embedding'));
+  const embeddingModelId = capabilityRouting.embedding;
+  const embeddingModel = embeddingModelId ? settingsModelsList.find(m => m.id === embeddingModelId) : null;
+  const hasEmbedding = !!embeddingModel;
+  const hasEmbeddingModels = embeddingModels.length > 0;
 
-  let h = '<div style="display:flex;flex-direction:column;gap:12px">';
+  let h = '<div class="rag-simple-form">';
 
-  h += '<div class="settings-row"><div><div class="settings-label">' + t('settings.ragEnabled') + '</div></div>' +
-    '<div class="settings-value"><label style="display:flex;align-items:center;gap:6px;cursor:pointer">' +
-    '<input type="checkbox" id="stRagEnabled"' + (cfg.enabled ? ' checked' : '') + '> ' + (cfg.enabled ? t('settings.ragOn') : t('settings.ragOff')) +
-    '</label></div></div>';
+  h += '<div class="rag-beta-banner">' +
+    '<span class="rag-beta-tag">Beta</span>' +
+    '<div class="rag-beta-info">' +
+    '<div class="rag-beta-line">✅ ' + t('settings.ragSupportedFormats') + '</div>' +
+    '<div class="rag-beta-line">⚠️ ' + t('settings.ragLimitedPdf') + '</div>' +
+    '<div class="rag-beta-line">🚫 ' + t('settings.ragUnsupportedFormats') + '</div>' +
+    '<div class="rag-beta-line">📏 ' + t('settings.ragLimitsInfo') + '</div>' +
+    '</div></div>';
 
-  h += '<div class="settings-row"><div><div class="settings-label">' + t('settings.ragProvider') + '</div>' +
-    '<div style="font-size:11px;color:var(--text3)">' + t('settings.ragProviderHint') + '</div></div>' +
-    '<div class="settings-value"><select class="settings-select" id="stRagProvider"><option value="">' + t('settings.ragProviderAuto') + '</option>' + provOpts + '</select></div></div>';
+  h += '<div class="rag-main-toggle">' +
+    '<label class="rag-switch"><input type="checkbox" id="stRagEnabled"' + (cfg.enabled ? ' checked' : '') + ' onchange="_onRagToggle()">' +
+    '<span class="rag-switch-slider"></span></label>' +
+    '<div class="rag-toggle-info">' +
+    '<div class="rag-toggle-title">' + t('settings.ragEnabled') + '</div>' +
+    '<div class="rag-toggle-desc">' + t('settings.ragSimpleDesc') + '</div>' +
+    '</div></div>';
 
-  const keyPlaceholder = cfg.hasCustomKey ? cfg.embeddingApiKey : t('settings.ragApiKeyPlaceholder');
-  h += '<div class="settings-row" style="flex-direction:column;align-items:stretch;gap:6px">' +
-    '<div><div class="settings-label">' + t('settings.ragApiKey') + '</div>' +
-    '<div style="font-size:11px;color:var(--text3)">' + t('settings.ragApiKeyHint') + '</div></div>' +
-    '<input class="settings-input" id="stRagApiKey" type="password" placeholder="' + escH(keyPlaceholder) + '" style="width:100%;box-sizing:border-box">' +
-    '</div>';
+  // 向量化模型选择器
+  h += '<div class="rag-model-section">' +
+    '<div class="rag-model-label">' + t('settings.ragEmbeddingModel') + '</div>';
 
-  h += '<div class="settings-row"><div><div class="settings-label">' + t('settings.ragModel') + '</div></div>' +
-    '<div class="settings-value"><input class="settings-input" id="stRagModel" value="' + escH(cfg.embeddingModel) + '" style="width:200px"></div></div>';
+  if (hasEmbeddingModels) {
+    h += '<div class="rag-model-select-row">' +
+      '<select class="settings-select rag-model-select" id="stRagEmbeddingModel" onchange="_onRagModelChange()">' +
+      '<option value="">' + t('settings.ragSelectModel') + '</option>';
+    for (const m of embeddingModels) {
+      const label = (m.name || m.id) + ' (' + m.provider + ')';
+      h += '<option value="' + escH(m.id) + '"' + (embeddingModelId === m.id ? ' selected' : '') + '>' + escH(label) + '</option>';
+    }
+    h += '</select>';
+    if (hasEmbedding) {
+      h += '<button class="settings-btn" onclick="testRagEmbedding()" id="stRagTestBtn">' + t('settings.ragTestBtn') + '</button>';
+    }
+    h += '</div>';
+    h += '<div id="stRagTestResult" style="font-size:12px;margin-top:4px"></div>';
 
-  h += '<div class="settings-row" style="flex-direction:column;align-items:stretch;gap:6px">' +
-    '<div><div class="settings-label">' + t('settings.ragBaseUrl') + '</div>' +
-    '<div style="font-size:11px;color:var(--text3)">' + t('settings.ragBaseUrlHint') + '</div></div>' +
-    '<input class="settings-input" id="stRagBaseUrl" value="' + escH(cfg.embeddingBaseUrl) + '" placeholder="' + t('settings.ragBaseUrlPlaceholder') + '" style="width:100%;box-sizing:border-box">' +
-    '</div>';
+    // 状态提示
+    if (hasEmbedding) {
+      h += '<div class="rag-model-hint ok">✓ ' + t('settings.ragReady') + '</div>';
+    } else {
+      h += '<div class="rag-model-hint warning">⚠ ' + t('settings.ragPleaseSelect') + '</div>';
+    }
+  } else {
+    // 没有 embedding 模型
+    h += '<div class="rag-no-model">' +
+      '<div class="rag-no-model-text">' + t('settings.ragNoEmbeddingModels') + '</div>' +
+      '<button class="settings-btn settings-btn-primary" onclick="switchSettingsTab(\'models\')">' + t('settings.ragAddModel') + '</button>' +
+      '</div>';
+  }
 
-  h += '<button class="settings-btn settings-btn-primary" onclick="saveRagSettings()" style="align-self:flex-start;margin-top:4px">' + t('common.save') + '</button>';
-
-  h += '<button class="settings-btn" onclick="testRagEmbedding()" style="align-self:flex-start;margin-top:2px" id="stRagTestBtn">' + t('settings.ragTestBtn') + '</button>';
-  h += '<div id="stRagTestResult" style="font-size:12px;margin-top:4px"></div>';
-
-  h += '</div>';
+  h += '</div></div>';
   el.innerHTML = h;
 }
 
-async function saveRagSettings() {
-  const body = {};
-  body.enabled = document.getElementById('stRagEnabled')?.checked ?? true;
-  body.embeddingProvider = document.getElementById('stRagProvider')?.value || '';
-  const apiKeyInput = document.getElementById('stRagApiKey')?.value?.trim();
-  if (apiKeyInput) body.embeddingApiKey = apiKeyInput;
-  body.embeddingModel = document.getElementById('stRagModel')?.value?.trim() || 'text-embedding-v3';
-  body.embeddingBaseUrl = document.getElementById('stRagBaseUrl')?.value?.trim() || '';
+async function _onRagModelChange() {
+  const modelId = document.getElementById('stRagEmbeddingModel')?.value || '';
   try {
-    await authFetch('/api/settings/rag', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await authFetch('/api/settings/routing', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embedding: modelId || null })
+    });
+    capabilityRouting.embedding = modelId || null;
+    showToastMsg(t('settings.saved'));
+    _loadRagSettings();
+  } catch (e) {
+    showToastMsg(t('common.fail') + ': ' + e.message, 'error');
+  }
+}
+
+function _onRagToggle() {
+  saveRagSettings();
+}
+
+async function saveRagSettings() {
+  const enabled = document.getElementById('stRagEnabled')?.checked ?? true;
+  try {
+    await authFetch('/api/settings/rag', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
     showToastMsg(t('settings.saved'));
   } catch (e) { showToastMsg(t('common.fail') + ': ' + e.message, 'error'); }
 }
@@ -443,149 +990,4 @@ async function testRagEmbedding() {
     result.innerHTML = '<span style="color:var(--red)">' + t('settings.ragTestFail') + ': ' + escH(e.message) + '</span>';
   }
   btn.disabled = false; btn.textContent = t('settings.ragTestBtn');
-}
-
-function _getImgGenModels() {
-  return (settingsModelsList || []).filter(m => {
-    if (m.output && m.output.includes('image')) return true;
-    if (m.api && (m.api === 'dashscope-image' || m.api === 'openai-image')) return true;
-    return false;
-  });
-}
-
-let _toolImgGenSS = null;
-
-function _renderToolModelsForm() {
-  const el = document.getElementById('stToolModelsContent'); if (!el) return;
-  const imgModels = _getImgGenModels();
-
-  let h = '<div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">' +
-    '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">\uD83C\uDFA8</span>' +
-    '<div><div class="settings-label">' + t('settings.toolImgGen') + '</div>' +
-    '<div style="font-size:12px;color:var(--text3)">' + t('settings.toolImgGenDesc') + '</div></div></div>';
-
-  if (!imgModels.length) {
-    h += '<div style="padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px dashed var(--border);font-size:13px;color:var(--text3)">' +
-      t('settings.toolImgNoModelTip') + '</div>';
-  } else {
-    h += '<div id="stToolImgGenSS" style="width:100%"></div>' +
-      '<div id="stToolImgGenHint" style="margin-top:4px"></div>';
-  }
-
-  h += '</div>';
-
-  h += '<div style="margin-top:4px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2)">' +
-    '<input type="checkbox" id="stToolImgAuto"' + (_toolModels.imageAutoIntercept !== false ? ' checked' : '') + '>' +
-    t('settings.toolImgAuto') + '</label></div>';
-
-  h += '<button class="settings-btn settings-btn-primary" onclick="saveToolModels()" style="margin-top:12px">' + t('common.save') + '</button>';
-
-  h += '<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">' +
-    '<div class="settings-section-title" style="font-size:14px">' + t('settings.toolAddImgModel') + '</div>' +
-    '<div style="font-size:12px;color:var(--text3);margin-bottom:10px">' + t('settings.toolAddImgModelDesc') + '</div>' +
-    '<div id="stToolAddForm"></div></div>';
-
-  _renderToolAddForm(h, el);
-  _initToolImgGenSS();
-}
-
-function _renderToolAddForm(h, el) {
-  const provOpts = Object.keys(settingsProviders).map(p => '<option value="' + escH(p) + '">' + escH(p) + '</option>').join('');
-  const apiOpts = [
-    { val: 'dashscope-image', label: 'DashScope \u6587\u751F\u56FE (wanx \u7B49)' },
-    { val: 'openai-image', label: 'OpenAI Images (DALL-E \u7B49)' },
-  ].map(a => '<option value="' + a.val + '">' + a.label + '</option>').join('');
-
-  const presets = [
-    { name: 'wanx2.1-t2i-turbo', label: '\u901A\u4E49\u4E07\u8C61 Turbo', api: 'dashscope-image' },
-    { name: 'wanx2.1-t2i-plus', label: '\u901A\u4E49\u4E07\u8C61 Plus', api: 'dashscope-image' },
-    { name: 'wanx-v1', label: '\u901A\u4E49\u4E07\u8C61 v1', api: 'dashscope-image' },
-    { name: 'dall-e-3', label: 'DALL-E 3', api: 'openai-image' },
-  ];
-  const presetBtns = presets.map(p =>
-    '<button class="settings-btn settings-btn-outline" style="padding:4px 10px;font-size:12px" ' +
-    'onclick="fillToolPreset(\'' + p.name + '\',\'' + p.api + '\')">' + p.label + '</button>'
-  ).join(' ');
-
-  h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center">' +
-    '<span style="font-size:12px;color:var(--text3);line-height:28px">' + t('settings.toolPresetsLabel') + '</span>' + presetBtns + '</div>';
-
-  h += '<div class="add-form" style="border:1px solid var(--border);border-radius:8px;padding:12px">' +
-    '<div class="add-form-row" style="gap:8px;margin-bottom:8px">' +
-    '<select class="settings-select" id="stImgProv" style="min-width:100px"><option value="">' + t('settings.selectProvider') + '</option>' + provOpts + '</select>' +
-    '<input class="settings-input" id="stImgName" placeholder="' + t('settings.toolModelNamePH') + '" style="flex:1"></div>' +
-    '<div class="add-form-row" style="gap:8px">' +
-    '<select class="settings-select" id="stImgApi" style="flex:1">' + apiOpts + '</select>' +
-    '<button class="settings-btn settings-btn-primary" onclick="addImgGenModel()">' + t('settings.toolAddBtn') + '</button></div></div>';
-
-  h += '<div class="settings-section-desc" style="margin-top:16px;padding:10px;background:var(--bg3);border-radius:8px;font-size:12px;line-height:1.6">' +
-    '<strong>' + t('settings.toolImgHowTitle') + '</strong><br>' + t('settings.toolImgHowBody') + '</div>';
-
-  el.innerHTML = h;
-}
-
-function _initToolImgGenSS() {
-  const imgModels = _getImgGenModels();
-  if (!imgModels.length) { _toolImgGenSS = null; return; }
-  const items = imgModels.map(m => ({
-    id: m.id,
-    label: (m.name || m.id),
-    badge: m.provider || '',
-    group: getModelCategoryLabel(getModelCategory(m))
-  }));
-  const savedVal = _toolModels.imageGeneration || '';
-  const validVal = savedVal && items.some(it => it.id === savedVal) ? savedVal : '';
-  _toolImgGenSS = initSearchableSelect('stToolImgGenSS', {
-    items,
-    value: validVal,
-    placeholder: t('common.searchModel') || '搜索模型...',
-    emptyLabel: t('settings.toolModelNone'),
-    grouped: false,
-  });
-  const hintEl = document.getElementById('stToolImgGenHint');
-  if (hintEl) {
-    if (savedVal && !validVal) {
-      hintEl.innerHTML = '<span style="color:var(--danger);font-size:12px">' + escH(t('settings.toolModelInvalid', { id: savedVal })) + '</span>';
-    } else {
-      hintEl.innerHTML = '';
-    }
-  }
-}
-
-function fillToolPreset(name, api) {
-  const nameEl = document.getElementById('stImgName');
-  const apiEl = document.getElementById('stImgApi');
-  if (nameEl) nameEl.value = name;
-  if (apiEl) apiEl.value = api;
-}
-
-async function addImgGenModel() {
-  const provider = document.getElementById('stImgProv')?.value;
-  const name = document.getElementById('stImgName')?.value?.trim();
-  const api = document.getElementById('stImgApi')?.value;
-  if (!provider || !name) { showToastMsg(t('settings.fillRequired'), 'error'); return; }
-  const id = provider + '/' + name;
-  try {
-    await authFetch('/api/settings/models', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, name, provider, input: ['text'], output: ['image'], api, contextWindow: 0, maxTokens: 0 })
-    });
-    showToastMsg(t('settings.saved'));
-    await loadSettingsProviders();
-    _renderToolModelsForm();
-  } catch (e) { showToastMsg(e.message || t('common.fail'), 'error'); }
-}
-
-async function saveToolModels() {
-  const imgGen = (_toolImgGenSS ? _toolImgGenSS.getValue() : '') || '';
-  const autoIntercept = document.getElementById('stToolImgAuto')?.checked !== false;
-  try {
-    await authFetch('/api/settings/tool-models', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageGeneration: imgGen || null, imageAutoIntercept: autoIntercept })
-    });
-    _toolModels.imageGeneration = imgGen || null;
-    _toolModels.imageAutoIntercept = autoIntercept;
-    showToastMsg(t('settings.saved'));
-  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
 }

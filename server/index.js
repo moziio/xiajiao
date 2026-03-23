@@ -24,6 +24,8 @@ const chat = require('./services/chat');
 const workflow = require('./services/workflow');
 const toolEvents = require('./services/tool-events');
 const toolRegistry = require('./services/tool-registry');
+const mcpManager = require('./services/mcp-manager');
+const channelEngine = require('./services/channel-engine');
 const { handleApi } = require('./router');
 const { ROLES, jsonRes, readBody, checkOrigin } = require('./middleware/auth');
 const { checkHttpRate, checkWsRate } = require('./middleware/rate-limit');
@@ -58,7 +60,24 @@ toolRegistry.registerTool('web_search', webSearchTool);
 toolRegistry.registerTool('memory_write', memoryWriteTool);
 toolRegistry.registerTool('memory_search', memorySearchTool);
 toolRegistry.registerTool('call_agent', callAgentTool);
+const manageChannelTool = require('./services/tools/manage-channel');
+toolRegistry.registerTool('manage_channel', manageChannelTool);
+const manageScheduleTool = require('./services/tools/manage-schedule');
+toolRegistry.registerTool('manage_schedule', manageScheduleTool);
 log.info(`tool registry: ${toolRegistry.getAllToolNames().join(', ')}`);
+
+// M8 — 初始化 MCP Server 连接
+(async () => {
+  try {
+    const mcpServers = store.imSettings.mcpServers || {};
+    if (Object.keys(mcpServers).length) {
+      await mcpManager.init(mcpServers);
+      const count = mcpManager.getTotalToolCount();
+      if (count > 0) log.info(`MCP tools bridged: ${count}`);
+    }
+  } catch (e) { log.warn('MCP init skipped:', e.message); }
+})();
+
 
 const llmMode = cfg.getLLMMode();
 
@@ -68,11 +87,23 @@ const cancelFn = llmMode === 'gateway' ? gw.cancelGwRun : llm.cancelRun;
 chat.init({
   sendFn,
   getAgentsFn: () => gw.knownAgents.length ? gw.knownAgents : gw.refreshKnownAgents(),
+  broadcastFn: gw.broadcast,
 });
 
 workflow.setBroadcast(gw.broadcast);
 workflow.setSendFn(sendFn);
 workflow.setCancelFn(cancelFn);
+
+// M9 — 初始化 Channel Engine
+channelEngine.setBroadcast(gw.broadcast);
+channelEngine.setSendFn(sendFn);
+(async () => {
+  try {
+    await channelEngine.init();
+    const channels = channelEngine.getAllChannels().filter(c => c.enabled);
+    if (channels.length) log.info(`channel engine: ${channels.length} channel(s)`);
+  } catch (e) { log.warn('channel engine init:', e.message); }
+})();
 
 // ── Static file cache (pre-compressed at boot) ──
 
@@ -114,14 +145,37 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && kbUploadMatch) return handleKbUpload(req, res, kbUploadMatch[1]);
   const urlQuery = new URLSearchParams((req.url.split('?')[1]) || '');
   if (urlPath.startsWith('/api/')) return handleApi(req, res, urlPath, urlQuery);
+  if (urlPath.startsWith('/channel/')) {
+    let body;
+    if (req.method === 'POST' || req.method === 'PUT') {
+      body = await readBody(req).catch(() => ({}));
+    } else {
+      const qObj = {}; urlQuery.forEach((v, k) => { qObj[k] = v; });
+      body = qObj;
+    }
+    const handled = channelEngine.handleChannelRoute(req.method, urlPath, req, res, body);
+    if (handled) return;
+  }
   let filePath = urlPath === '/' ? '/index.html' : urlPath;
   const fullPath = path.resolve(cfg.PUBLIC_DIR, '.' + filePath);
   const baseResolved = path.resolve(cfg.PUBLIC_DIR);
   if (!fullPath.startsWith(baseResolved + path.sep) && fullPath !== baseResolved) { res.writeHead(403); res.end(); return; }
   const ext = path.extname(fullPath).toLowerCase();
 
+  // sw.js: inject BOOT_VERSION so browser detects SW change on restart
+  if (filePath === '/sw.js') {
+    let src;
+    const swCached = _staticCache.get(filePath);
+    if (swCached) { src = swCached.raw.toString(); }
+    else { try { src = fs.readFileSync(fullPath, 'utf8'); } catch { src = ''; } }
+    const versioned = src.replace('__SW_VERSION__', BOOT_VERSION);
+    res.writeHead(200, { 'Content-Type': 'application/javascript', 'Cache-Control': 'no-cache' });
+    res.end(versioned);
+    return;
+  }
+
   const cached = _staticCache.get(filePath);
-  const _noLongCache = filePath === '/sw.js' || filePath === '/manifest.json';
+  const _noLongCache = filePath === '/manifest.json' || filePath.startsWith('/favicon') || filePath === '/logo.png' || filePath.startsWith('/icons/');
   if (cached && ext !== '.html') {
     const headers = { 'Content-Type': cached.mime };
     if ((ext === '.js' || ext === '.css') && !_noLongCache) headers['Cache-Control'] = 'public, max-age=31536000, immutable';
@@ -262,8 +316,27 @@ wss.on('connection', (ws) => {
             db.prepare('UPDATE messages SET userId=? WHERE type=? AND userName=? AND userId!=?').run(user.id, 'user', user.name, user.id);
           } catch {}
         }
-        ws.send(JSON.stringify({ type: 'joined', user, history, users: [...gw.users.values()], agents: slimAgents, groups: store.groups, gatewayConnected: isConnected, llmMode, isOwner, role, guestCanChat, incremental: !!lastTs }));
+        let channelMap = {};
+        try {
+          const chEngine = require('./services/channel-engine');
+          for (const ch of chEngine.getAllChannels()) {
+            channelMap[ch.id] = { name: ch.name || ch.type || '', agentId: ch.config?.imAgentId || '' };
+          }
+        } catch {}
+        ws.send(JSON.stringify({ type: 'joined', user, history, users: [...gw.users.values()], agents: slimAgents, groups: store.groups, gatewayConnected: isConnected, llmMode, isOwner, role, guestCanChat, incremental: !!lastTs, channelMap }));
         gw.broadcast({ type: 'user_joined', user }, ws);
+
+        try {
+          for (const [key, run] of llm.activeRuns.entries()) {
+            const runChannel = key.includes(':') ? key.split(':')[0] : key;
+            ws.send(JSON.stringify({ type: 'agent_lifecycle', channel: runChannel, agentId: run.agentId, runId: run.runId, phase: 'start', model: run._modelId || '' }));
+            if (run.currentText) {
+              const isImgProgress = /^⏳/.test(run.currentText);
+              ws.send(JSON.stringify({ type: 'agent_stream', channel: runChannel, agentId: run.agentId, runId: run.runId, text: run.currentText, delta: '', ...(isImgProgress ? { _imageProgress: true } : {}) }));
+            }
+          }
+        } catch (e) { log.error('resume active runs error:', e.message); }
+
         return;
       }
       if (!user) return;
@@ -323,7 +396,7 @@ wss.on('connection', (ws) => {
           collabFlow.stopFlow(msg.channel);
         }
       }
-      if (msg.type === 'typing') gw.broadcast({ type: 'typing', userId: user.id, userName: user.name }, ws);
+      if (msg.type === 'typing') gw.broadcast({ type: 'typing', userId: user.id, userName: user.name, channel: msg.channel || '' }, ws);
     } catch (e) { log.error('ws client message error:', e.message); }
   });
   ws.on('close', () => { clientSockets.delete(ws); if (user) { gw.users.delete(user.id); gw.broadcast({ type: 'user_left', userId: user.id, userName: user.name }); } });
@@ -430,6 +503,20 @@ function onListening() {
     global.scheduler.start();
     log.info('scheduler started');
   } catch (e) { log.error('scheduler failed to start:', e.message); }
+
+  try {
+    const TaskScheduler = require('./services/task-scheduler');
+    global.taskScheduler = new TaskScheduler({
+      sendFn,
+      broadcast: gw.broadcast,
+      getAgents: () => gw.knownAgents.length ? gw.knownAgents : gw.refreshKnownAgents(),
+      getGroups: () => store.groups,
+      isGwConnected: () => llmMode === 'gateway' ? gw.gwConnected : true,
+    });
+    global.taskScheduler.migrateOldSchedules(store.schedules);
+    global.taskScheduler.start();
+    log.info('task-scheduler started');
+  } catch (e) { log.error('task-scheduler failed to start:', e.message); }
 }
 
 server.on('error', (err) => {

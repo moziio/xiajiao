@@ -27,7 +27,7 @@ function renderWorkflowContacts() {
       const badge = running ? `<span class="wf-running-badge">${t('workflow.running')}</span>` : '';
       const stepsTxt = `${w.steps?.length || 0} ${t('workflow.stepsUnit')}`;
       const swid = escJs(w.id);
-      return `<div class="contact-item" onclick="openWorkflowChannel('${swid}')"><div class="contact-avatar">${esc(w.emoji || '⚙️')}</div><div class="contact-info"><div class="contact-name">${esc(w.name)} ${badge}</div><div class="contact-desc">${stepsTxt}${w.description ? ' · ' + esc(w.description) : ''}</div></div><div class="contact-action">${isOwner ? `<button class="wf-trigger-btn" onclick="event.stopPropagation();triggerWorkflow('${swid}')" title="${t('workflow.runBtn')}">▶</button><button onclick="event.stopPropagation();openWorkflowBuilder('${swid}')">${t('workflow.edit')}</button>` : ''}</div></div>`;
+      return `<div class="contact-item" onclick="openWorkflowChannel('${swid}')"><div class="contact-avatar">${esc(w.emoji || '⚙️')}</div><div class="contact-info"><div class="contact-name">${esc(w.name)} ${badge}</div><div class="contact-desc">${stepsTxt}${w.description ? ' · ' + esc(w.description) : ''}</div></div><div class="contact-action">${isOwner ? `<button class="wf-trigger-btn" onclick="event.stopPropagation();triggerWorkflow('${swid}')" title="${t('workflow.runBtn')}">▶</button><button onclick="event.stopPropagation();openWorkflowBuilder('${swid}')">${t('workflow.edit')}</button><button class="btn-icon-danger" onclick="event.stopPropagation();deleteWorkflow('${swid}')" title="${t('common.delete')}">&#128465;</button>` : ''}</div></div>`;
     }).join('');
     if (isOwner && !q) {
       h += `<div class="add-btn" onclick="openWorkflowBuilder()"><div class="add-icon">+</div> ${t('workflow.create')}</div>`;
@@ -38,8 +38,7 @@ function renderWorkflowContacts() {
 }
 
 function openWorkflowChannel(wfId) {
-  switchTab('chats');
-  switchChannel('wf_' + wfId);
+  saveDraft(); activeChannel = 'wf_' + wfId; switchTab('chats');
 }
 
 // ── Templates ──
@@ -301,7 +300,7 @@ async function triggerWorkflow(wfId) {
   const input = await appPrompt(t('workflow.triggerPrompt', {name: wfName}), '', t('workflow.triggerPH'));
   if (!input || !input.trim()) return;
   const channel = 'wf_' + wfId;
-  if (activeChannel !== channel) { switchTab('chats'); switchChannel(channel); }
+  if (activeChannel !== channel) { saveDraft(); activeChannel = channel; switchTab('chats'); }
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'chat', text: input.trim(), channel, mentions: [] }));
   }

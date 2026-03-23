@@ -106,7 +106,7 @@ function favDetailGoto() {
   const f = getFavorites().find(x => x.id === _activeFavId);
   if (!f || !f.channel) return;
   if (resolveChannelInfo(f.channel)) {
-    switchTab('chats'); switchChannel(f.channel);
+    saveDraft(); activeChannel = f.channel; switchTab('chats');
   } else {
     showToastMsg(t('fav.channelGone') || '\u8BE5\u4F1A\u8BDD\u5DF2\u4E0D\u5B58\u5728', 'warning');
   }

@@ -1,10 +1,59 @@
 {
   "agents": [
     {
-      "id": "my-assistant",
-      "name": "My Assistant",
-      "model": "bailian/qwen-plus",
-      "createdAt": 0
+      "id": "xiajiao-butler",
+      "name": "虾饺管家",
+      "emoji": "🤖",
+      "model": "",
+      "createdAt": 0,
+      "tools": {
+        "allow": ["manage_channel", "manage_schedule", "memory_write", "memory_search", "web_search"]
+      },
+      "autoInjectMemory": true
+    },
+    {
+      "id": "novelist",
+      "name": "小说家",
+      "emoji": "✍️",
+      "model": "",
+      "createdAt": 0,
+      "tools": {
+        "allow": ["memory_write", "memory_search", "web_search"]
+      },
+      "autoInjectMemory": true
+    },
+    {
+      "id": "editor",
+      "name": "编辑",
+      "emoji": "📝",
+      "model": "",
+      "createdAt": 0,
+      "tools": {
+        "allow": ["memory_write", "memory_search"]
+      },
+      "autoInjectMemory": true
+    },
+    {
+      "id": "translator",
+      "name": "翻译官",
+      "emoji": "🌐",
+      "model": "",
+      "createdAt": 0,
+      "tools": {
+        "allow": ["memory_write", "memory_search", "web_search"]
+      },
+      "autoInjectMemory": true
+    },
+    {
+      "id": "coder",
+      "name": "代码助手",
+      "emoji": "💻",
+      "model": "",
+      "createdAt": 0,
+      "tools": {
+        "allow": ["memory_write", "memory_search", "web_search", "rag_query"]
+      },
+      "autoInjectMemory": true
     }
   ]
 }

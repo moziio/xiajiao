@@ -3,9 +3,24 @@
 let activeSettingsTab = 'general';
 
 const KB_TEXT_EXTS = ['.md','.txt','.json','.csv','.yaml','.yml','.xml','.html','.css','.js','.ts','.py','.java','.go','.rs','.sql','.sh','.bat','.log','.ini','.cfg','.toml','.env'];
-const KB_BIN_EXTS = ['.pdf','.doc','.docx','.xls','.xlsx','.ppt','.pptx','.png','.jpg','.jpeg','.gif','.svg','.webp'];
+const KB_BIN_EXTS = ['.pdf'];
+const KB_UNSUPPORTED_EXTS = ['.doc','.docx','.xls','.xlsx','.ppt','.pptx','.png','.jpg','.jpeg','.gif','.svg','.webp','.bmp'];
 const KB_ACCEPT = KB_TEXT_EXTS.concat(KB_BIN_EXTS).join(',');
+const KB_MAX_TEXT_SIZE = 2 * 1024 * 1024;
+const KB_MAX_PDF_SIZE = 5 * 1024 * 1024;
+const KB_MAX_FILES = 50;
 function isKbTextFile(name) { const ext = (name || '').toLowerCase().replace(/^.*(\.\w+)$/, '$1'); return KB_TEXT_EXTS.includes(ext); }
+function validateKbFile(file) {
+  const ext = (file.name || '').toLowerCase().replace(/^.*(\.\w+)$/, '$1');
+  if (KB_UNSUPPORTED_EXTS.includes(ext)) {
+    if (['.doc','.docx','.xls','.xlsx','.ppt','.pptx'].includes(ext)) return { ok: false, msg: t('train.kbUnsupportedOffice') };
+    return { ok: false, msg: t('train.kbUnsupportedImage') };
+  }
+  if (!KB_TEXT_EXTS.includes(ext) && !KB_BIN_EXTS.includes(ext)) return { ok: false, msg: t('train.kbUnsupportedType') };
+  const maxSize = ext === '.pdf' ? KB_MAX_PDF_SIZE : KB_MAX_TEXT_SIZE;
+  if (file.size > maxSize) return { ok: false, msg: t('train.kbFileTooLarge', { limit: (maxSize / 1024 / 1024).toFixed(0) }) };
+  return { ok: true };
+}
 function kbFileIcon(name) {
   const n = (name || '').toLowerCase();
   if (/\.(md|txt|log)$/.test(n)) return '\u{1F4DD}';
@@ -19,6 +34,7 @@ function kbFileIcon(name) {
 }
 
 let AGENTS = [], customGroups = [], availableModels = [], communityTopics = [], communityPosts = [], schedulesList = [], workflowDefs = [];
+let _extChannelMap = {};
 let activeTab = 'chats', activeChannel = null, activeCommunityTopic = null, communityUnread = 0;
 let _lastChatsChannel = null;
 let lastCommunityView = null;
@@ -28,6 +44,16 @@ let _guestCanChat = true;
 const _ROLE_LEVEL = { owner: 3, admin: 2, member: 1, guest: 0 };
 function canManage() { return (_ROLE_LEVEL[myRole] || 0) >= 2; }
 function canChat() { return (_ROLE_LEVEL[myRole] || 0) >= 1 || (myRole === 'guest' && _guestCanChat); }
+function loadExtChannelMap() {
+  authFetch('/api/channels').then(r => r.json()).then(data => {
+    _extChannelMap = {};
+    for (const ch of (data.channels || [])) {
+      _extChannelMap[ch.id] = { name: ch.name || ch.type || '', agentId: ch.config?.imAgentId || '' };
+    }
+    if (typeof renderChatList === 'function') renderChatList();
+  }).catch(() => {});
+}
+
 let typingTimer = null, reconnectDelay = 1000, reconnectHandle = null, streamingText = new Map();
 const channelDrafts = new Map();
 const unreadCounts = new Map();
@@ -81,6 +107,23 @@ function resolveChannelInfo(c) {
   }
   const g = customGroups.find(x => x.id === c); if (g) return { id: g.id, name: g.name, emoji: g.emoji || '\u{1F465}', type: 'custom-group', members: g.members };
   const a = AGENTS.find(x => x.id === c); if (a) return { id: a.id, name: a.name, emoji: a.emoji, type: 'direct' };
+  if (c && c.startsWith('ext-')) {
+    const body = c.slice(4);
+    const chId = Object.keys(_extChannelMap).find(k => body.startsWith(k + '-')) || '';
+    const chMeta = chId ? _extChannelMap[chId] : null;
+    const chName = chMeta?.name || '';
+    const msgs = allMessages.filter(m => m.channel === c);
+    const rawName = msgs.find(m => m.type === 'user')?.userName || '';
+    const isOpaque = !rawName || /^(ou_|cli_)[a-f0-9]{8,}$/i.test(rawName);
+    const agentId = chMeta?.agentId || '';
+    const agentInfo = agentId ? AGENTS.find(x => x.id === agentId) : msgs.find(m => m.type === 'agent') ? AGENTS.find(x => x.id === msgs.find(m => m.type === 'agent').agent) : null;
+    const parts = [];
+    if (chName) parts.push(chName);
+    if (!isOpaque && rawName) parts.push(rawName);
+    if (agentInfo) parts.push(agentInfo.name);
+    if (!parts.length) parts.push('外部会话');
+    return { id: c, name: parts.join(' · '), emoji: '🌐', type: 'external' };
+  }
   return null;
 }
 function resolveAuthor(type, id) {

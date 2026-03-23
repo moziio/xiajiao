@@ -10,7 +10,7 @@ const schema = {
     type: 'object',
     properties: {
       query: { type: 'string', description: '搜索查询语句' },
-      topK: { type: 'number', description: '返回最多 N 条结果（默认 5）' },
+      topK: { type: 'number', description: '返回最多 N 条结果（默认 3）' },
       fileFilter: { type: 'string', description: '可选，仅搜索指定文件名的内容' },
     },
     required: ['query'],
@@ -20,7 +20,7 @@ const schema = {
 async function handler(args, context) {
   const { agentId } = context;
   const query = args.query || '';
-  const topK = args.topK || 5;
+  const topK = args.topK || undefined;
   const fileFilter = args.fileFilter || undefined;
 
   if (!query.trim()) {

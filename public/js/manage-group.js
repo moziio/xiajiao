@@ -217,7 +217,9 @@ function editCollabChain(gid) {
   const members = (g.members || []).map(mid => AGENTS.find(a => a.id === mid)).filter(Boolean);
 
   let h = '<div class="chain-panel">';
-  h += '<div class="chain-panel-hd"><span class="chain-panel-title">🔗 协作链</span><button class="modal-close" onclick="closeManagePanel()">&times;</button></div>';
+  h += '<div class="chain-panel-hd"><span class="chain-panel-title">🔗 协作链</span>';
+  h += '<button class="collab-flow-btn" style="margin-left:auto;margin-right:8px" onclick="closeManagePanel();showFlowPanelForChannel(\'' + sg + '\')">📋 协作流记录</button>';
+  h += '<button class="modal-close" onclick="closeManagePanel()">&times;</button></div>';
 
   if (chain.length === 0) {
     h += '<div class="chain-empty">尚未配置，添加 Agent 后消息将按顺序自动接力</div>';

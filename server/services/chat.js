@@ -1,11 +1,31 @@
 const store = require('./storage');
+const { createLogger } = require('../middleware/logger');
+const log = createLogger('chat');
 
 let _sendFn = null;
 let _getAgentsFn = null;
+let _broadcastFn = null;
 
-function init({ sendFn, getAgentsFn }) {
+function init({ sendFn, getAgentsFn, broadcastFn }) {
   _sendFn = sendFn;
   _getAgentsFn = getAgentsFn;
+  _broadcastFn = broadcastFn || (() => {});
+}
+
+function _safeSend(channel, agentId, text, opts) {
+  try {
+    const result = _sendFn(channel, agentId, text, opts);
+    if (result && typeof result.catch === 'function') {
+      result.catch(err => {
+        log.error(`sendFn failed for agent=${agentId} channel=${channel}:`, err.message);
+        _broadcastFn({ type: 'agent_error', channel, error: `Agent 错误: ${err.message}` });
+      });
+    }
+    return result;
+  } catch (err) {
+    log.error(`sendFn threw for agent=${agentId} channel=${channel}:`, err.message);
+    _broadcastFn({ type: 'agent_error', channel, error: `Agent 错误: ${err.message}` });
+  }
 }
 
 function getAgents() {
@@ -34,31 +54,31 @@ async function routeGroupMessage(channel, mentions, content) {
       ? (grp.members || []).filter(mid => agents.find(a => a.id === mid))
       : agents.map(a => a.id);
     for (const mid of members) {
-      _sendFn(channel, mid, ctx + content, { _skipChain: true });
+      _safeSend(channel, mid, ctx + content, { _skipChain: true });
       await new Promise(r => setTimeout(r, 500));
     }
     return;
   }
 
   if (mentions.length > 0) {
-    for (const mid of mentions) { _sendFn(channel, mid, ctx + content, { _skipChain: true }); }
+    for (const mid of mentions) { _safeSend(channel, mid, ctx + content, { _skipChain: true }); }
     return;
   }
 
   if (isCustomGroup) {
     const chain = grp.collabChain;
     const responderId = (chain && chain.length) ? chain[0].agentId : (grp.leader || grp.members?.[0]);
-    if (responderId) _sendFn(channel, responderId, ctx + content);
+    if (responderId) _safeSend(channel, responderId, ctx + content);
     return;
   }
 
   if (channel === 'group') {
     const agentId = detectAgentFromText(content, agents) || agents.find(a => a.isDefault)?.id || agents[0]?.id || 'main';
-    _sendFn(channel, agentId, content);
+    _safeSend(channel, agentId, content);
     return;
   }
 
-  _sendFn(channel, channel, content);
+  _safeSend(channel, channel, content);
 }
 
 function detectAgentFromText(text, agents) {

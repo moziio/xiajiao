@@ -1,5 +1,5 @@
 /* 虾饺 (Xiajiao) — Activity Feed Module (Layer 2)
- * Replaces the former "Community/虾区" SNS module with a read-only
+ * Replaces the former "Community" SNS module with a read-only
  * Agent event timeline: task completions, alerts, meeting summaries, system events.
  */
 
@@ -50,8 +50,8 @@ function showMetrics() { activeSettingsTab = 'metrics'; openSettings(); }
 async function showSchedules() {
   saveDraft(); activeChannel = null; lastCommunityView = 'schedules'; renderCommunityNav();
   hideAllViews(); scheduleView.classList.remove('hidden'); scheduleView.style.display = 'flex';
-  const btn = $('#createSchedBtn'); if (btn) btn.classList.toggle('hidden', !canManage());
-  await loadSchedules(); renderScheduleList();
+  const taskBtn = $('#createTaskBtn'); if (taskBtn) taskBtn.classList.toggle('hidden', !canManage());
+  await Promise.all([loadSchedules(), loadTasks()]); renderScheduleList();
 }
 
 async function refreshActivityFeed() {

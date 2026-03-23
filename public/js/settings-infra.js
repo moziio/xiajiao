@@ -170,3 +170,213 @@ function toggleGwToolEvents() {
   authFetch('/api/settings', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ gatewayToolEvents: isOn }) });
   showToastMsg(t('settings.saved'));
 }
+
+// ══════════════════════════════════════════════════════════════
+// ── MCP Settings ──
+// ══════════════════════════════════════════════════════════════
+
+let _mcpServers = {};
+
+async function renderSettingsMcp(ct) {
+  ct.innerHTML = '<div class="settings-section" id="stMcpSection"><div style="color:var(--text3);padding:20px;text-align:center">' + t('common.loading') + '</div></div>';
+  try {
+    const r = await (await authFetch('/api/settings/mcp')).json();
+    _mcpServers = r.servers || {};
+  } catch { _mcpServers = {}; }
+  _renderMcpList();
+}
+
+function _renderMcpList() {
+  const el = document.getElementById('stMcpSection'); if (!el) return;
+  const ids = Object.keys(_mcpServers);
+
+  let h = '<div class="settings-section-title">' + t('settings.mcpTitle') + '</div>';
+  h += '<div class="settings-section-desc">' + t('settings.mcpDesc') + '</div>';
+
+  if (!ids.length) {
+    h += '<div class="mcp-empty"><div class="mcp-empty-icon">🔌</div><div class="mcp-empty-text">' + t('settings.mcpEmpty') + '</div>' +
+      '<button class="settings-btn settings-btn-primary" onclick="_mcpShowAddForm()">' + t('settings.mcpAddServer') + '</button></div>';
+  } else {
+    h += '<div class="mcp-server-list">';
+    for (const sid of ids) {
+      const srv = _mcpServers[sid];
+      const isHttp = srv.transport === 'http';
+      const statusCls = srv.status === 'connected' ? 'online' : (srv.status === 'disabled' ? 'disabled' : 'offline');
+      const statusText = srv.status === 'connected' ? t('settings.mcpConnected') : (srv.status === 'disabled' ? t('settings.mcpDisabled') : t('settings.mcpDisconnected'));
+      const toolInfo = srv.toolCount > 0 ? t('settings.mcpTools', {count: srv.toolCount}) : '';
+
+      h += '<div class="mcp-server-card" id="mcpCard-' + escH(sid) + '">';
+      h += '<div class="mcp-server-header">';
+      h += '<div class="mcp-server-info">';
+      h += '<div class="mcp-server-name">' + escH(sid) + '</div>';
+      h += '<div class="mcp-server-meta">';
+      h += '<span class="mcp-badge mcp-badge-' + (isHttp ? 'http' : 'stdio') + '">' + (isHttp ? 'HTTP' : 'STDIO') + '</span>';
+      h += '<span class="mcp-status-dot ' + statusCls + '"></span><span class="mcp-status-text">' + statusText + '</span>';
+      if (toolInfo) h += '<span class="mcp-tool-count">' + toolInfo + '</span>';
+      h += '</div></div>';
+      h += '<div class="mcp-server-actions">';
+      if (srv.enabled !== false) {
+        if (srv.status === 'connected') {
+          h += '<button class="settings-btn settings-btn-outline" onclick="_mcpDisconnect(\'' + escJs(sid) + '\')">' + t('settings.mcpDisconnect') + '</button>';
+        } else {
+          h += '<button class="settings-btn settings-btn-outline" onclick="_mcpConnect(\'' + escJs(sid) + '\')">' + t('settings.mcpConnect') + '</button>';
+        }
+      }
+      h += '<button class="settings-btn settings-btn-outline" onclick="_mcpToggleEnabled(\'' + escJs(sid) + '\')">' + (srv.enabled !== false ? t('settings.mcpDisable') : t('settings.mcpEnable')) + '</button>';
+      h += '<button class="settings-btn settings-btn-outline" onclick="_mcpEdit(\'' + escJs(sid) + '\')">' + t('settings.mcpEdit') + '</button>';
+      h += '<button class="settings-btn settings-btn-danger" onclick="_mcpDelete(\'' + escJs(sid) + '\')">' + t('settings.mcpDelete') + '</button>';
+      h += '</div></div>';
+
+      h += '<div class="mcp-server-detail">';
+      if (isHttp) {
+        h += '<div class="mcp-detail-row"><span class="mcp-detail-label">' + t('settings.mcpUrl') + ':</span> <code>' + escH(srv.url || '-') + '</code></div>';
+        if (srv.hasHeaders) h += '<div class="mcp-detail-row"><span class="mcp-detail-label">Headers:</span> ' + t('settings.mcpHeadersConfigured') + '</div>';
+      } else {
+        h += '<div class="mcp-detail-row"><span class="mcp-detail-label">' + t('settings.mcpCommand') + ':</span> <code>' + escH(srv.command || '-') + '</code></div>';
+        if (srv.args && srv.args.length) h += '<div class="mcp-detail-row"><span class="mcp-detail-label">' + t('settings.mcpArgs') + ':</span> <code>' + escH(srv.args.join(' ')) + '</code></div>';
+        if (srv.hasEnv) h += '<div class="mcp-detail-row"><span class="mcp-detail-label">ENV:</span> ' + t('settings.mcpEnvConfigured') + '</div>';
+      }
+      h += '</div>';
+
+      h += '<div id="mcpEdit-' + escH(sid) + '"></div>';
+      h += '</div>';
+    }
+    h += '</div>';
+    h += '<div style="margin-top:16px"><button class="settings-btn settings-btn-primary" onclick="_mcpShowAddForm()">+ ' + t('settings.mcpAddServer') + '</button></div>';
+  }
+
+  h += '<div id="mcpAddForm" class="hidden"></div>';
+  el.innerHTML = h;
+}
+
+function _mcpShowAddForm() {
+  const el = document.getElementById('mcpAddForm'); if (!el) return;
+  if (!el.classList.contains('hidden')) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  el.innerHTML = '<div class="add-form" style="margin-top:16px">' +
+    '<div class="add-form-header"><div class="add-form-title">' + t('settings.mcpAddServerTitle') + '</div>' +
+    '<button class="add-form-close" onclick="_mcpShowAddForm()">&times;</button></div>' +
+    '<div class="add-form-row">' +
+    '<div class="form-field"><label class="form-label">' + t('settings.mcpServerId') + '</label><input class="settings-input" id="mcpAddId" placeholder="' + t('settings.mcpServerIdPH') + '" autocomplete="off"></div>' +
+    '<div class="form-field"><label class="form-label">' + t('settings.mcpTransport') + '</label><select class="settings-select" id="mcpAddTransport" onchange="_mcpAddTransportChange()">' +
+    '<option value="stdio">' + t('settings.mcpTransportStdio') + '</option><option value="http">' + t('settings.mcpTransportHttp') + '</option></select></div></div>' +
+    '<div id="mcpAddFields"></div>' +
+    '<div class="add-form-row" style="margin-top:12px"><button class="settings-btn settings-btn-primary" onclick="_mcpAdd()">' + t('common.add') + '</button>' +
+    '<button class="settings-btn settings-btn-outline" onclick="_mcpShowAddForm()">' + t('common.cancel') + '</button></div></div>';
+  _mcpAddTransportChange();
+}
+
+function _mcpAddTransportChange() {
+  const transport = document.getElementById('mcpAddTransport')?.value || 'stdio';
+  const el = document.getElementById('mcpAddFields'); if (!el) return;
+  if (transport === 'http') {
+    el.innerHTML = '<div class="add-form-row"><div class="form-field" style="flex:2"><label class="form-label">' + t('settings.mcpUrl') + '</label>' +
+      '<input class="settings-input" id="mcpAddUrl" placeholder="http://127.0.0.1:3000/mcp" autocomplete="off"></div></div>';
+  } else {
+    el.innerHTML = '<div class="add-form-row"><div class="form-field"><label class="form-label">' + t('settings.mcpCommand') + '</label>' +
+      '<input class="settings-input" id="mcpAddCmd" placeholder="npx" autocomplete="off"></div>' +
+      '<div class="form-field" style="flex:2"><label class="form-label">' + t('settings.mcpArgs') + '</label>' +
+      '<input class="settings-input" id="mcpAddArgs" placeholder="-y @anthropic/mcp-server-xxx" autocomplete="off"></div></div>';
+  }
+}
+
+async function _mcpAdd() {
+  const id = document.getElementById('mcpAddId')?.value?.trim();
+  if (!id) { showToastMsg(t('settings.mcpIdRequired'), 'error'); return; }
+  if (_mcpServers[id]) { showToastMsg(t('settings.mcpIdExists'), 'error'); return; }
+  const transport = document.getElementById('mcpAddTransport')?.value || 'stdio';
+  const body = { id, transport, enabled: true };
+  if (transport === 'http') {
+    body.url = document.getElementById('mcpAddUrl')?.value?.trim() || '';
+    if (!body.url) { showToastMsg(t('settings.mcpUrlRequired'), 'error'); return; }
+  } else {
+    body.command = document.getElementById('mcpAddCmd')?.value?.trim() || '';
+    const argsStr = document.getElementById('mcpAddArgs')?.value?.trim() || '';
+    body.args = argsStr ? argsStr.split(/\s+/) : [];
+    if (!body.command) { showToastMsg(t('settings.mcpCmdRequired'), 'error'); return; }
+  }
+  try {
+    await authFetch('/api/settings/mcp', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    showToastMsg(t('settings.saved'));
+    await renderSettingsMcp(document.getElementById('settingsContent'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+function _mcpEdit(sid) {
+  const el = document.getElementById('mcpEdit-' + sid); if (!el) return;
+  if (el.innerHTML) { el.innerHTML = ''; return; }
+  const srv = _mcpServers[sid]; if (!srv) return;
+  const isHttp = srv.transport === 'http';
+
+  let h = '<div class="add-form" style="margin-top:10px;border:none;padding:8px 0">';
+  if (isHttp) {
+    h += '<div class="add-form-row"><div class="form-field" style="flex:2"><label class="form-label">' + t('settings.mcpUrl') + '</label>' +
+      '<input class="settings-input" id="mcpEditUrl-' + escH(sid) + '" value="' + escH(srv.url || '') + '" autocomplete="off"></div></div>';
+  } else {
+    h += '<div class="add-form-row"><div class="form-field"><label class="form-label">' + t('settings.mcpCommand') + '</label>' +
+      '<input class="settings-input" id="mcpEditCmd-' + escH(sid) + '" value="' + escH(srv.command || '') + '" autocomplete="off"></div>' +
+      '<div class="form-field" style="flex:2"><label class="form-label">' + t('settings.mcpArgs') + '</label>' +
+      '<input class="settings-input" id="mcpEditArgs-' + escH(sid) + '" value="' + escH((srv.args || []).join(' ')) + '" autocomplete="off"></div></div>';
+  }
+  h += '<div class="add-form-row"><button class="settings-btn settings-btn-primary" onclick="_mcpSaveEdit(\'' + escJs(sid) + '\')">' + t('common.save') + '</button>' +
+    '<button class="settings-btn settings-btn-outline" onclick="_mcpEdit(\'' + escJs(sid) + '\')">' + t('common.cancel') + '</button></div></div>';
+  el.innerHTML = h;
+}
+
+async function _mcpSaveEdit(sid) {
+  const srv = _mcpServers[sid]; if (!srv) return;
+  const isHttp = srv.transport === 'http';
+  const body = { id: sid, transport: srv.transport, enabled: srv.enabled };
+  if (isHttp) {
+    body.url = document.getElementById('mcpEditUrl-' + sid)?.value?.trim() || '';
+  } else {
+    body.command = document.getElementById('mcpEditCmd-' + sid)?.value?.trim() || '';
+    const argsStr = document.getElementById('mcpEditArgs-' + sid)?.value?.trim() || '';
+    body.args = argsStr ? argsStr.split(/\s+/) : [];
+  }
+  try {
+    await authFetch('/api/settings/mcp', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    showToastMsg(t('settings.saved'));
+    await renderSettingsMcp(document.getElementById('settingsContent'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+async function _mcpToggleEnabled(sid) {
+  const srv = _mcpServers[sid]; if (!srv) return;
+  const newEnabled = srv.enabled === false;
+  try {
+    await authFetch('/api/settings/mcp', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: sid, enabled: newEnabled }) });
+    showToastMsg(t('settings.saved'));
+    await renderSettingsMcp(document.getElementById('settingsContent'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+async function _mcpConnect(sid) {
+  showToastMsg(t('settings.mcpConnecting'));
+  try {
+    const r = await (await authFetch('/api/settings/mcp/' + encodeURIComponent(sid) + '/connect', { method: 'POST' })).json();
+    if (r.ok) {
+      showToastMsg(t('settings.mcpConnectSuccess') + (r.toolCount ? ' (' + t('settings.mcpTools', {count: r.toolCount}) + ')' : ''));
+    } else {
+      showToastMsg(t('settings.mcpConnectFail') + ': ' + (r.error || ''), 'error');
+    }
+    await renderSettingsMcp(document.getElementById('settingsContent'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+async function _mcpDisconnect(sid) {
+  try {
+    await authFetch('/api/settings/mcp/' + encodeURIComponent(sid) + '/disconnect', { method: 'POST' });
+    showToastMsg(t('settings.mcpDisconnectSuccess'));
+    await renderSettingsMcp(document.getElementById('settingsContent'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}
+
+async function _mcpDelete(sid) {
+  if (!await appConfirm(t('settings.mcpDeleteConfirm', {id: sid}))) return;
+  try {
+    await authFetch('/api/settings/mcp/' + encodeURIComponent(sid), { method: 'DELETE' });
+    showToastMsg(t('settings.saved'));
+    await renderSettingsMcp(document.getElementById('settingsContent'));
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+}

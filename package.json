@@ -5,24 +5,35 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "test": "node --test server/tests/"
+    "test": "node --test --test-force-exit server/tests/*.js"
   },
   "keywords": [
     "ai",
-    "agent",
+    "ai-agent",
+    "multi-agent",
+    "agent-collaboration",
     "im",
+    "group-chat",
     "chatbot",
     "llm",
     "rag",
+    "tool-calling",
+    "agent-memory",
     "workflow",
     "sqlite",
-    "websocket"
+    "websocket",
+    "self-hosted",
+    "lightweight",
+    "no-dependency",
+    "pwa"
   ],
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"
   },
   "dependencies": {
+    "@larksuiteoapi/node-sdk": "^1.59.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "formidable": "^3.5.2",
     "node-cron": "^4.2.1",
     "pdf-parse": "^1.1.4",

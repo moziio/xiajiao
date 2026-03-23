@@ -20,12 +20,30 @@ function _evictIndexCache() {
   }
   if (oldestKey) _indexCache.delete(oldestKey);
 }
+
 const TEXT_EXTS = new Set(['.md', '.txt', '.json', '.csv', '.yaml', '.yml', '.xml', '.html', '.css', '.js', '.ts', '.py', '.java', '.go', '.rs', '.sql', '.sh', '.bat', '.log', '.ini', '.cfg', '.toml', '.env']);
+
+const LIMITS = {
+  MAX_FILES_PER_AGENT: 50,
+  MAX_TEXT_FILE_SIZE: 2 * 1024 * 1024,    // 2 MB
+  MAX_PDF_FILE_SIZE: 5 * 1024 * 1024,     // 5 MB
+  MAX_CHUNKS_PER_AGENT: 5000,
+  MAX_CONTEXT_CHARS: 2000,
+  PDF_MIN_TEXT_LENGTH: 50,
+  PDF_GARBLE_THRESHOLD: 0.3,
+};
+
+const UNSUPPORTED_EXTS = {
+  '.docx': 'Office', '.doc': 'Office', '.xlsx': 'Office', '.xls': 'Office',
+  '.pptx': 'Office', '.ppt': 'Office',
+  '.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.gif': 'image',
+  '.bmp': 'image', '.svg': 'image', '.webp': 'image',
+};
 
 function getRAGConfig() {
   const defaults = {
-    enabled: true, embeddingModel: 'text-embedding-v3', embeddingProvider: 'qwen-plus',
-    topK: 5, chunkSize: 500, chunkOverlap: 50,
+    enabled: false,
+    topK: 3, chunkSize: 500, chunkOverlap: 50,
     parentChunkSize: 800, childChunkSize: 200,
     enableReranking: false,
   };
@@ -33,6 +51,11 @@ function getRAGConfig() {
     const s = JSON.parse(fs.readFileSync(cfg.SETTINGS_FILE, 'utf8'));
     return { ...defaults, ...s.rag };
   } catch { return defaults; }
+}
+
+function _getEmbeddingModelId() {
+  const routing = store.getCapabilityRouting();
+  return routing.embedding || null;
 }
 
 function resolveWorkspace(agentId) {
@@ -83,17 +106,42 @@ function fileHash(filepath) {
 }
 
 function shouldIndex(filename) {
-  if (filename.startsWith('.')) return false;
-  if (SKIP_FILES.has(filename)) return false;
+  if (filename.startsWith('.')) return { ok: false, reason: 'hidden' };
+  if (SKIP_FILES.has(filename)) return { ok: false, reason: 'system' };
   const ext = path.extname(filename).toLowerCase();
-  return TEXT_EXTS.has(ext) || ext === '.pdf';
+  if (TEXT_EXTS.has(ext)) return { ok: true };
+  if (ext === '.pdf') return { ok: true, isPdf: true };
+  if (UNSUPPORTED_EXTS[ext]) {
+    const kind = UNSUPPORTED_EXTS[ext];
+    if (kind === 'Office') return { ok: false, reason: 'unsupported_office' };
+    if (kind === 'image') return { ok: false, reason: 'unsupported_image' };
+    return { ok: false, reason: 'unsupported' };
+  }
+  return { ok: false, reason: 'unknown_type' };
+}
+
+function canIndex(filename) {
+  const r = shouldIndex(filename);
+  return r.ok === true;
 }
 
 // ── Text Extraction ──
 
 async function extractText(filepath) {
   const ext = path.extname(filepath).toLowerCase();
-  if (ext === '.pdf') return extractPdfText(filepath);
+  if (ext === '.pdf') {
+    const result = await extractPdfText(filepath);
+    if (result.quality === 'scan') {
+      throw new Error('PDF_SCAN: 该 PDF 可能是扫描件或图片型文档，暂不支持');
+    }
+    if (result.quality === 'garbled') {
+      log.warn(`PDF garble rate ${result.garbleRate}% for ${filepath}`);
+    }
+    if (result.quality === 'error') {
+      throw new Error('PDF_ERROR: PDF 解析失败 — ' + result.reason);
+    }
+    return result.text;
+  }
   return fs.readFileSync(filepath, 'utf8');
 }
 
@@ -102,10 +150,22 @@ async function extractPdfText(filepath) {
     const pdfParse = require('pdf-parse');
     const buf = fs.readFileSync(filepath);
     const data = await pdfParse(buf);
-    return data.text || '';
+    const text = (data.text || '').trim();
+
+    if (text.length < LIMITS.PDF_MIN_TEXT_LENGTH) {
+      return { text: '', quality: 'scan', reason: 'scan_or_empty' };
+    }
+
+    const cjkOrAscii = text.replace(/[\x00-\x7F\u4e00-\u9fff\u3000-\u303f\uff00-\uffef\u3400-\u4dbf\u{20000}-\u{2a6df}]/gu, '');
+    const garbleRate = cjkOrAscii.length / text.length;
+    if (garbleRate > LIMITS.PDF_GARBLE_THRESHOLD) {
+      return { text, quality: 'garbled', reason: 'high_garble_rate', garbleRate: Math.round(garbleRate * 100) };
+    }
+
+    return { text, quality: 'ok' };
   } catch (err) {
     log.error(`pdf extract failed for ${filepath}:`, err.message);
-    return '';
+    return { text: '', quality: 'error', reason: err.message };
   }
 }
 
@@ -203,33 +263,36 @@ function chunkTextHierarchical(text, opts = {}) {
 // ── Embedding API ──
 
 function getEmbeddingProvider() {
-  const ragCfg = getRAGConfig();
   store.loadModels();
-  const provId = ragCfg.embeddingProvider || 'qwen-plus';
-  const prov = (store.localModels.providers || {})[provId];
 
-  let baseUrl, apiKey;
-  if (prov) {
-    baseUrl = prov.baseUrl;
-    apiKey = prov.apiKey;
-  } else {
-    const first = Object.entries(store.localModels.providers || {})[0];
-    if (!first) return null;
-    baseUrl = first[1].baseUrl;
-    apiKey = first[1].apiKey;
+  // 从能力路由获取 embedding 配置
+  const routing = store.getCapabilityRouting();
+  const routedModelId = routing.embedding;
+  if (!routedModelId) {
+    return null; // 未配置向量化模型
   }
 
-  if (ragCfg.embeddingApiKey) {
-    apiKey = ragCfg.embeddingApiKey;
+  const routedModel = (store.localModels.models || []).find(m => m.id === routedModelId);
+  if (!routedModel) {
+    return null; // 配置的模型不存在
   }
 
-  if (ragCfg.embeddingBaseUrl) {
-    baseUrl = ragCfg.embeddingBaseUrl;
-  } else if (/coding\.dashscope/i.test(baseUrl)) {
+  const prov = (store.localModels.providers || {})[routedModel.provider];
+  if (!prov || !prov.baseUrl || !prov.apiKey) {
+    return null; // Provider 配置不完整
+  }
+
+  let baseUrl = prov.baseUrl;
+  // DashScope 编码助手地址需要切换到兼容模式
+  if (/coding\.dashscope/i.test(baseUrl)) {
     baseUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
   }
 
-  return { baseUrl, apiKey, model: ragCfg.embeddingModel };
+  return {
+    baseUrl,
+    apiKey: prov.apiKey,
+    model: routedModel.name || routedModelId.split('/').pop()
+  };
 }
 
 const _embCache = new Map();
@@ -259,7 +322,7 @@ async function getEmbeddings(texts) {
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
       if (resp.status === 401) {
-        throw new Error('Embedding API Key 无效。请在 im-settings.json 的 rag 中配置 embeddingApiKey（需要百炼平台标准密钥，sk-sp 编码助手密钥不支持 Embedding）');
+        throw new Error('Embedding API Key 无效。请在「模型」→「能力路由」中确认向量化模型的 Provider 配置了正确的 API Key');
       }
       throw new Error(`Embedding API ${resp.status}: ${errText.slice(0, 200)}`);
     }
@@ -434,7 +497,7 @@ ${chunksText}
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${provider.apiKey}` },
       body: JSON.stringify({
-        model: model.name || model.id,
+        model: model.id.split('/').pop(),
         messages: [{ role: 'user', content: prompt }],
         temperature: 0,
         max_tokens: 200,
@@ -477,13 +540,30 @@ function getIndexingProgress(agentId) {
 async function indexFile(agentId, filename) {
   const ragCfg = getRAGConfig();
   if (!ragCfg.enabled) return { ok: false, reason: 'RAG disabled' };
-  if (!shouldIndex(filename)) return { ok: false, reason: 'file type excluded' };
+
+  const check = shouldIndex(filename);
+  if (!check.ok) {
+    if (check.reason === 'unsupported_office') return { ok: false, reason: '暂不支持 Office 文档，后续版本将支持' };
+    if (check.reason === 'unsupported_image') return { ok: false, reason: '暂不支持图片 OCR，后续版本将支持' };
+    return { ok: false, reason: 'file type excluded' };
+  }
+
+  const embeddingModelId = _getEmbeddingModelId();
+  if (!embeddingModelId) return { ok: false, reason: '未配置向量化模型，请在「模型」→「能力路由」中配置 Embedding 模型' };
 
   const wsDir = resolveWorkspace(agentId);
   if (!wsDir) return { ok: false, reason: 'agent not found' };
 
   const filepath = path.join(wsDir, filename);
   if (!fs.existsSync(filepath)) return { ok: false, reason: 'file not found' };
+
+  const stat = fs.statSync(filepath);
+  const ext = path.extname(filename).toLowerCase();
+  const maxSize = ext === '.pdf' ? LIMITS.MAX_PDF_FILE_SIZE : LIMITS.MAX_TEXT_FILE_SIZE;
+  if (stat.size > maxSize) {
+    const limitMB = (maxSize / 1024 / 1024).toFixed(0);
+    return { ok: false, reason: `文件过大（${(stat.size / 1024 / 1024).toFixed(1)}MB），${ext === '.pdf' ? 'PDF' : '文本'}文件最大 ${limitMB}MB` };
+  }
 
   const hash = fileHash(filepath);
   const index = loadIndex(wsDir);
@@ -521,7 +601,6 @@ async function indexFile(agentId, filename) {
 
     removeFileFromIndex(index, filename);
 
-    const ext = path.extname(filename).toLowerCase();
     const indexedAt = Date.now();
     const meta = { fileName: filename, fileType: ext, indexedAt };
 
@@ -539,9 +618,15 @@ async function indexFile(agentId, filename) {
       return { ok: false, error: 'no valid embeddings' };
     }
 
+    const existingChildCount = index.chunks.filter(c => c.type !== 'parent').length;
+    if (existingChildCount + newChildren.length > LIMITS.MAX_CHUNKS_PER_AGENT) {
+      saveIndex(wsDir, index);
+      return { ok: false, reason: `Chunk 数量将超限（已有 ${existingChildCount}，新增 ${newChildren.length}，上限 ${LIMITS.MAX_CHUNKS_PER_AGENT}）` };
+    }
+
     index.chunks.push(...newParents, ...newChildren);
     index.files[filename] = { hash, chunkCount: newChildren.length, parentCount: newParents.length };
-    index.model = ragCfg.embeddingModel;
+    index.model = _getEmbeddingModelId();
     index.dimension = 1024;
     index.version = 2;
     saveIndex(wsDir, index);
@@ -560,15 +645,22 @@ async function indexAgent(agentId) {
   const ragCfg = getRAGConfig();
   if (!ragCfg.enabled) return { ok: false, reason: 'RAG disabled' };
 
+  const embeddingModelId = _getEmbeddingModelId();
+  if (!embeddingModelId) return { ok: false, reason: '未配置向量化模型，请在「模型」→「能力路由」中配置 Embedding 模型' };
+
   const wsDir = resolveWorkspace(agentId);
   if (!wsDir || !fs.existsSync(wsDir)) return { ok: false, reason: 'workspace not found' };
 
   if (_indexingProgress.has(agentId)) return { ok: false, reason: 'already indexing' };
 
   const entries = fs.readdirSync(wsDir, { withFileTypes: true });
-  const files = entries.filter(e => e.isFile() && shouldIndex(e.name)).map(e => e.name);
+  const files = entries.filter(e => e.isFile() && canIndex(e.name)).map(e => e.name);
 
   if (files.length === 0) return { ok: true, files: 0, chunks: 0, reason: 'no indexable files' };
+
+  if (files.length > LIMITS.MAX_FILES_PER_AGENT) {
+    return { ok: false, reason: `文件数量超限：${files.length} 个（最多 ${LIMITS.MAX_FILES_PER_AGENT} 个）` };
+  }
 
   const progress = {
     status: 'indexing',
@@ -584,7 +676,7 @@ async function indexAgent(agentId) {
   _clearAgentFTS(agentId);
 
   log.info(`reindexing agent=${agentId}, ${files.length} files`);
-  const index = { version: 2, model: ragCfg.embeddingModel, dimension: 1024, updatedAt: 0, files: {}, chunks: [] };
+  const index = { version: 2, model: _getEmbeddingModelId(), dimension: 1024, updatedAt: 0, files: {}, chunks: [] };
   saveIndex(wsDir, index);
 
   for (const f of files) {
@@ -639,12 +731,17 @@ async function search(agentId, query, topK, options) {
   const index = loadIndex(wsDir);
   if (!index.chunks.length) return [];
 
-  if (index.model && index.model !== ragCfg.embeddingModel) {
-    log.warn(`model mismatch: index=${index.model}, config=${ragCfg.embeddingModel}. Please reindex.`);
+  const currentEmbeddingModel = _getEmbeddingModelId();
+  if (!currentEmbeddingModel) {
+    log.warn(`search skipped: no embedding model configured`);
+    return [];
+  }
+  if (index.model && index.model !== currentEmbeddingModel) {
+    log.warn(`model mismatch: index=${index.model}, config=${currentEmbeddingModel}. Please reindex.`);
     return [];
   }
 
-  topK = topK || ragCfg.topK || 5;
+  topK = topK || ragCfg.topK || 3;
   const opts = options || {};
   const fileFilter = opts.fileFilter || null;
   const isV2 = index.version >= 2;
@@ -685,6 +782,7 @@ async function search(agentId, query, topK, options) {
       candidates = [...reranked, ...candidates.slice(20)];
     }
 
+    let results;
     if (isV2) {
       const parentMap = new Map();
       for (const c of index.chunks) {
@@ -692,7 +790,7 @@ async function search(agentId, query, topK, options) {
       }
 
       const seen = new Set();
-      const results = [];
+      results = [];
       for (const c of candidates) {
         if (c.parentId && parentMap.has(c.parentId)) {
           if (seen.has(c.parentId)) continue;
@@ -706,10 +804,26 @@ async function search(agentId, query, topK, options) {
         }
         if (results.length >= topK) break;
       }
-      return results;
+    } else {
+      results = candidates.slice(0, topK).filter(s => s.score > 0.3);
     }
 
-    return candidates.slice(0, topK).filter(s => s.score > 0.3);
+    let totalChars = 0;
+    const truncated = [];
+    for (const r of results) {
+      if (totalChars >= LIMITS.MAX_CONTEXT_CHARS) {
+        r.truncated = true;
+        break;
+      }
+      const remaining = LIMITS.MAX_CONTEXT_CHARS - totalChars;
+      if (r.text.length > remaining) {
+        r.text = r.text.slice(0, remaining) + '…';
+        r.truncated = true;
+      }
+      totalChars += r.text.length;
+      truncated.push(r);
+    }
+    return truncated;
   } catch (err) {
     log.error(`search failed for agent=${agentId}:`, err.message);
     return [];
@@ -730,7 +844,7 @@ function getIndexStatus(agentId) {
   if (fs.existsSync(wsDir)) {
     const entries = fs.readdirSync(wsDir, { withFileTypes: true });
     for (const e of entries) {
-      if (!e.isFile() || !shouldIndex(e.name)) continue;
+      if (!e.isFile() || !canIndex(e.name)) continue;
       const info = index.files[e.name];
       if (info) {
         const currentHash = fileHash(path.join(wsDir, e.name));
@@ -743,15 +857,23 @@ function getIndexStatus(agentId) {
 
   const ragCfg = getRAGConfig();
   const progress = getIndexingProgress(agentId);
+  const embeddingConfigured = !!_getEmbeddingModelId();
   return {
     enabled: ragCfg.enabled,
     files: fileCount,
     chunks: chunkCount,
     updatedAt: index.updatedAt,
     detail: filesDetail,
-    modelMismatch: !!(index.model && index.model !== ragCfg.embeddingModel),
+    modelMismatch: !!(index.model && _getEmbeddingModelId() && index.model !== _getEmbeddingModelId()),
     version: index.version || 1,
     enableReranking: !!ragCfg.enableReranking,
+    embeddingConfigured,
+    limits: {
+      maxFiles: LIMITS.MAX_FILES_PER_AGENT,
+      maxTextSize: LIMITS.MAX_TEXT_FILE_SIZE,
+      maxPdfSize: LIMITS.MAX_PDF_FILE_SIZE,
+      maxChunks: LIMITS.MAX_CHUNKS_PER_AGENT,
+    },
     indexing: progress ? {
       status: progress.status,
       totalFiles: progress.totalFiles,
@@ -771,4 +893,4 @@ function clearAgentIndex(agentId) {
   _clearAgentFTS(agentId);
 }
 
-module.exports = { indexFile, indexAgent, removeFile, search, getIndexStatus, getRAGConfig, testEmbedding, getEmbeddings, cosineSimilarity, clearAgentIndex };
+module.exports = { indexFile, indexAgent, removeFile, search, getIndexStatus, getRAGConfig, testEmbedding, getEmbeddings, cosineSimilarity, clearAgentIndex, shouldIndex, canIndex, LIMITS };

@@ -23,12 +23,29 @@ function resolveAgent(agentId) {
   const agent = store.localAgents.find(a => a.id === agentId);
   if (!agent) return null;
 
-  const modelId = agent.model || store.imSettings.defaultModel || store.getFirstAvailableModel();
   store.loadModels();
-  const model = (store.localModels.models || []).find(m => m.id === modelId);
-  if (!model) return null;
-  const provider = (store.localModels.providers || {})[model.provider];
-  if (!provider) return null;
+  const allModels = store.localModels.models || [];
+  const providers = store.localModels.providers || {};
+
+  const tryResolve = (mid) => {
+    if (!mid) return null;
+    const m = allModels.find(x => x.id === mid);
+    if (!m) return null;
+    const p = providers[m.provider];
+    return p ? { model: m, provider: p } : null;
+  };
+
+  let resolved = tryResolve(agent.model);
+  if (!resolved && agent.model) {
+    log.warn(`agent "${agentId}" references missing model "${agent.model}", falling back`);
+    agent.model = '';
+    store.saveAgents();
+  }
+  if (!resolved) resolved = tryResolve(store.imSettings.defaultModel);
+  if (!resolved) resolved = tryResolve(store.getFirstAvailableModel());
+  if (!resolved) return null;
+
+  const { model, provider } = resolved;
 
   const wsDir = agent.workspace || path.join(cfg.DATA_DIR, `workspace-${agentId}`);
   let soulContent = '';
@@ -48,9 +65,12 @@ classDef data fill:#0d2a1a,stroke:#2ecc71,color:#c0ffd0
 classDef warn fill:#3a0d1a,stroke:#ff3b5c,color:#ffc0c0
 classDef decide fill:#1a1a3a,stroke:#8b5cf6,color:#e0e6ed`;
 
-async function buildMessages(agentId, channel, userText, soulContent, ragContext) {
+async function buildMessages(agentId, channel, userText, soulContent, ragContext, modelMeta) {
   const messages = [];
-  const systemBase = soulContent ? soulContent + '\n\n' + MERMAID_GUIDE : MERMAID_GUIDE;
+  let systemBase = soulContent ? soulContent + '\n\n' + MERMAID_GUIDE : MERMAID_GUIDE;
+  if (modelMeta) {
+    systemBase += `\n\n[Model] 你当前运行的底层模型是 ${modelMeta.name}（ID: ${modelMeta.id}），由 provider "${modelMeta.provider}" 提供。请以此为准回答关于你的模型身份的问题，忽略对话历史中可能存在的旧模型自称。`;
+  }
   messages.push({ role: 'system', content: systemBase });
 
   const autoInject = _shouldInjectMemory(agentId);
@@ -124,21 +144,92 @@ async function _buildMemoryBlock(agentId, userText) {
   return '以下是你的长期记忆，请在回答时适当参考（不要主动提及这些是"记忆"）：\n' + items.map((t, i) => `${i + 1}. ${t}`).join('\n');
 }
 
+async function handleDirectImageGen(channel, agentId, model, provider, userText, callOpts) {
+  const modelName = model.name || model.id.split('/').pop();
+  const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  const runKey = callOpts._isSubCall ? `${channel}:sub:${runId}` : `${channel}:${runId}`;
+  const progressText = `⏳ 正在使用「${modelName}」生成图片，请稍候...`;
+
+  const abortCtrl = new AbortController();
+  activeRuns.set(runKey, { abortCtrl, agentId, runId, ts: Date.now(), _modelId: model.id, currentText: progressText });
+
+  log.info(`direct image gen: agent="${agentId}" model="${model.id}" prompt="${userText.slice(0, 80)}"`);
+  broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'start', model: model.id });
+  broadcastFn({ type: 'agent_stream', channel, agentId, runId, text: progressText, delta: progressText, _imageProgress: true });
+
+  try {
+    const imageUrl = await imageGen.generateDirect(provider, model, userText, abortCtrl.signal);
+    const resultText = `![${userText}](${imageUrl})`;
+
+    activeRuns.delete(runKey);
+    broadcastFn({ type: 'agent_stream', channel, agentId, runId, text: resultText, delta: '' });
+    broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'end' });
+
+    const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+    store.addMessage({ id: msgId, type: 'agent', agent: agentId, channel, text: resultText, ts: Date.now(), runId });
+    broadcastFn({ type: 'message', message: { id: msgId, type: 'agent', agent: agentId, channel, text: resultText, ts: Date.now(), runId } });
+
+    if (!callOpts._isSubCall) collabFlow.onAgentEnd(channel, agentId, 0);
+    return { ok: true, text: resultText };
+  } catch (err) {
+    activeRuns.delete(runKey);
+    log.error(`direct image gen failed: model="${model.id}" error="${err.message}"`);
+    const errMsg = `图片生成失败（模型: ${modelName}）: ${err.message}\n\n💡 排查建议：\n1. 确认该模型确实支持文生图能力\n2. 在「设置 → 模型管理」中检查该模型的 API 类型是否选择正确\n3. 如果服务商使用非标准接口，建议通过 one-api 等中转工具统一接入\n4. 检查 Provider 的 API Key 和 Base URL 是否正确`;
+    broadcastFn({ type: 'agent_error', channel, error: errMsg });
+    broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'end' });
+    if (!callOpts._isSubCall) collabFlow.onAgentError(channel, agentId);
+    return { ok: false, error: errMsg };
+  }
+}
+
 async function sendToLLM(channel, agentId, userText, opts) {
   const callOpts = opts || {};
   const resolved = resolveAgent(agentId);
   if (!resolved) {
-    broadcastFn({ type: 'agent_error', channel, error: `Agent or model not found: ${agentId}` });
-    return { ok: false, error: 'Agent or model not found' };
+    store.loadAgents();
+    const agentExists = store.localAgents.some(a => a.id === agentId);
+    const hint = agentExists
+      ? `当前 Agent 未配置模型，且系统中没有可用的默认模型。\n💡 请先在「设置 → 模型配置」中添加 Provider 和模型。`
+      : `Agent「${agentId}」不存在。`;
+    broadcastFn({ type: 'agent_error', channel, error: hint });
+    return { ok: false, error: hint };
   }
 
-  const { agent, model, provider, soulContent } = resolved;
-  const abortCtrl = new AbortController();
-  const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-  const runKey = callOpts._isSubCall ? `${channel}:sub:${runId}` : channel;
+  let { agent, model, provider, soulContent } = resolved;
 
-  activeRuns.set(runKey, { abortCtrl, agentId, runId, ts: Date.now(), _calledBy: callOpts._calledBy, _runKey: runKey, _skipChain: callOpts._skipChain, _isSubCall: !!callOpts._isSubCall, _toolCallCount: 0 });
-  broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'start', calledBy: callOpts._calledBy || undefined });
+  if (callOpts._forceModel) {
+    store.loadModels();
+    const fm = (store.localModels.models || []).find(x => x.id === callOpts._forceModel);
+    const fp = fm ? (store.localModels.providers || {})[fm.provider] : null;
+    if (fm && fp) {
+      model = fm;
+      provider = fp;
+    }
+  }
+
+  const modelCaps = store.detectCapabilities(model);
+  if (!modelCaps.includes('chat')) {
+    if (modelCaps.includes('image_gen')) {
+      return await handleDirectImageGen(channel, agentId, model, provider, userText, callOpts);
+    }
+    const capLabel = modelCaps.join(', ') || 'unknown';
+    const modelName = model.name || model.id.split('/').pop();
+    log.warn(`agent="${agentId}" model="${model.id}" has caps=[${capLabel}], not a chat model`);
+    const hint = `模型「${modelName}」是 ${capLabel} 类型，不支持对话。\n💡 请在 Agent 训练面板将模型切换为对话模型。`;
+    broadcastFn({ type: 'agent_error', channel, error: hint });
+    return { ok: false, error: hint };
+  }
+
+  const abortCtrl = new AbortController();
+  const FETCH_TIMEOUT_MS = 120_000;
+  const _fetchTimer = setTimeout(() => {
+    if (!abortCtrl.signal.aborted) abortCtrl.abort(new Error('请求超时（120秒），模型无响应'));
+  }, FETCH_TIMEOUT_MS);
+  const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  const runKey = callOpts._isSubCall ? `${channel}:sub:${runId}` : `${channel}:${runId}`;
+
+  activeRuns.set(runKey, { abortCtrl, agentId, runId, ts: Date.now(), _calledBy: callOpts._calledBy, _runKey: runKey, _skipChain: callOpts._skipChain, _isSubCall: !!callOpts._isSubCall, _toolCallCount: 0, _channelReply: callOpts._channelReply || null, _modelId: model.id, _userText: userText, _isRetry: !!callOpts._isRetry });
+  broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'start', calledBy: callOpts._calledBy || undefined, model: model.id });
 
   if (!callOpts._isSubCall && callOpts._calledBy) {
     collabFlow.onAgentStart(channel, agentId);
@@ -152,14 +243,16 @@ async function sendToLLM(channel, agentId, userText, opts) {
 
   try {
     const baseUrl = (provider.baseUrl || '').replace(/\/+$/, '');
-    const modelName = model.name || model.id.split('/').pop();
+    const apiModelName = model.id.split('/').pop();
+    const displayName = model.name || apiModelName;
 
     let ragContext = [];
     try { ragContext = await rag.search(agentId, userText); } catch (err) {
       log.warn('RAG search error (non-fatal):', err.message);
     }
 
-    const messages = await buildMessages(agentId, channel, userText, soulContent, ragContext);
+    const modelMeta = { id: model.id, name: displayName, provider: model.provider };
+    const messages = await buildMessages(agentId, channel, userText, soulContent, ragContext, modelMeta);
     const apiType = model.api || provider.api || 'openai-completions';
 
     const agentTools = registry.getToolsForAgent(agentId);
@@ -176,7 +269,7 @@ async function sendToLLM(channel, agentId, userText, opts) {
       if (abortCtrl.signal.aborted) break;
 
       const currentTools = hasTools ? agentTools : [];
-      const req = buildApiRequest(apiType, baseUrl, modelName, messages, model, currentTools);
+      const req = buildApiRequest(apiType, baseUrl, apiModelName, messages, model, currentTools);
       const { endpoint, body: reqBody, extractText } = req;
 
       const headers = { 'Content-Type': 'application/json', ...(req.headers || {}) };
@@ -195,7 +288,10 @@ async function sendToLLM(channel, agentId, userText, opts) {
 
       if (!resp.ok) {
         const errText = await resp.text().catch(() => '');
-        throw new Error(`LLM API ${resp.status}: ${errText.slice(0, 300)}`);
+        const briefErr = errText.slice(0, 200).replace(/[\n\r]+/g, ' ');
+        const e = new Error(`API ${resp.status}: ${briefErr}`);
+        e.statusCode = resp.status;
+        throw e;
       }
 
       const contentType = resp.headers.get('content-type') || '';
@@ -255,10 +351,11 @@ async function sendToLLM(channel, agentId, userText, opts) {
       }
 
       let text = extractText(data);
-      if (!text) throw new Error('Empty response from LLM');
 
-      broadcastFn({ type: 'agent_stream', channel, agentId, runId, text, delta: text });
-      return await finalize(channel, agentId, runId, text, runKey);
+      if (text) {
+        broadcastFn({ type: 'agent_stream', channel, agentId, runId, text, delta: text });
+      }
+      return await finalize(channel, agentId, runId, text || '', runKey);
     }
 
     if (round >= toolEngine.MAX_ROUNDS) {
@@ -266,7 +363,7 @@ async function sendToLLM(channel, agentId, userText, opts) {
     }
 
     // Exceeded max rounds — do a final call without tools to force text response
-    const finalReq = buildApiRequest(apiType, baseUrl, modelName, messages, model, []);
+    const finalReq = buildApiRequest(apiType, baseUrl, apiModelName, messages, model, []);
     const fHeaders = { 'Content-Type': 'application/json', ...(finalReq.headers || {}) };
     if (finalReq.authStyle === 'x-api-key') { fHeaders['x-api-key'] = provider.apiKey; }
     else { fHeaders['Authorization'] = `Bearer ${provider.apiKey}`; }
@@ -286,7 +383,8 @@ async function sendToLLM(channel, agentId, userText, opts) {
     return await finalize(channel, agentId, runId, fText || '', runKey);
 
   } catch (err) {
-    if (err.name === 'AbortError') {
+    const isTimeout = err.name === 'AbortError' && /超时/.test(abortCtrl.signal.reason?.message || '');
+    if (err.name === 'AbortError' && !isTimeout) {
       log.info(`aborted channel=${channel}`);
       if (activeRuns.has(runKey)) {
         activeRuns.delete(runKey);
@@ -294,12 +392,35 @@ async function sendToLLM(channel, agentId, userText, opts) {
       }
       return { ok: true, cancelled: true };
     }
+
+    const curModelName = model.name || model.id?.split('/').pop() || 'unknown';
     activeRuns.delete(runKey);
-    log.error(`error for agent=${agentId}:`, err.message);
-    broadcastFn({ type: 'agent_error', channel, error: err.message });
+
+    let userMsg;
+    if (isTimeout) {
+      userMsg = `模型「${curModelName}」请求超时（120秒无响应）。\n可能原因：模型服务不可用或网络异常。\n建议：稍后重试，或切换其他模型。`;
+    } else if (err.statusCode >= 400 && err.statusCode < 500) {
+      if (/Arrearage/i.test(err.message)) {
+        userMsg = `模型「${curModelName}」调用失败：账户欠费，API 已被冻结。\n💡 请登录阿里云控制台充值后重试。`;
+      } else if (/invalid_api_key/i.test(err.message)) {
+        userMsg = `模型「${curModelName}」调用失败：API Key 无效或已过期。\n💡 请在「设置 → 模型配置」中检查 API Key。`;
+      } else {
+        const codeHints = { 401: 'API Key 无效或已过期', 403: '无权限访问该模型', 429: '请求频率超限或余额不足', 404: '模型不存在或 API 地址错误' };
+        const hint = codeHints[err.statusCode] || '客户端请求错误';
+        userMsg = `模型「${curModelName}」调用失败（HTTP ${err.statusCode}：${hint}）。\n\n💡 排查建议：\n1. 检查 Provider 的 Base URL 和 API Key 配置\n2. 确认模型名称和 API 类型选择正确\n3. 如果服务商使用非标准接口，建议通过 one-api 等中转工具统一接入`;
+      }
+    } else if (err.statusCode >= 500) {
+      userMsg = `模型「${curModelName}」服务端错误（HTTP ${err.statusCode}）。\n可能原因：模型服务暂时不可用。\n建议：稍后重试，或切换其他模型。`;
+    } else {
+      userMsg = `模型「${curModelName}」调用出错：${err.message}\n建议：检查网络连接和模型配置，或切换其他模型重试。`;
+    }
+    log.error(`error for agent=${agentId} model="${curModelName}":`, err.message);
+    broadcastFn({ type: 'agent_error', channel, error: userMsg });
     broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'end' });
     if (!callOpts._isSubCall) collabFlow.onAgentError(channel, agentId);
-    return { ok: false, error: err.message };
+    return { ok: false, error: userMsg };
+  } finally {
+    clearTimeout(_fetchTimer);
   }
 }
 
@@ -397,7 +518,21 @@ function buildApiRequest(apiType, baseUrl, modelName, messages, model, tools) {
       ...(model.maxTokens ? { max_tokens: model.maxTokens } : {}),
       ...(openaiTools?.length ? { tools: openaiTools } : {}),
     },
-    extractText: (data) => data.choices?.[0]?.message?.content || '',
+    extractText: (data) => {
+      const content = data.choices?.[0]?.message?.content;
+      if (Array.isArray(content)) {
+        return content.map(c => {
+          if (typeof c === 'string') return c;
+          if (c.type === 'text') return c.text || '';
+          if (c.type === 'image_url' && c.image_url?.url) return `![](${c.image_url.url})`;
+          return '';
+        }).join('');
+      }
+      if (typeof content === 'string' && /^https?:\/\/\S+\.(png|jpg|jpeg|webp|gif)/i.test(content.trim())) {
+        return `![](${content.trim()})`;
+      }
+      return content || '';
+    },
   };
 }
 
@@ -407,9 +542,17 @@ async function handleSSEStream(resp, channel, agentId, runId, abortCtrl, apiType
   const decoder = new TextDecoder();
   let buffer = '';
   const toolAccum = detectTools ? toolEngine.createStreamToolAccumulator() : null;
+  const STREAM_IDLE_MS = 60_000;
+  let _idleTimer = setTimeout(() => {
+    if (!abortCtrl.signal.aborted) abortCtrl.abort(new Error('流式响应超时（60秒无数据），模型可能不支持此调用方式'));
+  }, STREAM_IDLE_MS);
 
   for await (const chunk of reader) {
     if (abortCtrl.signal.aborted) break;
+    clearTimeout(_idleTimer);
+    _idleTimer = setTimeout(() => {
+      if (!abortCtrl.signal.aborted) abortCtrl.abort(new Error('流式响应超时（60秒无数据），模型可能不支持此调用方式'));
+    }, STREAM_IDLE_MS);
 
     buffer += decoder.decode(chunk, { stream: true });
     const lines = buffer.split('\n');
@@ -433,7 +576,16 @@ async function handleSSEStream(resp, channel, agentId, runId, abortCtrl, apiType
           if (toolAccum) toolAccum.feedAnthropicEvent(parsed);
         } else {
           const choice = parsed.choices?.[0];
-          delta = choice?.delta?.content;
+          let rawContent = choice?.delta?.content;
+          if (Array.isArray(rawContent)) {
+            delta = rawContent.map(c => {
+              if (c.type === 'text') return c.text || '';
+              if (c.type === 'image_url' && c.image_url?.url) return `![](${c.image_url.url})`;
+              return '';
+            }).join('');
+          } else {
+            delta = rawContent;
+          }
           if (toolAccum && choice?.delta) toolAccum.feedDelta(choice.delta);
         }
 
@@ -446,6 +598,8 @@ async function handleSSEStream(resp, channel, agentId, runId, abortCtrl, apiType
       } catch {}
     }
   }
+
+  clearTimeout(_idleTimer);
 
   if (toolAccum && toolAccum.hasToolCalls()) {
     return { text: fullText, toolCalls: toolAccum.getToolCalls() };
@@ -463,15 +617,49 @@ async function finalize(channel, agentId, runId, text, runKey) {
   activeRuns.delete(runKey);
 
   if (!text || !text.trim()) {
-    log.warn(`empty response for agent=${agentId} channel=${channel}, skipping save`);
+    const failedModelId = runInfo._modelId || '';
+    store.loadModels();
+    const failedModel = (store.localModels.models || []).find(m => m.id === failedModelId);
+    const failedName = failedModel?.name || failedModelId.split('/').pop() || 'unknown';
+    const failedCaps = failedModel ? store.detectCapabilities(failedModel) : [];
+
+    log.warn(`empty response for agent=${agentId} model="${failedName}" caps=[${failedCaps}] channel=${channel}`);
+
+    let hint;
+    if (failedCaps.includes('image_gen') && !failedCaps.includes('chat')) {
+      hint = `模型「${failedName}」是图像生成专用模型，不支持对话。\n💡 建议：在 Agent 训练面板将模型切换为对话模型（如 qwen3.5-plus），然后在「设置 → 能力路由 → 文生图」中指定图像生成模型。`;
+    } else if (failedCaps.includes('image_gen')) {
+      hint = `模型「${failedName}」未返回有效内容。\n💡 该模型支持图像生成，但可能需要更具体的指令（如"画一只猫"）。若需要普通对话，建议切换为对话模型。`;
+    } else if (failedCaps.includes('tts') || failedCaps.includes('stt') || failedCaps.includes('embedding')) {
+      const capLabel = failedCaps.join(', ');
+      hint = `模型「${failedName}」是 ${capLabel} 类型，不支持对话。\n💡 建议：在 Agent 训练面板将模型切换为对话模型（如 qwen3.5-plus）。`;
+    } else {
+      hint = `模型「${failedName}」返回了空响应。\n\n💡 排查建议：\n1. 检查模型的 API 类型是否选择正确（设置 → 模型管理 → 编辑模型）\n2. 确认 Provider 的 Base URL 和 API Key 配置正确\n3. 如果服务商使用非标准接口，可通过 one-api 等中转工具统一接入\n4. 或在 Agent 训练面板切换为其他对话模型`;
+    }
+
+    broadcastFn({ type: 'agent_error', channel, error: hint });
     broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'end' });
     if (!runInfo._isSubCall) collabFlow.onAgentEnd(channel, agentId, runInfo._toolCallCount || 0);
     return { ok: true, runId, empty: true };
   }
 
-  if (imageGen.isEnabled() && imageGen.hasMarker(text)) {
-    try { text = await imageGen.processText(text); } catch (err) {
-      log.error('image-gen error:', err.message);
+  if (imageGen.hasMarker(text)) {
+    store.loadAgents();
+    const agentCfg = store.localAgents.find(a => a.id === agentId);
+    const resolvedCaps = store.resolveAgentCapabilities(agentCfg);
+    const imgRoute = resolvedCaps.image_gen;
+    const imgModelId = imgRoute?.model || null;
+
+    if (imgModelId) {
+      const onProgress = (info) => {
+        broadcastFn({ type: 'agent_stream', channel, agentId, runId, text: info.currentText, delta: '', _imageProgress: true });
+      };
+      try { text = await imageGen.processText(text, onProgress, imgModelId); } catch (err) {
+        log.error('image-gen error:', err.message);
+      }
+    } else {
+      imageGen.IMG_GEN_RE.lastIndex = 0;
+      text = text.replace(imageGen.IMG_GEN_RE, '[图片生成不可用: 未配置文生图模型，请在「模型→能力路由」中配置]');
     }
   }
 
@@ -479,6 +667,7 @@ async function finalize(channel, agentId, runId, text, runKey) {
   const entry = {
     id: 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
     type: 'agent', agent: agentId, channel, text, ts: Date.now(), runId,
+    model: runInfo._modelId || undefined,
   };
   if (blocks.length) entry.blocks = blocks;
   if (runInfo._calledBy) entry.calledBy = runInfo._calledBy;
@@ -487,6 +676,12 @@ async function finalize(channel, agentId, runId, text, runKey) {
   store.bumpMetric(agentId, 'messages');
   store.bumpMetric(agentId, 'tasks');
   emitCommunityEventFn('agent_task_complete', { agentId, text });
+
+  if (runInfo._channelReply && typeof runInfo._channelReply === 'function') {
+    try { runInfo._channelReply(text); } catch (e) {
+      log.error('channel reply callback error:', e.message);
+    }
+  }
 
   broadcastFn({ type: 'agent_lifecycle', channel, agentId, runId, phase: 'end' });
 
@@ -545,30 +740,40 @@ function _triggerCollabChain(channel, agentId, responseText) {
 }
 
 async function cancelRun(channel) {
-  const run = activeRuns.get(channel);
-  if (!run) return { ok: false, error: 'no active run' };
-  const partialText = run.currentText;
-  run.abortCtrl.abort();
-  activeRuns.delete(channel);
-  log.info(`cancelled channel=${channel}`);
+  const matchingKeys = [...activeRuns.keys()].filter(k => k === channel || k.startsWith(channel + ':'));
+  if (!matchingKeys.length) return { ok: false, error: 'no active run' };
 
-  if (partialText && partialText.trim()) {
-    const entry = {
-      id: 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-      type: 'agent', agent: run.agentId, channel,
-      text: partialText, ts: Date.now(), runId: run.runId,
-    };
-    store.addMessage(entry);
-    broadcastFn({ type: 'message', message: entry });
+  for (const key of matchingKeys) {
+    const run = activeRuns.get(key);
+    if (!run) continue;
+    const partialText = run.currentText;
+    run.abortCtrl.abort();
+    activeRuns.delete(key);
+
+    const isProgressPlaceholder = partialText && /^⏳/.test(partialText.trim());
+    if (partialText && partialText.trim() && !isProgressPlaceholder) {
+      const entry = {
+        id: 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        type: 'agent', agent: run.agentId, channel,
+        text: partialText, ts: Date.now(), runId: run.runId,
+      };
+      store.addMessage(entry);
+      broadcastFn({ type: 'message', message: entry });
+    }
+
+    broadcastFn({ type: 'agent_lifecycle', channel, agentId: run.agentId, runId: run.runId, phase: 'end' });
   }
 
-  broadcastFn({ type: 'agent_lifecycle', channel, agentId: run.agentId, runId: run.runId, phase: 'end' });
   collabFlow.stopFlow(channel);
+  log.info(`cancelled channel=${channel} (${matchingKeys.length} run(s))`);
   return { ok: true };
 }
 
 function isRunning(channel) {
-  return activeRuns.has(channel);
+  for (const key of activeRuns.keys()) {
+    if (key === channel || key.startsWith(channel + ':')) return true;
+  }
+  return false;
 }
 
 /**

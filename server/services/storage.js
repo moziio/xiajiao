@@ -26,9 +26,37 @@ try { workflows = JSON.parse(fs.readFileSync(cfg.WORKFLOWS_FILE, 'utf8')); } cat
 
 let localAgents = [];
 let _agentsLoaded = false;
+const _defaultAgents = [
+  { id: 'xiajiao-butler', name: '虾饺管家', emoji: '🤖', model: '', createdAt: Date.now(),
+    tools: { allow: ['manage_channel', 'manage_schedule', 'memory_write', 'memory_search', 'web_search'] }, autoInjectMemory: true },
+  { id: 'novelist', name: '小说家', emoji: '✍️', model: '', createdAt: Date.now(),
+    tools: { allow: ['memory_write', 'memory_search', 'web_search'] }, autoInjectMemory: true },
+  { id: 'editor', name: '编辑', emoji: '📝', model: '', createdAt: Date.now(),
+    tools: { allow: ['memory_write', 'memory_search'] }, autoInjectMemory: true },
+  { id: 'translator', name: '翻译官', emoji: '🌐', model: '', createdAt: Date.now(),
+    tools: { allow: ['memory_write', 'memory_search', 'web_search'] }, autoInjectMemory: true },
+  { id: 'coder', name: '代码助手', emoji: '💻', model: '', createdAt: Date.now(),
+    tools: { allow: ['memory_write', 'memory_search', 'web_search', 'rag_query'] }, autoInjectMemory: true },
+];
+
 function loadAgents(force) {
   if (_agentsLoaded && !force) return localAgents;
-  try { localAgents = JSON.parse(fs.readFileSync(cfg.AGENTS_FILE, 'utf8')).agents || []; } catch { localAgents = []; }
+  const fileExists = fs.existsSync(cfg.AGENTS_FILE);
+  if (fileExists) {
+    try { localAgents = JSON.parse(fs.readFileSync(cfg.AGENTS_FILE, 'utf8')).agents || []; } catch { localAgents = []; }
+  } else {
+    localAgents = JSON.parse(JSON.stringify(_defaultAgents));
+    fs.mkdirSync(path.dirname(cfg.AGENTS_FILE), { recursive: true });
+    fs.writeFileSync(cfg.AGENTS_FILE, JSON.stringify({ agents: localAgents }, null, 2));
+    for (const a of localAgents) {
+      const ws = path.join(cfg.DATA_DIR, `workspace-${a.id}`);
+      fs.mkdirSync(ws, { recursive: true });
+      const soulFile = path.join(ws, 'SOUL.md');
+      if (!fs.existsSync(soulFile)) {
+        try { const tpl = fs.readFileSync(path.join(cfg.DATA_DIR, '_soul-templates', `${a.id}.md`), 'utf8'); fs.writeFileSync(soulFile, tpl); } catch {}
+      }
+    }
+  }
   _agentsLoaded = true;
   return localAgents;
 }
@@ -37,17 +65,122 @@ function saveAgents() {
 }
 loadAgents();
 
-let localModels = { providers: {}, models: [] };
+let localModels = { providers: {}, models: [], capabilityRouting: {} };
 let _modelsLoaded = false;
+
+const ALL_CAPABILITIES = ['chat', 'image_gen', 'image_understand', 'tts', 'stt', 'embedding', 'video_gen'];
+
 function loadModels(force) {
   if (_modelsLoaded && !force) return localModels;
   try { localModels = JSON.parse(fs.readFileSync(cfg.MODELS_FILE, 'utf8')); } catch { localModels = { providers: {}, models: [] }; }
+  if (!localModels.capabilityRouting) {
+    localModels.capabilityRouting = { chat: null, image_gen: null, image_understand: null, tts: null, stt: null, embedding: null, video_gen: null, strategy: { preferDedicated: false } };
+  }
   _modelsLoaded = true;
   return localModels;
 }
 function saveModels() {
   fs.writeFileSync(cfg.MODELS_FILE, JSON.stringify(localModels, null, 2));
 }
+
+function detectCapabilities(model) {
+  const caps = [];
+  const name = (model.name || '').toLowerCase();
+  const rawId = (model.id || '').toLowerCase();
+  const id = rawId.includes('/') ? rawId.split('/').pop() : rawId;
+  const nameId = name + ' ' + id;
+  const hasImageOutput = model.output && model.output.includes('image');
+  const hasVideoOutput = model.output && model.output.includes('video');
+  const hasAudioOutput = model.output && model.output.includes('audio');
+  const hasImageInput = model.input && model.input.includes('image');
+  const hasAudioInput = model.input && model.input.includes('audio');
+  const api = (model.api || '').toLowerCase();
+
+  const isPureImageGenByName = /\b(wanx|dall-e|dalle|stable-diffusion|sdxl|midjourney|mj-|imagen|t2i|txt2img|image-gen|flux|kolors|ideogram|playground-v|z-image|qwen-image|cogview|seedream|hunyuan-image)\b/.test(nameId);
+  const isMultimodalImageByName = /\b(gpt-4o-image|gemini-image)\b/.test(nameId);
+
+  const isVideoGenByName = /\b(video-gen|t2v|txt2video|sora|runway|kling|cogvideo|pika|gen-2|luma|minimax-video|vidu|animate)\b/.test(nameId) ||
+    (/\bvideo\b/.test(nameId) && !/understand|vision|input/.test(nameId));
+
+  const isTtsByName = /\b(tts|s2s|cosyvoice|sambert|text-to-speech|elevenlabs|eleven-|azure-tts|edge-tts)\b/.test(nameId) ||
+    /\bspeech-\d/.test(nameId) ||
+    /\beleven_/.test(nameId) ||
+    (/(speech|voice)/.test(nameId) && /gen|synth|output/.test(nameId));
+
+  const isSttByName = /\b(stt|asr|whisper|paraformer|sensevoice|speech-to-text|transcri|recognition)\b/.test(nameId);
+
+  const isEmbeddingByName = /\b(embed|embedding|bge-|m3e|gte-|e5-|voyage-|cohere-embed|text-embedding|vectoriz)\b/.test(nameId);
+
+  const isImageUnderstandByName = /\b(vl|vision|visual|gpt-4v|gpt-4-vision|gemini.*vision|gemini-pro-v|glm-4v|yi-vision|internvl|llava|cogvlm|minicpm-v|qwen.*vl)\b/.test(nameId) ||
+    (hasImageInput && !hasImageOutput);
+
+  if (api === 'dashscope-image' || api === 'openai-image' || api === 'dashscope-multimodal' || api === 'chat-image' || isPureImageGenByName) {
+    caps.push('image_gen');
+  } else if (api.includes('tts') || hasAudioOutput || isTtsByName) {
+    caps.push('tts');
+  } else if (api.includes('stt') || api.includes('transcription') || hasAudioInput || isSttByName) {
+    caps.push('stt');
+  } else if (api.includes('video') || hasVideoOutput || isVideoGenByName) {
+    caps.push('video_gen');
+  } else if (api.includes('embedding') || isEmbeddingByName) {
+    caps.push('embedding');
+  } else if (isMultimodalImageByName || (hasImageOutput && !isPureImageGenByName)) {
+    caps.push('chat');
+    caps.push('image_gen');
+  } else {
+    caps.push('chat');
+    if (hasImageInput || isImageUnderstandByName) caps.push('image_understand');
+  }
+  return caps;
+}
+
+function getModel(modelId) {
+  loadModels();
+  return (localModels.models || []).find(m => m.id === modelId) || null;
+}
+
+function getCapabilityRouting() {
+  loadModels();
+  return localModels.capabilityRouting || {};
+}
+
+function setCapabilityRouting(routing) {
+  loadModels();
+  localModels.capabilityRouting = { ...localModels.capabilityRouting, ...routing };
+  saveModels();
+}
+
+function resolveAgentCapabilities(agentConfig) {
+  loadModels();
+  const routing = localModels.capabilityRouting || {};
+  const strategy = routing.strategy || {};
+  const preferDedicated = strategy.preferDedicated === true;
+
+  const result = {};
+  const agentModelId = agentConfig?.model;
+  const agentModel = agentModelId ? getModel(agentModelId) : null;
+  const agentCaps = agentModel ? (agentModel.capabilities || detectCapabilities(agentModel)) : [];
+
+  for (const cap of ALL_CAPABILITIES) {
+    const agentOverride = agentConfig?.capabilityOverrides?.[cap];
+    const systemRoute = routing[cap];
+    const nativeSupport = agentCaps.includes(cap);
+
+    if (agentOverride) {
+      result[cap] = { model: agentOverride, source: 'agent' };
+    } else if (systemRoute && preferDedicated) {
+      result[cap] = { model: systemRoute, source: 'system' };
+    } else if (nativeSupport) {
+      result[cap] = { model: agentModelId, source: 'native' };
+    } else if (systemRoute) {
+      result[cap] = { model: systemRoute, source: 'system' };
+    } else {
+      result[cap] = null;
+    }
+  }
+  return result;
+}
+
 loadModels();
 
 function saveTopics() { save(cfg.TOPICS_FILE, topics); }
@@ -182,7 +315,11 @@ function reloadStateFromDB() {
 
 function getFirstAvailableModel() {
   const models = localModels.models || [];
-  return models.length > 0 ? models[0].id : null;
+  const chatModel = models.find(m => {
+    const caps = m.capabilities || detectCapabilities(m);
+    return caps.includes('chat');
+  });
+  return chatModel ? chatModel.id : (models.length > 0 ? models[0].id : null);
 }
 
 fs.mkdirSync(cfg.DATA_DIR, { recursive: true });
@@ -486,6 +623,9 @@ module.exports = {
   saveSchedules, saveGroups, saveSettings, saveWorkflows,
   loadGroupsFromDB, loadWorkflowsFromDB, loadSchedulesFromDB, reloadStateFromDB,
   getFirstAvailableModel, bumpMetric,
+  
+  ALL_CAPABILITIES, detectCapabilities, getModel,
+  getCapabilityRouting, setCapabilityRouting, resolveAgentCapabilities,
 
   addMessage, getRecentMessages, getMessagesSince, getMessagesByChannel, queryMessages,
   searchMessages, countMessagesByAgent, deleteMessagesByAgent, deleteMessagesByChannel,

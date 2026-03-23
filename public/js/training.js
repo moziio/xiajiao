@@ -10,7 +10,9 @@ document.getElementById('kbFileInput')?.addEventListener('change', async functio
   const file = this.files[0]; if (!file || !activeChannel) return;
   const agentId = activeChannel;
   if (!isDirectAgent(agentId)) { showToastMsg(t('train.onlyDirectChat'), 'error'); this.value = ''; return; }
-  try { const r = await uploadKbFile(agentId, file); if (r.ok) showToastMsg(t('train.savedToKb', {name: file.name})); else showToastMsg(t('profile.saveFail'), 'error'); } catch (e) { showToastMsg(t('profile.saveFail') + ': ' + e.message, 'error'); }
+  const v = validateKbFile(file);
+  if (!v.ok) { showToastMsg(v.msg, 'error'); this.value = ''; return; }
+  try { const r = await uploadKbFile(agentId, file); if (r.ok) showToastMsg(t('train.savedToKb', {name: file.name})); else showToastMsg((r.error || r.reason || t('profile.saveFail')), 'error'); } catch (e) { showToastMsg(t('profile.saveFail') + ': ' + e.message, 'error'); }
   this.value = '';
 });
 async function uploadKbFile(agentId, file) {

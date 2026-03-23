@@ -66,7 +66,7 @@ function renderContactsList() {
     const grpCollapsed = !q && storageGet('im-cat-collapsed-__groups') === '1';
     h += `<div class="contacts-section"><div class="contacts-section-title" onclick="toggleCatCollapse('__groups')"><svg class="cat-chevron ${grpCollapsed ? '' : 'open'}" viewBox="0 0 16 16" width="14" height="14"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> ${t('contacts.groupSection', {count: filteredGroups.length})}</div>`;
     if (!grpCollapsed) {
-      h += filteredGroups.map(g => { const sgid = escJs(g.id); return `<div class="contact-item" onclick="startChat('${sgid}')"><div class="contact-avatar">${g.emoji}</div><div class="contact-info"><div class="contact-name">${esc(g.name)}</div><div class="contact-desc">${esc(g.desc)}</div></div><div class="contact-action"><button onclick="event.stopPropagation();startChat('${sgid}')">${t('contacts.startChat')}</button></div></div>`; }).join('');
+      h += filteredGroups.map(g => { const sgid = escJs(g.id); return `<div class="contact-item" onclick="startChat('${sgid}')"><div class="contact-avatar">${g.emoji}</div><div class="contact-info"><div class="contact-name">${esc(g.name)}</div><div class="contact-desc">${esc(g.desc)}</div></div><div class="contact-action"><button onclick="event.stopPropagation();startChat('${sgid}')">${t('contacts.startChat')}</button>${canManage() ? `<button class="btn-icon-danger" onclick="event.stopPropagation();deleteGroupConfirm('${sgid}')" title="${t('panel.dissolve')}">&#128465;</button>` : ''}</div></div>`; }).join('');
       if (canManage() && !q) h += `<div class="add-btn" onclick="openManagePanel('groups')"><div class="add-icon">+</div> ${t('contacts.createGroup')}</div>`;
     }
     h += '</div>';
@@ -185,7 +185,7 @@ async function deleteCat(name) {
   showToastMsg(t('contacts.categoryDeleted'));
 }
 
-function startChat(c) { switchTab('chats'); switchChannel(c); }
+function startChat(c) { saveDraft(); activeChannel = c; switchTab('chats'); }
 
 async function confirmDeleteAgent(agentId) {
   document.querySelector('.agent-cat-menu')?.remove();

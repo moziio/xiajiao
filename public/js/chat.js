@@ -4,6 +4,7 @@
 function getActiveChannels() {
   const cs = new Set(); for (const m of allMessages) if (m.channel && m.type !== 'system') cs.add(m.channel);
   for (const [ch, d] of channelDrafts) if (d) cs.add(ch);
+  if (activeChannel && resolveChannelInfo(activeChannel)) cs.add(activeChannel);
   const r = []; for (const c of cs) { const lm = [...allMessages].reverse().find(m => m.channel === c && m.type !== 'system'); const info = resolveChannelInfo(c); if (!info) continue; r.push({ ...info, lastMsg: lm || null, lastTs: lm ? lm.ts : Date.now() }); }
   return r.sort((a, b) => b.lastTs - a.lastTs);
 }
@@ -66,7 +67,12 @@ function showChatMenu(e, chId) {
   const pinned = getPinnedChannels(), isPinned = pinned.includes(chId), unread = unreadCounts.get(chId) || 0;
   const safeChId = escJs(chId);
   const menu = document.createElement('div'); menu.id = 'chatCtxMenu'; menu.className = 'ctx-menu';
-  menu.innerHTML = `<div class="ctx-item" onclick="togglePin('${safeChId}')"><span class="ctx-icon">${isPinned ? '\u{274C}' : '\u{1F4CC}'}</span>${isPinned ? t('ctx.unpin') : t('ctx.pin')}</div>${unread > 0 ? `<div class="ctx-item" onclick="markAsRead('${safeChId}')"><span class="ctx-icon">\u{2705}</span>${t('ctx.markRead')}</div>` : ''}${canManage() ? `<div class="ctx-item ctx-danger" onclick="clearChannelMessages('${safeChId}')"><span class="ctx-icon">\u{1F9F9}</span>${t('ctx.clearMessages')}</div><div class="ctx-item ctx-danger" onclick="deleteChat('${safeChId}')"><span class="ctx-icon">\u{1F5D1}\uFE0F</span>${t('ctx.deleteChat')}</div>` : ''}`;
+  const isGroup = customGroups.some(g => g.id === chId);
+  const isWf = chId.startsWith('wf_');
+  let extra = '';
+  if (canManage() && isGroup) extra = `<div class="ctx-item ctx-danger" onclick="closeChatMenu();deleteGroupConfirm('${safeChId}')"><span class="ctx-icon">\u{1F5D1}\uFE0F</span>${t('panel.dissolve')}</div>`;
+  if (canManage() && isWf) extra = `<div class="ctx-item ctx-danger" onclick="closeChatMenu();deleteWorkflow('${escJs(chId.replace('wf_',''))}')" ><span class="ctx-icon">\u{1F5D1}\uFE0F</span>${t('ctx.deleteWorkflow')}</div>`;
+  menu.innerHTML = `<div class="ctx-item" onclick="togglePin('${safeChId}')"><span class="ctx-icon">${isPinned ? '\u{274C}' : '\u{1F4CC}'}</span>${isPinned ? t('ctx.unpin') : t('ctx.pin')}</div>${unread > 0 ? `<div class="ctx-item" onclick="markAsRead('${safeChId}')"><span class="ctx-icon">\u{2705}</span>${t('ctx.markRead')}</div>` : ''}${canManage() ? `<div class="ctx-item ctx-danger" onclick="clearChannelMessages('${safeChId}')"><span class="ctx-icon">\u{1F9F9}</span>${t('ctx.clearMessages')}</div><div class="ctx-item ctx-danger" onclick="deleteChat('${safeChId}')"><span class="ctx-icon">\u{1F5D1}\uFE0F</span>${t('ctx.deleteChat')}</div>` : ''}${extra}`;
   document.body.appendChild(menu);
   requestAnimationFrame(() => {
     const r = menu.getBoundingClientRect();
@@ -97,7 +103,7 @@ function renderChatListItems() {
   if (!active.length) { container.innerHTML = '<div class="chat-list-empty" style="padding:20px"><p>' + t('chat.noMatch') + '</p></div>'; return; }
   const pinned = getPinnedChannels();
   active.sort((a, b) => { const ap = pinned.includes(a.id) ? 1 : 0, bp = pinned.includes(b.id) ? 1 : 0; if (ap !== bp) return bp - ap; return b.lastTs - a.lastTs; });
-  container.innerHTML = active.map(ch => { const draft = channelDrafts.get(ch.id); const unread = unreadCounts.get(ch.id) || 0; const isPinned = pinned.includes(ch.id); const preview = draft ? `<span class="channel-draft">${t('chat.draft')}</span> ${esc(truncate(draft, 20))}` : esc(truncate(stripMd(ch.lastMsg?.text || ''), 30)); const isGroup = ch.type === 'group' || ch.type === 'custom-group'; const isWf = ch.type === 'workflow'; const typeTag = isWf ? `<span class="channel-type-tag channel-tag-wf">${t('workflow.section')}</span>` : isGroup ? `<span class="channel-type-tag channel-tag-group">${t('chat.tagGroup')}</span>` : `<span class="channel-type-tag channel-tag-agent">${t('chat.tagAgent')}</span>`; const safeId = escJs(ch.id); return `<div class="channel-item ${ch.id === activeChannel ? 'active' : ''} ${isPinned ? 'pinned' : ''}" data-ch="${escH(ch.id)}" onclick="channelClick('${safeId}')" oncontextmenu="showChatMenu(event,'${safeId}')"><div class="channel-avatar">${ch.emoji}${unread > 0 ? `<span class="channel-unread">${unread > 99 ? '99+' : unread}</span>` : ''}</div><div class="channel-info"><div class="channel-name">${esc(ch.name)} ${typeTag}</div><div class="channel-preview">${preview}</div></div><span class="channel-time">${formatTime(ch.lastTs)}</span></div>`; }).join('');
+  container.innerHTML = active.map(ch => { const draft = channelDrafts.get(ch.id); const unread = unreadCounts.get(ch.id) || 0; const isPinned = pinned.includes(ch.id); const preview = draft ? `<span class="channel-draft">${t('chat.draft')}</span> ${esc(truncate(draft, 20))}` : esc(truncate(stripMd(ch.lastMsg?.text || ''), 30)); const isGroup = ch.type === 'group' || ch.type === 'custom-group'; const isWf = ch.type === 'workflow'; const isExt = ch.type === 'external'; const typeTag = isWf ? `<span class="channel-type-tag channel-tag-wf">${t('workflow.section')}</span>` : isGroup ? `<span class="channel-type-tag channel-tag-group">${t('chat.tagGroup')}</span>` : isExt ? `<span class="channel-type-tag channel-tag-ext">外部</span>` : `<span class="channel-type-tag channel-tag-agent">${t('chat.tagAgent')}</span>`; const safeId = escJs(ch.id); return `<div class="channel-item ${ch.id === activeChannel ? 'active' : ''} ${isPinned ? 'pinned' : ''}" data-ch="${escH(ch.id)}" onclick="channelClick('${safeId}')" oncontextmenu="showChatMenu(event,'${safeId}')"><div class="channel-avatar">${ch.emoji}${unread > 0 ? `<span class="channel-unread">${unread > 99 ? '99+' : unread}</span>` : ''}</div><div class="channel-info"><div class="channel-name">${esc(ch.name)} ${typeTag}</div><div class="channel-preview">${preview}</div></div><span class="channel-time">${formatTime(ch.lastTs)}</span></div>`; }).join('');
 }
 
 // ── Draft ──
@@ -156,7 +162,7 @@ function _buildMemberBar(agents, chId, safeChId, isCustom) {
   }).join('');
   const overflow = agents.length > 6 ? `<span class="hdr-avatar hdr-overflow">+${agents.length - 6}</span>` : '';
   const mentionBtn = `<span class="hdr-btn" onclick="toggleMentionMenu('${safeChId}')" title="@提及">@</span>`;
-  const chainBtn = isCustom && canManage() ? `<span class="hdr-btn" onclick="editCollabChain('${safeChId}')" title="协作链">🔗</span>` : '';
+  const chainBtn = isCustom && canManage() ? `<span class="hdr-btn" id="chainBtn" onclick="onChainBtnClick('${safeChId}')" title="协作链">🔗</span>` : '';
   const inviteBtn = isCustom && canManage() ? `<span class="hdr-btn" onclick="event.stopPropagation();toggleInvitePopup('${safeChId}')" title="${t('panel.invite')}">+</span>` : '';
   const moreBtn = `<span class="hdr-btn" onclick="toggleGroupPanel('${safeChId}')" title="设置">⋮</span>`;
   const searchBtn = `<span class="hdr-btn" onclick="toggleChatSearch()" title="搜索">🔍</span>`;
@@ -178,7 +184,7 @@ function closeMentionMenu() { const m = document.getElementById('mentionMenu'); 
 
 // ── Channel Switch ──
 function switchChannel(id) {
-  saveDraft(); hideMentionPopup(); closeGroupPanel(); closeMentionMenu();
+  saveDraft(); hideMentionPopup(); closeGroupPanel(); closeMentionMenu(); clearAgentTyping();
   if (typeof closeChatSearch === 'function') closeChatSearch();
   if (typeof clearReplyTarget === 'function') clearReplyTarget();
   if (_multiSelectMode) exitMultiSelectMode();
@@ -199,8 +205,9 @@ function switchChannel(id) {
     const wfBtns = wf && isOwner ? `<span class="hdr-btn hdr-btn-accent" onclick="triggerWorkflow('${escJs(wf.id)}')" title="${t('workflow.runBtn')}">▶</span><span class="hdr-btn" onclick="openWorkflowBuilder('${escJs(wf.id)}')" title="${t('workflow.edit')}">⚙</span>` : '';
     memberTags.innerHTML = `<div class="hdr-toolbar">${wfBtns}${moreBtn}<span class="hdr-btn" onclick="toggleChatSearch()" title="搜索">🔍</span></div>`;
   }
+  else if (info.type === 'external') { chatStatus.textContent = '外部平台会话'; memberTags.innerHTML = `<div class="hdr-toolbar">${moreBtn}<span class="hdr-btn" onclick="toggleChatSearch()" title="搜索">🔍</span></div>`; }
   else { const ag = AGENTS.find(a => a.id === id); chatStatus.textContent = ag ? `AI Agent${ag.model ? ' · '+ag.model : ''}` : ''; memberTags.innerHTML = `<div class="hdr-toolbar">${moreBtn}<span class="hdr-btn" onclick="toggleChatSearch()" title="搜索">🔍</span></div>`; }
-  msgInput.placeholder = info.type === 'workflow' ? t('workflow.inputPH') : isDirectAgent(id) ? t('chat.directPlaceholder', {name: (resolveChannelInfo(id)?.name || id)}) : t('chat.inputPlaceholder');
+  msgInput.placeholder = info.type === 'workflow' ? t('workflow.inputPH') : info.type === 'external' ? '外部会话（只读）' : isDirectAgent(id) ? t('chat.directPlaceholder', {name: (resolveChannelInfo(id)?.name || id)}) : t('chat.inputPlaceholder');
   if (info.type === 'workflow' && typeof getWfRunForChannel === 'function') {
     const wfRun = getWfRunForChannel(id);
     if (wfRun?.status === 'waiting') { renderWfApprovalButtons(wfRun.runId, ''); setSendBtnStop(false); }
@@ -255,7 +262,9 @@ function _trimRawStore() { if (rawMsgStore.size <= _RAW_STORE_MAX) return; const
 function renderMsg(m) {
   if (m.type === 'system') {
     if (typeof renderRichSystemMsg === 'function') { const rich = renderRichSystemMsg(m); if (rich) return rich; }
-    return `<div class="msg system"><div class="msg-bubble">${esc(m.text)}</div></div>`;
+    const errCls = m.isError ? ' error' : '';
+    const closeBtn = m.isError ? '<span class="sys-err-close" onclick="this.closest(\'.msg\').remove()" title="关闭">&times;</span>' : '';
+    return `<div class="msg system${errCls}"><div class="msg-bubble">${closeBtn}${esc(m.text).replace(/\n/g, '<br>')}</div></div>`;
   }
   const isSelf = m.type === 'user' && (m.userId === me?.id || m.userId === _myUserId || (isOwner && m.userName === me?.name)), isAgent = m.type === 'agent';
   let avC, avB, sN;
@@ -327,11 +336,12 @@ function renderMsg(m) {
     collabBadge = `<div class="collab-relay-badge">\u{1F91D} ${esc(callerName)} \u2192 ${esc(sN)}</div>`;
   }
   const collabCls = (isAgent && m.calledBy) ? ' collab-msg' : '';
-  return `<div class="msg ${isSelf?'self':isAgent?'agent':''}${collabCls}" id="m-${midAttr}" data-msg-id="${midAttr}" oncontextmenu="if(typeof showMsgContextMenu==='function')showMsgContextMenu(event,this.dataset.msgId)"><div class="msg-avatar" style="background:${avB}">${avC}</div><div class="msg-body">${collabBadge}<div class="msg-meta"><span>${esc(sN)}</span><span>${formatMsgTime(m.ts)}${statusHtml}</span></div><div class="msg-bubble${isAgent?' md-content':''}">${quoteHtml}${content}${actions}</div></div></div>`;
+  const modelTag = isAgent && m.model ? `<span class="msg-model-tag">${esc(m.model.split('/').pop())}</span>` : '';
+  return `<div class="msg ${isSelf?'self':isAgent?'agent':''}${collabCls}" id="m-${midAttr}" data-msg-id="${midAttr}" oncontextmenu="if(typeof showMsgContextMenu==='function')showMsgContextMenu(event,this.dataset.msgId)"><div class="msg-avatar" style="background:${avB}">${avC}</div><div class="msg-body">${collabBadge}<div class="msg-meta"><span>${esc(sN)}${modelTag}</span><span>${formatMsgTime(m.ts)}${statusHtml}</span></div><div class="msg-bubble${isAgent?' md-content':''}">${quoteHtml}${content}${actions}</div></div></div>`;
 }
 function copyMsgText(uid) { const raw = rawMsgStore.get(uid); if (!raw) return; navigator.clipboard.writeText(raw).then(() => { const btn = document.querySelector(`[onclick="copyMsgText('${uid}')"]`); if (btn) { btn.textContent = '\u2705'; setTimeout(() => { btn.innerHTML = '&#128203;'; }, 1500); } }).catch(() => {}); }
 
-function addSystemMsg(text, ch) { const m = { type: 'system', text, ts: Date.now(), channel: ch||'group' }; allMessages.push(m); if (activeChannel === m.channel) { messagesEl.insertAdjacentHTML('beforeend', renderMsg(m)); scrollBottom(); _trimDom(); } }
+function addSystemMsg(text, ch, isError) { const m = { type: 'system', text, ts: Date.now(), channel: ch||'group', isError: !!isError }; allMessages.push(m); if (activeChannel === m.channel) { messagesEl.insertAdjacentHTML('beforeend', renderMsg(m)); scrollBottom(); _trimDom(); } }
 
 // ── Streaming ──
 function handleAgentStream(msg) {
@@ -344,10 +354,16 @@ function handleAgentStream(msg) {
     messagesEl.insertAdjacentHTML('beforeend', `<div class="msg agent" id="${elId}"><div class="msg-avatar" style="background:${ag?.color||'#00d4ff'}">${ag?.emoji||'\u{1F916}'}</div><div class="msg-body"><div class="msg-meta"><span>${esc(ag?.name||'Agent')}</span><span>${t('chat.replying')}</span></div><div class="msg-bubble md-content streaming-bubble">${rendered}</div></div></div>`);
     scrollBottom();
   } else { const b = el.querySelector('.msg-bubble'); if (b) b.innerHTML = rendered; scrollBottom(); }
+  if (msg._imageProgress) {
+    showTyping((ag?.name || 'Agent') + ' 🎨', true);
+    clearTimeout(typingClearTimer);
+    typingClearTimer = setTimeout(() => { clearAgentTyping(); setSendBtnStop(false); }, 180000);
+  }
 }
 function handleAgentLifecycle(msg) {
+  if ((msg.channel || 'group') !== activeChannel) return;
   const ag = AGENTS.find(a => a.id === msg.agentId);
-  if (msg.phase === 'start') { showTyping(ag?.name || 'Agent', true); setSendBtnStop(true); }
+  if (msg.phase === 'start') { const modelHint = msg.model ? ' (' + msg.model.split('/').pop() + ')' : ''; showTyping((ag?.name || 'Agent') + modelHint, true); setSendBtnStop(true); }
   else if (msg.phase === 'end') {
     clearAgentTyping(); setSendBtnStop(false);
     setTimeout(() => {
@@ -396,10 +412,10 @@ function handleToolCallStart(msg) {
   const argsText = _summarizeArgs(msg.args);
 
   tl.insertAdjacentHTML('beforeend',
-    `<div class="tool-call-step" id="tc-${esc(callId)}" data-start="${Date.now()}">` +
+    `<div class="tool-call-step" id="tc-${escH(callId)}" data-start="${Date.now()}">` +
     `<div class="tool-call-header">` +
     `<span class="tool-call-spinner"></span>` +
-    `<span class="tool-call-name">${_toolIcon(toolName)} ${esc(toolName)}</span>` +
+    `<span class="tool-call-name">${_toolIcon(toolName)} ${esc(_toolDisplayName(toolName))}</span>` +
     `</div>` +
     `<div class="tool-call-args">${esc(argsText)}</div>` +
     `<div class="tool-call-status running">${t('chat.toolRunning') || '执行中...'}</div>` +
@@ -410,7 +426,7 @@ function handleToolCallStart(msg) {
 
 function handleToolCallEnd(msg) {
   const callId = msg.callId || '';
-  const el = document.getElementById('tc-' + callId);
+  const el = document.getElementById('tc-' + escH(callId));
   if (!el) return;
 
   const startTs = parseInt(el.dataset.start || '0');
@@ -432,9 +448,9 @@ function handleToolCallEnd(msg) {
       statusEl.innerHTML = `\u2705 ${esc(summary)} (${duration}s)`;
 
       if (msg.result && typeof msg.result === 'object') {
-        const detailId = 'tcd-' + callId;
+        const detailId = 'tcd-' + escH(callId);
         statusEl.insertAdjacentHTML('afterend',
-          `<div class="tool-call-detail-toggle" onclick="document.getElementById('${detailId}').classList.toggle('hidden')">[${t('chat.toolExpand') || '展开结果'} \u25BE]</div>` +
+          `<div class="tool-call-detail-toggle" onclick="document.getElementById('${escJs(detailId)}').classList.toggle('hidden')">[${t('chat.toolExpand') || '展开结果'} \u25BE]</div>` +
           `<pre class="tool-call-detail hidden" id="${detailId}">${esc(JSON.stringify(msg.result, null, 2).slice(0, 2000))}</pre>`
         );
       }
@@ -444,8 +460,16 @@ function handleToolCallEnd(msg) {
 }
 
 function _toolIcon(name) {
-  const icons = { rag_query: '\u{1F4DA}', web_search: '\u{1F50D}', memory_write: '\u{1F9E0}', memory_search: '\u{1F50E}' };
+  if (name && name.startsWith('mcp:')) return '\u{1F50C}';
+  const icons = { rag_query: '\u{1F4DA}', web_search: '\u{1F50D}', memory_write: '\u{1F9E0}', memory_search: '\u{1F50E}', call_agent: '\u{1F91D}' };
   return icons[name] || '\u{1F527}';
+}
+
+function _toolDisplayName(name) {
+  if (!name || !name.startsWith('mcp:')) return name;
+  const parts = name.split(':');
+  if (parts.length >= 3) return parts.slice(2).join(':') + ' [' + parts[1] + ']';
+  return name;
 }
 
 function _summarizeArgs(args) {
@@ -471,6 +495,11 @@ function _summarizeResult(tool, result) {
   if (tool === 'memory_search') {
     const n = result.results?.length || result.total || 0;
     return n ? `回忆起 ${n} 条相关记忆` : '未找到相关记忆';
+  }
+  if (tool && tool.startsWith('mcp:')) {
+    if (typeof result === 'string') return result.slice(0, 100) || '完成';
+    if (result.result) return (typeof result.result === 'string' ? result.result : JSON.stringify(result.result)).slice(0, 100);
+    return '完成';
   }
   return '完成';
 }
@@ -771,7 +800,7 @@ function showTyping(n, isAgent) {
   clearTimeout(typingClearTimer);
   if (isAgent) {
     _agentThinking = true;
-    typingClearTimer = setTimeout(() => { clearAgentTyping(); setSendBtnStop(false); }, 60000);
+    typingClearTimer = setTimeout(() => { clearAgentTyping(); setSendBtnStop(false); }, 130000);
   } else {
     typingClearTimer = setTimeout(() => { if (!_agentThinking) typingIndicator.textContent = ''; }, 3000);
   }

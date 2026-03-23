@@ -32,7 +32,11 @@ function getToolsForAgent(agentId) {
   const result = [];
   for (const [name, entry] of _tools) {
     if (deny.has(name)) continue;
-    if (allow && !allow.includes(name)) continue;
+    if (entry.meta?.defaultDeny) {
+      if (!allow || !allow.includes(name)) continue;
+    } else {
+      if (allow && !allow.includes(name)) continue;
+    }
     result.push(entry);
   }
   return result;

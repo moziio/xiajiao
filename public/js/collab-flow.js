@@ -2,6 +2,7 @@
 
 var _currentFlow = null;
 var _flowHistoryCache = [];
+var _channelFlowCache = {};
 
 function _getFlowPanel() {
   var el = document.getElementById('collabFlowPanel');
@@ -18,15 +19,14 @@ function _getFlowPanel() {
 function handleCollabFlowUpdate(msg) {
   if (!msg.flow) return;
   var flow = msg.flow;
+
+  _channelFlowCache[flow.channel] = flow;
+
   if (flow.channel !== activeChannel) return;
 
   if (flow.status === 'completed' || flow.status === 'failed') {
     _currentFlow = null;
     _renderFlowPanel(flow);
-    setTimeout(function() {
-      var panel = document.getElementById('collabFlowPanel');
-      if (panel) panel.classList.remove('active');
-    }, 5000);
     return;
   }
 
@@ -58,6 +58,7 @@ function _renderFlowPanel(flow) {
     h += '<button class="collab-flow-btn danger" onclick="stopCollabFlow(\'' + escJs(flow.channel) + '\')">\u23f9 \u7ec8\u6b62</button>';
   }
   h += '<button class="collab-flow-btn" onclick="toggleFlowHistory(\'' + escJs(flow.channel) + '\')">\u{1F4CB} \u5386\u53f2</button>';
+  h += '<button class="collab-flow-btn" onclick="hideFlowPanel();if(typeof editCollabChain===\'function\')editCollabChain(\'' + escJs(flow.channel) + '\')">\u2699 \u914d\u7f6e</button>';
   h += '<button class="collab-flow-btn" onclick="hideFlowPanel()">&times;</button>';
   h += '</div></div>';
 
@@ -101,6 +102,39 @@ function _renderFlowPanel(flow) {
   h += '<div id="flowHistoryContainer" class="collab-flow-history" style="display:none"></div>';
 
   panel.innerHTML = h;
+  _updateChainBtnState();
+}
+
+function _updateChainBtnState() {
+  var btn = document.getElementById('chainBtn');
+  if (!btn) return;
+
+  var cached = _channelFlowCache[activeChannel];
+  var isActive = cached && (cached.status === 'running' || cached.status === 'pending');
+
+  btn.classList.toggle('has-flow', isActive);
+  btn.classList.toggle('flow-running', !!(cached && cached.status === 'running'));
+  btn.title = isActive ? '协作流运行中 (点击查看)' : '协作链';
+}
+
+function onChainBtnClick(channelId) {
+  var ch = channelId || activeChannel;
+  var panel = document.getElementById('collabFlowPanel');
+  var panelVisible = panel && panel.classList.contains('active');
+
+  if (panelVisible) {
+    hideFlowPanel();
+    return;
+  }
+
+  var cached = _channelFlowCache[ch];
+  var isActive = cached && (cached.status === 'running' || cached.status === 'pending');
+
+  if (isActive) {
+    showFlowPanel();
+  } else if (typeof editCollabChain === 'function') {
+    editCollabChain(ch);
+  }
 }
 
 function _formatDuration(ms) {
@@ -118,6 +152,16 @@ function stopCollabFlow(channel) {
 function hideFlowPanel() {
   var panel = document.getElementById('collabFlowPanel');
   if (panel) panel.classList.remove('active');
+  _updateChainBtnState();
+}
+
+function showFlowPanel() {
+  var cached = _channelFlowCache[activeChannel];
+  if (cached) {
+    _renderFlowPanel(cached);
+    return;
+  }
+  showFlowPanelForChannel(activeChannel);
 }
 
 function showFlowPanelForChannel(channel) {
@@ -127,7 +171,24 @@ function showFlowPanelForChannel(channel) {
     .then(function(d) {
       if (d.ok && d.flow) {
         _currentFlow = d.flow;
+        _channelFlowCache[channel] = d.flow;
         _renderFlowPanel(d.flow);
+      } else {
+        _loadLastFlowHistory(channel);
+      }
+      _updateChainBtnState();
+    })
+    .catch(function() { _updateChainBtnState(); });
+}
+
+function _loadLastFlowHistory(channel) {
+  authFetch('/api/collab-flows?channel=' + encodeURIComponent(channel))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.ok && d.flows && d.flows.length) {
+        var lastFlow = d.flows[0];
+        _channelFlowCache[channel] = lastFlow;
+        _renderFlowPanel(lastFlow);
       }
     })
     .catch(function() {});
@@ -181,8 +242,12 @@ function onChannelSwitch(channel) {
   var panel = document.getElementById('collabFlowPanel');
   if (panel) panel.classList.remove('active');
 
-  var grp = (typeof customGroups !== 'undefined' ? customGroups : []).find(function(g) { return g.id === channel; });
-  if (grp && grp.collabChain && grp.collabChain.length) {
+  var cached = _channelFlowCache[channel];
+  if (cached && (cached.status === 'running' || cached.status === 'pending')) {
+    _currentFlow = cached;
+    _renderFlowPanel(cached);
     showFlowPanelForChannel(channel);
   }
+
+  _updateChainBtnState();
 }

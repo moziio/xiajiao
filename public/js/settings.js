@@ -12,8 +12,10 @@ function openSettings(tab) {
 function renderSettingsNav() {
   const tabs = [
     { id: 'general', icon: '\u2699\uFE0F', label: t('settings.general') },
-    { id: 'models', icon: '\uD83E\uDDE0', label: t('settings.models') },
-    { id: 'tools', icon: '\uD83D\uDEE0\uFE0F', label: t('settings.tools') },
+    { id: 'models', icon: '\uD83E\uDDE0', label: t('settings.modelsNav') },
+    { id: 'tools', icon: '\uD83D\uDD0D', label: t('settings.toolsNav') },
+    { id: 'mcp', icon: '\uD83D\uDD0C', label: 'MCP' },
+    { id: 'channels', icon: '\uD83C\uDF10', label: 'Channel' },
     { id: 'gateway', icon: '\uD83D\uDD17', label: t('settings.gateway') },
     { id: 'auth', icon: '\uD83D\uDD12', label: t('settings.auth') },
     { id: 'metrics', icon: '\uD83D\uDCCA', label: t('settings.metrics'), adminOnly: true },
@@ -33,6 +35,8 @@ function switchSettingsTab(tab) {
   if (tab === 'general') renderSettingsGeneral(ct);
   else if (tab === 'models') renderSettingsModels(ct);
   else if (tab === 'tools') renderSettingsTools(ct);
+  else if (tab === 'mcp') renderSettingsMcp(ct);
+  else if (tab === 'channels') renderSettingsChannels(ct);
   else if (tab === 'gateway') renderSettingsGateway(ct);
   else if (tab === 'auth') renderSettingsAuth(ct);
   else if (tab === 'metrics') renderSettingsMetrics(ct);
@@ -40,12 +44,15 @@ function switchSettingsTab(tab) {
   else if (tab === 'about') renderSettingsAbout(ct);
 }
 
-function renderSettingsGeneral(ct) {
+async function renderSettingsGeneral(ct) {
   const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
   const currentLang = (window._i18nLang || 'zh');
+  let serverDefaultModel = '';
+  try {
+    const s = await (await authFetch('/api/settings')).json();
+    serverDefaultModel = s.defaultModel || '';
+  } catch {}
   ct.innerHTML = '<div class="settings-section"><div class="settings-section-title">' + t('settings.general') + '</div>' +
-    '<div class="settings-row"><div><div class="settings-label">' + t('settings.appName') + '</div></div><div class="settings-value">' +
-      '<input class="settings-input" id="stAppName" value="' + escH(storageGet('im-app-name') || '虾饺') + '" onchange="saveGeneralSetting(\'appName\', this.value)"></div></div>' +
     '<div class="settings-row"><div><div class="settings-label">' + t('settings.theme') + '</div></div><div class="settings-value">' +
       '<select class="settings-select" onchange="applyTheme(this.value)"><option value="dark"' + (currentTheme === 'dark' ? ' selected' : '') + '>' + t('settings.themeDark') + '</option>' +
       '<option value="light"' + (currentTheme === 'light' ? ' selected' : '') + '>' + t('settings.themeLight') + '</option></select></div></div>' +
@@ -55,15 +62,12 @@ function renderSettingsGeneral(ct) {
     '<div class="settings-row"><div><div class="settings-label">' + t('settings.defaultModel') + '</div><div class="settings-label-hint">' + t('settings.defaultModelHint') + '</div></div><div class="settings-value">' +
       '<select class="settings-select" id="stDefaultModel" onchange="saveGeneralSetting(\'defaultModel\', this.value)">' +
       '<option value="">' + t('settings.noDefaultModel') + '</option>' +
-      availableModels.map(m => '<option value="' + escH(m.id) + '"' + (storageGet('im-default-model') === m.id ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('') +
+      availableModels.filter(m => { const caps = typeof getModelCapabilities === 'function' ? getModelCapabilities(m) : (m.capabilities || []); return !caps.length || caps.includes('chat'); }).map(m => '<option value="' + escH(m.id) + '"' + (serverDefaultModel === m.id ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('') +
       '</select></div></div></div>';
 }
 
 function saveGeneralSetting(key, val) {
-  if (key === 'appName') {
-    storageSet('im-app-name', val);
-    authFetch('/api/settings', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({appName: val}) });
-  } else if (key === 'defaultModel') {
+  if (key === 'defaultModel') {
     storageSet('im-default-model', val);
     authFetch('/api/settings', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({defaultModel: val}) });
   }

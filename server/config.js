@@ -29,7 +29,7 @@ const SETTINGS_FILE = path.join(ROOT_DIR, 'im-settings.json');
 const WORKFLOWS_FILE = path.join(ROOT_DIR, 'workflows.json');
 const UPLOADS_DIR = path.join(ROOT_DIR, 'public', 'uploads');
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
-const OWNER_KEY = process.env.OWNER_KEY || 'xiajiao-admin';
+const OWNER_KEY = process.env.OWNER_KEY || 'admin';
 const MAX_HISTORY = 500;
 
 const MIME = {

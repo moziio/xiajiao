@@ -1,7 +1,7 @@
 /**
  * 内置工具：web_search — 互联网搜索
- * 6 个 provider: auto | duckduckgo | brave | kimi | perplexity | grok
- * auto 模式零配置：DuckDuckGo 抓取 + 现有 LLM 总结
+ * 7 个 provider: auto | duckduckgo | bing | brave | kimi | perplexity | grok
+ * auto 模式零配置：DuckDuckGo → Bing 自动降级 + LLM 总结（国内被墙也能用）
  */
 const fs = require('fs');
 const cfg = require('../../config');
@@ -9,7 +9,7 @@ const store = require('../storage');
 const { createLogger } = require('../../middleware/logger');
 const log = createLogger('web-search');
 
-const VALID_PROVIDERS = ['auto', 'duckduckgo', 'brave', 'kimi', 'perplexity', 'grok'];
+const VALID_PROVIDERS = ['auto', 'duckduckgo', 'bing', 'brave', 'kimi', 'perplexity', 'grok'];
 const CACHE_TTL = 15 * 60 * 1000;
 const CACHE_MAX = 100;
 const _cache = new Map();
@@ -76,6 +76,8 @@ async function handler(args, context) {
       result = await searchWithAutoSummary(query, maxResults, context);
     } else if (provider === 'duckduckgo') {
       result = await searchDuckDuckGo(query, maxResults);
+    } else if (provider === 'bing') {
+      result = await searchBing(query, maxResults);
     } else if (provider === 'brave') {
       if (!apiKey) return _noKeyError('Brave', 'brave.com/search/api');
       result = await searchBrave(query, maxResults, apiKey, config.braveMode);
@@ -95,7 +97,7 @@ async function handler(args, context) {
     return result;
   } catch (err) {
     log.error(`search failed [${provider}]: ${err.message}`);
-    if (provider !== 'auto' && provider !== 'duckduckgo') {
+    if (provider !== 'auto' && provider !== 'duckduckgo' && provider !== 'bing') {
       log.info('fallback to auto mode');
       try {
         const fallback = await searchWithAutoSummary(query, maxResults, context);
@@ -162,13 +164,77 @@ function _stripHtml(s) {
   return s.replace(/<\/?b>/gi, '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/\s+/g, ' ').trim();
 }
 
-// ─── Auto: DuckDuckGo + LLM 总结 ──────────────────────────────────────
-async function searchWithAutoSummary(query, maxResults, context) {
-  const ddg = await searchDuckDuckGo(query, maxResults);
-  if (!ddg.results.length) return ddg;
+// ─── Bing HTML 抓取（cn.bing.com 国内可用）────────────────────────────
+async function searchBing(query, maxResults) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const params = new URLSearchParams({ q: query, count: String(maxResults) });
+    const resp = await fetch(`https://cn.bing.com/search?${params}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'text/html',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!resp.ok) throw new Error(`Bing HTTP ${resp.status}`);
+    const html = await resp.text();
+    return { results: _parseBingHtml(html, maxResults) };
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
 
-  const summary = await _llmSummarize(query, ddg.results, context);
-  return { results: ddg.results, summary };
+function _parseBingHtml(html, maxResults) {
+  const results = [];
+  const liRe = /<li[^>]+class="b_algo"[^>]*>([\s\S]*?)(?=<li[^>]+class="b_algo"|<\/ol>|<\/ul>|$)/gi;
+  const blocks = [...html.matchAll(liRe)];
+
+  for (let i = 0; i < Math.min(blocks.length, maxResults); i++) {
+    const block = blocks[i][1];
+    const linkMatch = block.match(/<a[^>]+href="(https?:\/\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
+    if (!linkMatch) continue;
+    const url = linkMatch[1];
+    const title = _stripHtml(linkMatch[2]);
+    const snippetMatch = block.match(/<p[^>]*>([\s\S]*?)<\/p>/i)
+      || block.match(/<span[^>]+class="[^"]*algoSlug_icon[^"]*"[^>]*>[\s\S]*?<\/span>([\s\S]*?)(?=<\/div>)/i)
+      || block.match(/<div[^>]+class="b_caption"[^>]*>[\s\S]*?<p>([\s\S]*?)<\/p>/i);
+    const snippet = snippetMatch ? _stripHtml(snippetMatch[1] || snippetMatch[2] || '') : '';
+    if (url && title) results.push({ title, url, snippet });
+  }
+  return results;
+}
+
+// ─── Auto: DuckDuckGo → Bing fallback + LLM 总结 ─────────────────────
+async function searchWithAutoSummary(query, maxResults, context) {
+  let searchResult;
+  let triedBing = false;
+  try {
+    searchResult = await searchDuckDuckGo(query, maxResults);
+  } catch (ddgErr) {
+    log.warn(`DuckDuckGo failed (${ddgErr.message}), falling back to Bing`);
+    triedBing = true;
+    try {
+      searchResult = await searchBing(query, maxResults);
+    } catch (bingErr) {
+      log.error(`Bing also failed: ${bingErr.message}`);
+      throw new Error(`DuckDuckGo: ${ddgErr.message}; Bing: ${bingErr.message}`);
+    }
+  }
+  if (!triedBing && !searchResult.results.length) {
+    log.info('DuckDuckGo returned 0 results, trying Bing');
+    try {
+      const bingResult = await searchBing(query, maxResults);
+      if (bingResult.results.length) searchResult = bingResult;
+    } catch (e) { log.warn(`Bing fallback: ${e.message}`); }
+  }
+  if (!searchResult.results.length) return searchResult;
+
+  const summary = await _llmSummarize(query, searchResult.results, context);
+  return { results: searchResult.results, summary };
 }
 
 async function _llmSummarize(query, results, context) {
@@ -234,12 +300,6 @@ function _resolveToolModel(context) {
   const models = store.localModels.models || [];
   const providers = store.localModels.providers || {};
   if (!models.length) return {};
-
-  const tm = store.imSettings.toolModels || {};
-  if (tm.webSearch) {
-    const m = models.find(x => x.id === tm.webSearch);
-    if (m) { const p = providers[m.provider]; if (p) return { model: m, provider: p }; }
-  }
 
   const agentId = context?.agentId;
   if (agentId) {

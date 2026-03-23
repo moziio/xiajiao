@@ -15,7 +15,7 @@ function showToastMsg(text, type) {
   toast.onclick = dismiss;
   document.body.appendChild(toast);
   requestAnimationFrame(() => { requestAnimationFrame(() => toast.classList.add('show')); });
-  const duration = type === 'error' ? 15000 : type === 'warn' ? 8000 : 2500;
+  const duration = type === 'error' ? 6000 : type === 'warn' ? 5000 : 2500;
   setTimeout(dismiss, duration);
 }
 

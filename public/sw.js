@@ -1,18 +1,11 @@
-/* 虾饺 (Xiajiao) — Service Worker (offline-first for static, network-first for dynamic) */
+/* Shrimp — Service Worker */
 
-const CACHE_NAME = 'xiajiao-v2';
+const CACHE_NAME = 'shrimp-__SW_VERSION__';
 
-const PRECACHE = [
-  '/',
-  '/offline.html',
-  '/favicon.svg',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-];
+const PRECACHE = ['/offline.html'];
 
-const STATIC_EXT = /\.(?:js|css|woff2?|png|jpg|jpeg|gif|svg|webp|ico)(?:\?|$)/i;
+const NO_CACHE_PATHS = ['/favicon', '/logo.png', '/icons/', '/manifest.json', '/sw.js'];
 
-/* ── Install: precache shell ── */
 self.addEventListener('install', (ev) => {
   ev.waitUntil(
     caches.open(CACHE_NAME)
@@ -21,58 +14,43 @@ self.addEventListener('install', (ev) => {
   );
 });
 
-/* ── Activate: clean old caches ── */
 self.addEventListener('activate', (ev) => {
   ev.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
+    caches.keys().then(keys => {
+      const old = keys.filter(k => k !== CACHE_NAME);
+      return Promise.all(old.map(k => caches.delete(k))).then(() => {
+        return self.clients.claim().then(() => {
+          if (old.length > 0) {
+            return self.clients.matchAll({ type: 'window' }).then(clients => {
+              for (const client of clients) client.postMessage({ type: 'sw-activated' });
+            });
+          }
+        });
+      });
+    })
   );
 });
 
-/* ── Fetch strategies ── */
 self.addEventListener('fetch', (ev) => {
   const { request } = ev;
-
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-
   if (url.protocol === 'ws:' || url.protocol === 'wss:') return;
   if (url.pathname.startsWith('/api/') || url.pathname === '/upload') return;
   if (url.origin !== self.location.origin) return;
 
-  const isNav = request.mode === 'navigate';
+  if (NO_CACHE_PATHS.some(p => url.pathname.startsWith(p))) return;
 
-  if (isNav) {
-    ev.respondWith(networkFirst(request, true));
+  if (request.mode === 'navigate') {
+    ev.respondWith(networkFirst(request));
     return;
   }
 
-  if (STATIC_EXT.test(url.pathname)) {
-    ev.respondWith(cacheFirst(request));
-    return;
-  }
-
-  ev.respondWith(networkFirst(request, false));
+  ev.respondWith(networkFirst(request));
 });
 
-function cacheFirst(request) {
-  return caches.match(request).then(cached => {
-    if (cached) return cached;
-    return fetch(request).then(resp => {
-      if (resp.ok) {
-        const clone = resp.clone();
-        caches.open(CACHE_NAME).then(c => c.put(request, clone));
-      }
-      return resp;
-    }).catch(() => new Response('', { status: 504, statusText: 'Offline' }));
-  });
-}
-
-function networkFirst(request, fallbackOffline) {
+function networkFirst(request) {
   return fetch(request).then(resp => {
     if (resp.ok) {
       const clone = resp.clone();
@@ -82,7 +60,7 @@ function networkFirst(request, fallbackOffline) {
   }).catch(() =>
     caches.match(request).then(cached => {
       if (cached) return cached;
-      if (fallbackOffline) return caches.match('/offline.html');
+      if (request.mode === 'navigate') return caches.match('/offline.html');
       return new Response('', { status: 504, statusText: 'Offline' });
     })
   );

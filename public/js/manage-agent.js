@@ -67,12 +67,29 @@ function _initNewAgentModelSS() {
     placeholder: t('common.searchModel') || '搜索模型...',
     emptyLabel: t('manage.defaultModel'),
     grouped: true,
+    onChange: function(val) { _showCreateModelWarn(val); },
   });
+}
+
+function _showCreateModelWarn(modelId) {
+  const warnId = 'createModelWarn';
+  let warnEl = document.getElementById(warnId);
+  if (!modelId) { if (warnEl) warnEl.style.display = 'none'; return; }
+  const m = (typeof availableModels !== 'undefined' ? availableModels : []).find(x => x.id === modelId);
+  const cat = m ? getModelCategory(m) : 'chat';
+  const nonChatCats = { image: '图像生成', tts: '语音合成', asr: '语音识别', embedding: '向量化', video: '视频生成', translation: '翻译' };
+  if (nonChatCats[cat]) {
+    const html = `⚠️ 该模型是「${nonChatCats[cat]}」专用模型，不支持文字对话。选用后系统将自动使用默认对话模型回复消息。`;
+    if (warnEl) { warnEl.innerHTML = html; warnEl.style.display = ''; }
+    else { warnEl = document.createElement('div'); warnEl.id = warnId; warnEl.className = 'model-select-warn'; warnEl.innerHTML = html; document.getElementById('newAgentModelSS')?.after(warnEl); }
+  } else {
+    if (warnEl) warnEl.style.display = 'none';
+  }
 }
 
 function _buildModelSSItems(models) {
   const items = [];
-  const catOrder = ['chat','code','reasoning','vision','multimodal','math','thirdparty','image','tts','asr','translation'];
+  const catOrder = ['chat','code','reasoning','vision','multimodal','math','thirdparty','image','video','tts','asr','embedding','translation'];
   const byGroup = {};
   models.forEach(m => {
     const cat = getModelCategory(m);
@@ -111,9 +128,13 @@ async function applyCreateTemplate() {
 }
 
 function createAddKbFiles(evt) {
+  let rejected = [];
   for (const f of evt.target.files) {
+    const v = validateKbFile(f);
+    if (!v.ok) { rejected.push(f.name + ': ' + v.msg); continue; }
     if (!_createKbFiles.some(x => x.name === f.name)) _createKbFiles.push(f);
   }
+  if (rejected.length) showToastMsg(rejected.join('\n'), 'error');
   renderCreateKbList();
   evt.target.value = '';
 }
@@ -149,6 +170,7 @@ async function createAgentAction() {
     if (catName) { const cats = getAgentCategories(); const cat = cats.find(c => c.name === catName); if (cat) { cat.agents = (cat.agents || []).filter(x => x !== id); cat.agents.push(id); setAgentCategories(cats); } }
     _createKbFiles = [];
     showToastMsg(t('manage.createSuccess'));
+    try { const fresh = await (await authFetch('/api/agents')).json(); if (fresh.agents) updateAgentList(fresh.agents); } catch {}
     closeManagePanel();
   } catch(e){msg.textContent=t('common.error')+e.message;}
 }
@@ -274,7 +296,16 @@ async function loadKbTab(id, body) {
     }
   }
 
-  h += '<div class="kb-header"><h4>' + t('train.kbTitle') + '</h4><div class="kb-actions"><button class="btn-small" onclick="kbNewFile()">' + t('train.kbNew') + '</button><label class="btn-small btn-upload-label"><input type="file" accept="' + KB_ACCEPT + '" onchange="kbUploadFile(event)" hidden />' + t('train.kbUpload') + '</label></div></div>';
+  const kbFileCount = files.filter(f => !f.name.startsWith('.')).length;
+  const limits = ragStatus?.limits;
+  const maxFiles = limits?.maxFiles || KB_MAX_FILES;
+  const chunkCount = ragStatus?.chunks || 0;
+  const maxChunks = limits?.maxChunks || 5000;
+
+  h += '<div class="kb-header"><h4>' + t('train.kbTitle') + ' <span class="kb-usage-badge">' + kbFileCount + '/' + maxFiles + '</span></h4><div class="kb-actions"><button class="btn-small" onclick="kbNewFile()">' + t('train.kbNew') + '</button><label class="btn-small btn-upload-label"><input type="file" accept="' + KB_ACCEPT + '" onchange="kbUploadFile(event)" hidden />' + t('train.kbUpload') + '</label></div></div>';
+  if (ragStatus?.enabled && !ragStatus?.embeddingConfigured) {
+    h += '<div class="kb-warn">' + t('train.kbNoEmbedding') + '</div>';
+  }
 
   if (files.length === 0) { h += '<div class="kb-empty">' + t('train.kbEmpty') + '</div>'; }
   else {
@@ -408,6 +439,8 @@ async function kbNewFile() {
 
 async function kbUploadFile(evt) {
   const file = evt.target.files[0]; if (!file) return;
+  const v = validateKbFile(file);
+  if (!v.ok) { showToastMsg(v.msg, 'error'); evt.target.value = ''; return; }
   try { await uploadKbFile(_trainAgentId, file); showToastMsg(t('train.kbUploaded')); loadKbTab(_trainAgentId, $('#trainBody')); } catch (e) { showToastMsg(t('train.kbUploadFail') + e.message, 'error'); }
 }
 
@@ -446,7 +479,7 @@ async function loadModelTab(id, body) {
     <div class="model-cat-pills" id="modelCatPills"></div>
     <div class="model-grid" id="modelCardGrid"></div>
     <div class="model-default-opt"><label><input type="checkbox" id="useDefaultModel" ${!agentModel ? 'checked' : ''} onchange="toggleDefaultModel()" /> ${t('train.useDefaultModel')}</label></div>
-    <div class="train-actions model-actions-sticky"><button class="btn-primary" onclick="saveModelTab()">${t('train.saveModel')}</button><span id="modelMsg" class="form-msg"></span></div>
+    <div class="train-actions"><button class="btn-primary" onclick="saveModelTab()">${t('train.saveModel')}</button><span id="modelMsg" class="form-msg"></span></div>
   </div>`;
 
   _renderModelCatPills();
@@ -469,7 +502,7 @@ function _renderModelCatPills() {
     const c = getModelCategory(m);
     cats[c] = (cats[c] || 0) + 1;
   });
-  const order = ['chat','code','reasoning','vision','multimodal','math','thirdparty','image','tts','asr','translation'];
+  const order = ['chat','code','reasoning','vision','multimodal','math','thirdparty','image','video','tts','asr','embedding','translation'];
   let h = '<button class="model-cat-pill active" data-cat="" onclick="_filterModelCat(this,\'\')">' +
     (t('common.all') || '全部') + '<span class="model-cat-count"> ' + availableModels.length + '</span></button>';
   order.forEach(c => {
@@ -527,6 +560,18 @@ function selectModelCard(el, modelId) {
   $('#trainModelValue').value = modelId;
   $('#currentModelLabel').textContent = modelId;
   const cb = $('#useDefaultModel'); if (cb) cb.checked = false;
+
+  const m = (typeof availableModels !== 'undefined' ? availableModels : []).find(x => x.id === modelId);
+  const cat = m ? getModelCategory(m) : 'chat';
+  const warnEl = document.getElementById('modelSelectWarn');
+  const nonChatCats = { image: '图像生成', tts: '语音合成', asr: '语音识别', embedding: '向量化', video: '视频生成', translation: '翻译' };
+  if (nonChatCats[cat]) {
+    const html = `⚠️ 该模型是「${nonChatCats[cat]}」专用模型，不支持文字对话。选用后系统将自动使用默认对话模型回复消息。如需同时对话和${nonChatCats[cat]}，请选择多模态模型。`;
+    if (warnEl) { warnEl.innerHTML = html; warnEl.style.display = ''; }
+    else { const div = document.createElement('div'); div.id = 'modelSelectWarn'; div.className = 'model-select-warn'; div.innerHTML = html; el.closest('.train-panel-body')?.querySelector('.train-actions')?.before(div); }
+  } else {
+    if (warnEl) warnEl.style.display = 'none';
+  }
 }
 
 function toggleDefaultModel() {
@@ -543,7 +588,11 @@ async function saveModelTab() {
     if (r.ok) {
       msg.textContent = t('train.modelSaved'); msg.className = 'form-msg success'; showToastMsg(t('train.modelSaved'));
       const ag = AGENTS.find(a => a.id === id);
+      const oldModel = ag?.model;
       if (ag) { ag.model = model || null; }
+      if (oldModel && oldModel !== model && ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'stop', channel: id }));
+      }
       if (typeof renderContacts === 'function') renderContacts();
       if (typeof renderChatList === 'function') renderChatList();
       if (typeof activeChannel !== 'undefined' && activeChannel === id && typeof switchChannel === 'function') switchChannel(id);
@@ -574,6 +623,7 @@ async function saveProjectTab() {
 // ── Tools Tab ──
 let _toolsData = [];
 let _toolsDenySet = new Set();
+let _toolsAllowSet = null;
 
 async function loadToolsTab(id, body) {
   body.innerHTML = '<div class="train-panel-body"><div class="train-loading">' + t('common.loading') + '</div></div>';
@@ -589,6 +639,7 @@ async function loadToolsTab(id, body) {
   } catch { _toolsData = []; }
 
   _toolsDenySet = new Set(agentTools.deny || []);
+  _toolsAllowSet = agentTools.allow ? new Set(agentTools.allow) : null;
 
   let h = '<div class="train-panel-body">';
   h += '<div class="tools-tab-header">';
@@ -600,32 +651,75 @@ async function loadToolsTab(id, body) {
     h += '<div class="tools-empty"><div class="tools-empty-icon">\u{1F6E0}\uFE0F</div>';
     h += '<div class="tools-empty-text">' + (t('train.toolsEmpty') || '暂无已注册工具') + '</div></div>';
   } else {
-    h += '<div class="tools-grid">';
+    const builtinTools = [];
+    const mcpGroups = {};
     for (const tool of _toolsData) {
-      const isEnabled = !_toolsDenySet.has(tool.name);
-      const riskCls = tool.risk === 'high' ? 'risk-high' : (tool.risk === 'medium' ? 'risk-medium' : 'risk-low');
-      const riskDot = tool.risk === 'high' ? '\u{1F534}' : (tool.risk === 'medium' ? '\u{1F7E1}' : '\u{1F7E2}');
-      const riskLabel = t('train.risk_' + tool.risk) || tool.risk;
-      const statusCls = tool.status === 'ready' ? 'tool-status-ready' : 'tool-status-warn';
-      const statusLabel = tool.status === 'ready' ? (t('train.toolReady') || '就绪') : (t('train.toolNeedsConfig') || '需配置');
-      const statusClick = tool.status !== 'ready' ? ' onclick="closeManagePanel();openSettings(\'tools\')" style="cursor:pointer;text-decoration:underline"' : '';
-      const catLabel = _toolCatLabel(tool.category);
+      const isMcp = tool.category && tool.category.startsWith('mcp:');
+      if (isMcp) {
+        const serverId = tool.category.slice(4);
+        if (!mcpGroups[serverId]) mcpGroups[serverId] = [];
+        mcpGroups[serverId].push(tool);
+      } else {
+        builtinTools.push(tool);
+      }
+    }
 
-      h += '<div class="tool-card ' + (isEnabled ? '' : 'tool-card-disabled') + '" id="toolCard-' + tool.name + '">';
-      h += '<div class="tool-card-head">';
-      h += '<div class="tool-card-icon">' + (tool.icon || '\u{1F527}') + '</div>';
-      h += '<div class="tool-card-info"><div class="tool-card-name">' + esc(tool.name) + '</div>';
-      h += '<div class="tool-card-cat">' + esc(catLabel) + '</div></div>';
-      h += '<button class="settings-toggle' + (isEnabled ? ' on' : '') + '" id="toolToggle-' + tool.name + '" onclick="toggleAgentTool(\'' + escJs(tool.name) + '\')"></button>';
-      h += '</div>';
-      h += '<div class="tool-card-desc">' + esc(tool.description) + '</div>';
-      h += '<div class="tool-card-footer">';
-      h += '<span class="tool-risk-badge ' + riskCls + '">' + riskDot + ' ' + esc(riskLabel) + '</span>';
-      h += '<span class="tool-status-badge ' + statusCls + '"' + statusClick + '>' + esc(statusLabel) + '</span>';
-      if (tool.requireApproval) h += '<span class="tool-approval-badge">\u{1F6E1}\uFE0F ' + (t('train.toolApproval') || '需审批') + '</span>';
+    if (builtinTools.length) {
+      h += '<div class="tools-section">';
+      h += '<div class="tools-section-header"><span class="tools-section-icon">\u{1F527}</span>';
+      h += '<span class="tools-section-title">内置工具</span>';
+      h += '<span class="tools-section-count">' + builtinTools.length + ' 个</span></div>';
+      h += '<div class="tools-grid">';
+      for (const tool of builtinTools) {
+        h += _renderToolCard(tool);
+      }
       h += '</div></div>';
     }
-    h += '</div>';
+
+    const mcpServerIds = Object.keys(mcpGroups);
+    if (mcpServerIds.length) {
+      h += '<div class="tools-section" style="margin-top:20px">';
+      h += '<div class="tools-section-header"><span class="tools-section-icon">\u{1F50C}</span>';
+      h += '<span class="tools-section-title">MCP 工具</span>';
+      h += '<span class="tools-section-count">' + mcpServerIds.length + ' 个服务器</span>';
+      h += '<span class="tools-section-hint">工具随 MCP Server 加载，在 设置→MCP 中管理</span></div>';
+
+      for (const serverId of mcpServerIds) {
+        const tools = mcpGroups[serverId];
+        const allEnabled = tools.every(tl => !_toolsDenySet.has(tl.name));
+        const allDisabled = tools.every(tl => _toolsDenySet.has(tl.name));
+        const toggleCls = allEnabled ? ' on' : (allDisabled ? '' : ' partial');
+        const enabledCount = tools.filter(tl => !_toolsDenySet.has(tl.name)).length;
+        const autoExpand = mcpServerIds.length === 1;
+
+        h += '<div class="mcp-group" id="mcpGroup-' + escH(serverId) + '">';
+        h += '<div class="mcp-group-header">';
+        h += '<div class="mcp-group-left" onclick="_mcpGroupToggleExpand(\'' + escJs(serverId) + '\')">';
+        h += '<span class="mcp-group-arrow" id="mcpArrow-' + escH(serverId) + '">' + (autoExpand ? '\u25BC' : '\u25B6') + '</span>';
+        h += '<span class="mcp-group-icon">\u{1F50C}</span>';
+        h += '<span class="mcp-group-name">' + esc(serverId) + '</span>';
+        h += '<span class="mcp-group-stat">' + enabledCount + ' / ' + tools.length + ' 已启用</span>';
+        h += '</div>';
+        h += '<button class="settings-toggle' + toggleCls + '" id="mcpGroupToggle-' + escH(serverId) + '" onclick="_mcpGroupToggleAll(\'' + escJs(serverId) + '\')"></button>';
+        h += '</div>';
+
+        h += '<div class="mcp-group-body' + (autoExpand ? '' : ' hidden') + '" id="mcpBody-' + escH(serverId) + '">';
+        h += '<div class="mcp-tool-tags">';
+        for (const tool of tools) {
+          const safeId = _toolSafeId(tool.name);
+          const isEnabled = !_toolsDenySet.has(tool.name);
+          const shortName = tool.name.replace(/^mcp:[^:]+:/, '');
+          h += '<span class="mcp-tool-chip' + (isEnabled ? '' : ' mcp-tool-chip-off') + '" id="toolCard-' + safeId + '" ';
+          h += 'onclick="toggleAgentTool(\'' + escJs(tool.name) + '\',\'' + safeId + '\')" ';
+          h += 'title="' + escH(tool.description || shortName) + '">';
+          h += '<span class="mcp-chip-dot' + (isEnabled ? ' on' : '') + '" id="toolToggle-' + safeId + '"></span>';
+          h += esc(shortName);
+          h += '</span>';
+        }
+        h += '</div></div></div>';
+      }
+      h += '</div>';
+    }
 
     h += '<div class="tools-quick-actions">';
     h += '<button class="btn-small tools-btn-all" onclick="toolsEnableAll()">' + (t('train.toolsEnableAll') || '全部启用') + '</button>';
@@ -633,54 +727,215 @@ async function loadToolsTab(id, body) {
     h += '</div>';
   }
 
-  h += '<div class="train-actions" style="margin-top:16px"><button class="btn-primary" onclick="saveToolsTab()">' + t('common.save') + '</button><span id="toolsMsg" class="form-msg"></span></div>';
+  h += '<div class="train-actions"><button class="btn-primary" onclick="saveToolsTab()">' + t('common.save') + '</button><span id="toolsMsg" class="form-msg"></span></div>';
   h += '</div>';
   body.innerHTML = h;
 }
 
 function _toolCatLabel(cat) {
-  const map = { knowledge: t('train.toolCatKnowledge') || '知识', web: t('train.toolCatWeb') || '网络', memory: t('train.toolCatMemory') || '记忆', general: t('train.toolCatGeneral') || '通用' };
+  if (cat && cat.startsWith('mcp:')) return '🔌 MCP · ' + cat.slice(4);
+  const map = { knowledge: t('train.toolCatKnowledge') || '知识', web: t('train.toolCatWeb') || '网络', memory: t('train.toolCatMemory') || '记忆', general: t('train.toolCatGeneral') || '通用', admin: '管理', collaboration: '协作' };
   return map[cat] || cat;
 }
 
-function toggleAgentTool(name) {
-  const btn = document.getElementById('toolToggle-' + name);
-  const card = document.getElementById('toolCard-' + name);
-  if (!btn) return;
-  const isOn = btn.classList.toggle('on');
-  if (isOn) {
-    _toolsDenySet.delete(name);
-    if (card) card.classList.remove('tool-card-disabled');
+function _toolSafeId(name) { return name.replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
+function _isToolEnabled(tool) {
+  if (tool.defaultDeny) return !!(_toolsAllowSet && _toolsAllowSet.has(tool.name));
+  return !_toolsDenySet.has(tool.name);
+}
+
+function _renderToolCard(tool) {
+  const isEnabled = _isToolEnabled(tool);
+  const isDenyDefault = !!tool.defaultDeny;
+  const riskCls = tool.risk === 'high' ? 'risk-high' : (tool.risk === 'medium' ? 'risk-medium' : 'risk-low');
+  const riskDot = tool.risk === 'high' ? '\u{1F534}' : (tool.risk === 'medium' ? '\u{1F7E1}' : '\u{1F7E2}');
+  const riskLabel = t('train.risk_' + tool.risk) || tool.risk;
+  const statusCls = tool.status === 'ready' ? 'tool-status-ready' : 'tool-status-warn';
+  const statusLabel = tool.status === 'ready' ? (t('train.toolReady') || '就绪') : (t('train.toolNeedsConfig') || '需配置');
+  const statusClick = tool.status !== 'ready' ? ' onclick="closeManagePanel();openSettings(\'tools\')" style="cursor:pointer;text-decoration:underline"' : '';
+  const catLabel = _toolCatLabel(tool.category);
+  const safeId = _toolSafeId(tool.name);
+
+  let c = '<div class="tool-card ' + (isEnabled ? '' : 'tool-card-disabled') + '" id="toolCard-' + safeId + '">';
+  c += '<div class="tool-card-head">';
+  c += '<div class="tool-card-icon">' + (tool.icon || '\u{1F527}') + '</div>';
+  c += '<div class="tool-card-info"><div class="tool-card-name">' + esc(tool.name) + '</div>';
+  c += '<div class="tool-card-cat">' + esc(catLabel) + '</div></div>';
+  c += '<button class="settings-toggle' + (isEnabled ? ' on' : '') + '" id="toolToggle-' + safeId + '" onclick="toggleAgentTool(\'' + escJs(tool.name) + '\',\'' + safeId + '\')"></button>';
+  c += '</div>';
+  c += '<div class="tool-card-desc">' + esc(tool.description) + '</div>';
+  c += '<div class="tool-card-footer">';
+  c += '<span class="tool-risk-badge ' + riskCls + '">' + riskDot + ' ' + esc(riskLabel) + '</span>';
+  c += '<span class="tool-status-badge ' + statusCls + '"' + statusClick + '>' + esc(statusLabel) + '</span>';
+  if (isDenyDefault) c += '<span class="tool-approval-badge" id="toolBadge-' + safeId + '" title="此工具默认关闭，开启开关即可授权">\u{1F512} ' + (isEnabled ? '已授权' : '默认关闭') + '</span>';
+  else if (tool.requireApproval) c += '<span class="tool-approval-badge">\u{1F6E1}\uFE0F ' + (t('train.toolApproval') || '需审批') + '</span>';
+  c += '</div></div>';
+  return c;
+}
+
+function toggleAgentTool(name, safeId) {
+  const sid = safeId || _toolSafeId(name);
+  const isMcp = name.startsWith('mcp:');
+
+  if (isMcp) {
+    const dot = document.getElementById('toolToggle-' + sid);
+    const chip = document.getElementById('toolCard-' + sid);
+    if (!dot) return;
+    const wasOff = _toolsDenySet.has(name);
+    if (wasOff) {
+      _toolsDenySet.delete(name);
+      dot.classList.add('on');
+      if (chip) chip.classList.remove('mcp-tool-chip-off');
+    } else {
+      _toolsDenySet.add(name);
+      dot.classList.remove('on');
+      if (chip) chip.classList.add('mcp-tool-chip-off');
+    }
+    const serverId = (name.match(/^mcp:([^:]+):/) || [])[1];
+    if (serverId) _mcpGroupUpdateToggle(serverId);
   } else {
-    _toolsDenySet.add(name);
-    if (card) card.classList.add('tool-card-disabled');
+    const tool = _toolsData.find(tl => tl.name === name);
+    const isDefaultDeny = tool && tool.defaultDeny;
+    const btn = document.getElementById('toolToggle-' + sid);
+    const card = document.getElementById('toolCard-' + sid);
+    if (!btn) return;
+    const isOn = btn.classList.toggle('on');
+    if (isDefaultDeny) {
+      if (!_toolsAllowSet) _toolsAllowSet = new Set();
+      if (isOn) { _toolsAllowSet.add(name); } else { _toolsAllowSet.delete(name); }
+      const badge = document.getElementById('toolBadge-' + sid);
+      if (badge) badge.textContent = isOn ? '\u{1F512} 已授权' : '\u{1F512} 默认关闭';
+    } else {
+      if (isOn) { _toolsDenySet.delete(name); } else { _toolsDenySet.add(name); }
+    }
+    if (card) { if (isOn) card.classList.remove('tool-card-disabled'); else card.classList.add('tool-card-disabled'); }
   }
+}
+
+function _mcpGroupToggleExpand(serverId) {
+  const body = document.getElementById('mcpBody-' + serverId);
+  const arrow = document.getElementById('mcpArrow-' + serverId);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  if (isOpen) {
+    body.classList.add('hidden');
+    if (arrow) arrow.textContent = '\u25B6';
+  } else {
+    body.classList.remove('hidden');
+    if (arrow) arrow.textContent = '\u25BC';
+  }
+}
+
+function _mcpGroupToggleAll(serverId) {
+  const tools = _toolsData.filter(tl => tl.category === 'mcp:' + serverId);
+  if (!tools.length) return;
+  const allEnabled = tools.every(tl => !_toolsDenySet.has(tl.name));
+  for (const tl of tools) {
+    const sid = _toolSafeId(tl.name);
+    if (allEnabled) {
+      _toolsDenySet.add(tl.name);
+      const dot = document.getElementById('toolToggle-' + sid);
+      const chip = document.getElementById('toolCard-' + sid);
+      if (dot) dot.classList.remove('on');
+      if (chip) chip.classList.add('mcp-tool-chip-off');
+    } else {
+      _toolsDenySet.delete(tl.name);
+      const dot = document.getElementById('toolToggle-' + sid);
+      const chip = document.getElementById('toolCard-' + sid);
+      if (dot) dot.classList.add('on');
+      if (chip) chip.classList.remove('mcp-tool-chip-off');
+    }
+  }
+  _mcpGroupUpdateToggle(serverId);
+}
+
+function _mcpGroupUpdateToggle(serverId) {
+  const tools = _toolsData.filter(tl => tl.category === 'mcp:' + serverId);
+  const toggle = document.getElementById('mcpGroupToggle-' + serverId);
+  const group = document.getElementById('mcpGroup-' + serverId);
+  const stat = group ? group.querySelector('.mcp-group-stat') : null;
+  if (!toggle) return;
+  const enabledCount = tools.filter(tl => !_toolsDenySet.has(tl.name)).length;
+  const allOn = enabledCount === tools.length;
+  const allOff = enabledCount === 0;
+  toggle.className = 'settings-toggle' + (allOn ? ' on' : (allOff ? '' : ' partial'));
+  if (stat) stat.textContent = enabledCount + ' / ' + tools.length + ' 已启用';
 }
 
 function toolsEnableAll() {
   _toolsDenySet.clear();
+  if (!_toolsAllowSet) _toolsAllowSet = new Set();
   _toolsData.forEach(td => {
-    const btn = document.getElementById('toolToggle-' + td.name);
-    const card = document.getElementById('toolCard-' + td.name);
-    if (btn && !btn.classList.contains('on')) btn.classList.add('on');
-    if (card) card.classList.remove('tool-card-disabled');
+    const sid = _toolSafeId(td.name);
+    if (td.defaultDeny) {
+      _toolsAllowSet.add(td.name);
+      const badge = document.getElementById('toolBadge-' + sid);
+      if (badge) badge.textContent = '\u{1F512} 已授权';
+    }
+    const isMcp = td.category && td.category.startsWith('mcp:');
+    if (isMcp) {
+      const dot = document.getElementById('toolToggle-' + sid);
+      const chip = document.getElementById('toolCard-' + sid);
+      if (dot) dot.classList.add('on');
+      if (chip) chip.classList.remove('mcp-tool-chip-off');
+    } else {
+      const btn = document.getElementById('toolToggle-' + sid);
+      const card = document.getElementById('toolCard-' + sid);
+      if (btn && !btn.classList.contains('on')) btn.classList.add('on');
+      if (card) card.classList.remove('tool-card-disabled');
+    }
   });
+  const mcpServers = new Set();
+  _toolsData.forEach(td => { if (td.category && td.category.startsWith('mcp:')) mcpServers.add(td.category.slice(4)); });
+  mcpServers.forEach(sid => _mcpGroupUpdateToggle(sid));
 }
 
 function toolsDisableAll() {
+  if (_toolsAllowSet) _toolsAllowSet.clear();
   _toolsData.forEach(td => {
-    _toolsDenySet.add(td.name);
-    const btn = document.getElementById('toolToggle-' + td.name);
-    const card = document.getElementById('toolCard-' + td.name);
-    if (btn && btn.classList.contains('on')) btn.classList.remove('on');
-    if (card) card.classList.add('tool-card-disabled');
+    const sid = _toolSafeId(td.name);
+    if (td.defaultDeny) {
+      const badge = document.getElementById('toolBadge-' + sid);
+      if (badge) badge.textContent = '\u{1F512} 默认关闭';
+    } else {
+      _toolsDenySet.add(td.name);
+    }
+    const isMcp = td.category && td.category.startsWith('mcp:');
+    if (isMcp) {
+      const dot = document.getElementById('toolToggle-' + sid);
+      const chip = document.getElementById('toolCard-' + sid);
+      if (dot) dot.classList.remove('on');
+      if (chip) chip.classList.add('mcp-tool-chip-off');
+    } else {
+      const btn = document.getElementById('toolToggle-' + sid);
+      const card = document.getElementById('toolCard-' + sid);
+      if (btn && btn.classList.contains('on')) btn.classList.remove('on');
+      if (card) card.classList.add('tool-card-disabled');
+    }
   });
+  const mcpServers = new Set();
+  _toolsData.forEach(td => { if (td.category && td.category.startsWith('mcp:')) mcpServers.add(td.category.slice(4)); });
+  mcpServers.forEach(sid => _mcpGroupUpdateToggle(sid));
 }
 
 async function saveToolsTab() {
   const id = _trainAgentId, msg = $('#toolsMsg');
   const deny = [..._toolsDenySet];
-  const tools = deny.length > 0 ? { deny } : {};
+  const hasDefaultDenyEnabled = _toolsAllowSet && _toolsAllowSet.size > 0;
+  let allow = [];
+  if (hasDefaultDenyEnabled) {
+    _toolsData.forEach(td => {
+      if (td.defaultDeny) {
+        if (_toolsAllowSet.has(td.name)) allow.push(td.name);
+      } else {
+        if (!_toolsDenySet.has(td.name)) allow.push(td.name);
+      }
+    });
+  }
+  const tools = {};
+  if (deny.length > 0) tools.deny = deny;
+  if (allow.length > 0) tools.allow = allow;
   msg.textContent = t('common.saving'); msg.className = 'form-msg';
   try {
     const r = await (await authFetch('/api/agents/' + id, {

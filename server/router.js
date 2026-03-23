@@ -10,6 +10,7 @@ const linkPreviewRoute = require('./routes/link-preview');
 const messagesRoute = require('./routes/messages');
 const userPrefsRoute = require('./routes/user-prefs');
 const collabFlowRoute = require('./routes/collab-flows');
+const channelsRoute = require('./routes/channels');
 
 const communityHandle = (req, res, urlPath, query) => communityRoute.handle(req, res, urlPath, query);
 
@@ -23,6 +24,7 @@ const prefixMap = {
   'profiles':       communityHandle,
   'metrics':        communityHandle,
   'schedules':      communityHandle,
+  'tasks':          communityHandle,
   'settings':       settingsRoute.handle,
   'workflows':      workflowsRoute.handle,
   'link-preview':   linkPreviewRoute.handle,
@@ -30,6 +32,7 @@ const prefixMap = {
   'user':           userPrefsRoute.handle,
   'tools':          agentsRoute.handle,
   'collab-flows':   collabFlowRoute.handle,
+  'channels':       channelsRoute.handle,
 };
 
 async function handleApi(req, res, urlPath, query) {

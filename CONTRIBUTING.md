@@ -10,7 +10,7 @@
 ## 本地运行
 
 ```bash
-git clone https://github.com/FengWanMin/xiajiao.git
+git clone https://github.com/moziio/xiajiao.git
 cd xiajiao
 npm install
 npm start
@@ -66,5 +66,5 @@ public/
 
 ## 需要帮助？
 
-- 在 [GitHub Issues](https://github.com/FengWanMin/xiajiao/issues) 中提 Bug 或建议
-- 在 [GitHub Discussions](https://github.com/FengWanMin/xiajiao/discussions) 中交流讨论
+- 在 [GitHub Issues](https://github.com/moziio/xiajiao/issues) 中提 Bug 或建议
+- 在 [GitHub Discussions](https://github.com/moziio/xiajiao/discussions) 中交流讨论

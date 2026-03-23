@@ -3,6 +3,7 @@ node_modules/
 
 # Runtime data
 data/
+!data/_soul-templates/
 *.db
 *.db-wal
 *.db-shm
@@ -17,8 +18,12 @@ agent-profiles.json
 agent-metrics.json
 community-posts.json
 community-schedules.json
+community-topics.json
 message-history.json
 chat-history.json
+
+# Dev preview
+_preview.html
 
 # Migration backups
 *.bak
@@ -41,6 +46,9 @@ docs/dev/
 # Environment & secrets
 .env
 *.pem
+
+# Large media
+docs/images/*.mp4
 
 # Logs
 *.log
