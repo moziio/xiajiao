@@ -56,7 +56,7 @@ async function handle(req, res, urlPath) {
   // ── Providers ──
   if (urlPath === '/api/settings/providers' && req.method === 'GET') {
     if (!guardOwner(req, res)) return;
-    store.loadModels();
+    store.loadModels(true);
     return jsonRes(res, 200, { providers: store.localModels.providers || {}, models: store.localModels.models || [] });
   }
   if (urlPath === '/api/settings/providers' && req.method === 'POST') {
@@ -64,7 +64,7 @@ async function handle(req, res, urlPath) {
     const body = await readBody(req);
     if (!body.id || !body.baseUrl) throw new Error('id and baseUrl required');
     if (['__proto__', 'constructor', 'prototype'].includes(body.id)) throw new Error('invalid provider id');
-    store.loadModels();
+    store.loadModels(true);
     store.localModels.providers[body.id] = { baseUrl: body.baseUrl, apiKey: body.apiKey || '', api: body.api || 'openai-completions' };
     store.saveModels();
     return jsonRes(res, 200, { ok: true });
@@ -92,7 +92,14 @@ async function handle(req, res, urlPath) {
       try {
         const resp = await fetch(url, { headers: makeHeaders(), signal: ctrl.signal });
         clearTimeout(timer);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        if (!resp.ok) {
+          const status = resp.status;
+          let msg = 'HTTP ' + status;
+          if (status === 401 || status === 403) msg = 'auth_failed';
+          else if (status === 404) msg = 'endpoint_not_found';
+          else if (status >= 500) msg = 'server_error';
+          throw new Error(msg);
+        }
         const json = await resp.json();
         return (json.data || json.models || []).map(m => ({
           id: typeof m === 'string' ? m : (m.id || m.name || ''),
@@ -107,14 +114,17 @@ async function handle(req, res, urlPath) {
     if (!baseUrl.endsWith('/v1')) candidates.push(baseUrl + '/v1/models');
     if (baseUrl.includes('dashscope.aliyuncs.com') && !baseUrl.includes('compatible-mode'))
       candidates.push('https://dashscope.aliyuncs.com/compatible-mode/v1/models');
+    if (baseUrl.includes('coding.dashscope.aliyuncs.com'))
+      candidates.push('https://dashscope.aliyuncs.com/compatible-mode/v1/models');
 
+    let lastError = null;
     for (const url of candidates) {
       try {
         const models = await tryDiscover(url);
         if (models.length) return jsonRes(res, 200, { ok: true, models });
-      } catch {}
+      } catch (e) { lastError = e; }
     }
-    return jsonRes(res, 200, { ok: true, models: [], noDiscover: true });
+    return jsonRes(res, 200, { ok: true, models: [], noDiscover: true, error: lastError?.message || '' });
   }
 
   const provMatch = urlPath.match(/^\/api\/settings\/providers\/([^/]+)$/);
@@ -122,7 +132,7 @@ async function handle(req, res, urlPath) {
     if (!guardOwner(req, res)) return;
     const body = await readBody(req);
     store.loadModels();
-    const pid = provMatch[1];
+    const pid = decodeURIComponent(provMatch[1]);
     if (!store.localModels.providers[pid]) throw new Error('provider not found');
     if (body.baseUrl !== undefined) store.localModels.providers[pid].baseUrl = body.baseUrl;
     if (body.apiKey !== undefined) store.localModels.providers[pid].apiKey = body.apiKey;
@@ -132,8 +142,8 @@ async function handle(req, res, urlPath) {
   }
   if (provMatch && req.method === 'DELETE') {
     if (!guardOwner(req, res)) return;
-    store.loadModels();
-    const pid = provMatch[1];
+    store.loadModels(true);
+    const pid = decodeURIComponent(provMatch[1]);
     const removedModelIds = new Set((store.localModels.models || []).filter(m => m.provider === pid).map(m => m.id));
     delete store.localModels.providers[pid];
     store.localModels.models = (store.localModels.models || []).filter(m => m.provider !== pid);

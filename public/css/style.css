@@ -1186,7 +1186,7 @@ html, body { height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFo
 .preset-tag:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* Discover model list */
-.discover-model-list { margin-top: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; max-height: 320px; overflow-y: auto; }
+.discover-model-list { margin-top: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; max-height: 400px; overflow-y: auto; }
 .discover-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; color: var(--cyan); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 .discover-check-all { font-size: 12px; color: var(--text2); font-weight: 400; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 .discover-check-all input { accent-color: var(--cyan); }

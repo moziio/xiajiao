@@ -354,12 +354,17 @@ async function saveProviderEdit(pid) {
 async function deleteProvider(pid) {
   if (!await appConfirm(t('settings.deleteProviderConfirm'))) return;
   try {
-    await authFetch('/api/settings/providers/' + pid, { method: 'DELETE' });
-    showToastMsg(t('settings.saved'));
+    const resp = await authFetch('/api/settings/providers/' + pid, { method: 'DELETE' });
+    const r = await resp.json();
+    if (!r.ok) {
+      showToastMsg(t('common.fail') + ': ' + (r.error || ''), 'error');
+      return;
+    }
+    showToastMsg(t('settings.deleted'));
     if (_modelListFilter.provider === pid) { _modelListFilter.provider = ''; _modelListFilter.search = ''; }
     await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard();
     try { const r = await (await authFetch('/api/agents')).json(); if (r.agents) updateAgentList(r.agents); } catch {}
-  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
+  } catch (e) { showToastMsg(t('common.fail') + ': ' + e.message, 'error'); }
 }
 
 const PROVIDER_PRESETS = [
@@ -410,25 +415,57 @@ async function submitAddProvider() {
   if (!id || !baseUrl) { showToastMsg(t('settings.fillRequired'), 'error'); return; }
   const resultEl = document.getElementById('apDiscoverResult');
 
-  try {
-    await authFetch('/api/settings/providers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, baseUrl, apiKey, api }) });
-  } catch (e) { showToastMsg(t('common.fail') + ': ' + e.message, 'error'); return; }
-
-  await loadSettingsProviders();
-  await loadModels();
-  renderCapabilityDashboard();
-
   resultEl.innerHTML = '<div style="padding:12px;color:var(--text3);font-size:13px">' + t('settings.discovering') + '</div>';
+
   try {
     const r = await (await authFetch('/api/settings/providers/discover', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ baseUrl, apiKey, api }) })).json();
-    const models = (r.error ? [] : r.models) || [];
+    const models = r.models || [];
+
     if (!models.length) {
+      const resp = await authFetch('/api/settings/providers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, baseUrl, apiKey, api }) });
+      const saveR = await resp.json();
+      if (!saveR.ok) {
+        showToastMsg(t('common.fail') + ': ' + (saveR.error || ''), 'error');
+        return;
+      }
+      await loadSettingsProviders();
+      await loadModels();
+      renderCapabilityDashboard();
+
       const formEl = document.getElementById('stAddProviderForm');
       if (formEl) formEl.classList.add('hidden');
-      quickAddModelForProvider(id);
-      showToastMsg(t('settings.providerSavedNoDiscover'));
+
+      let hintMsg = t('settings.providerSavedNoDiscover');
+      if (r.error) {
+        hintMsg = t('settings.discoverFailedButSaved');
+      }
+      showToastMsg(hintMsg, 'warn');
+
+      window._apDiscoverData = { id, baseUrl, apiKey, api, models: [], alreadySaved: true };
+      const apiOpts = _imageApiOptions().map(a => '<option value="' + a.val + '">' + a.label + '</option>').join('');
+      let h = '<div class="discover-model-list"><div class="discover-header"><span>' + t('settings.manualAddModel') + '</span></div>' +
+        '<div style="padding:12px;border:1px solid var(--border);border-radius:8px;">' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+        '<input class="settings-input" id="qaId-' + escH(id) + '" placeholder="' + t('settings.modelIdPlaceholder') + '" style="flex:1;min-width:150px;">' +
+        '<input class="settings-input" id="qaName-' + escH(id) + '" placeholder="' + t('settings.modelNamePlaceholder') + '" style="flex:1;min-width:150px;opacity:0.7;">' +
+        '<select class="settings-select" id="qaApi-' + escH(id) + '" style="min-width:140px">' + apiOpts + '</select>' +
+        '<button class="settings-btn settings-btn-primary" onclick="submitQuickAddModelFromDiscover(\'' + escJs(id) + '\')" style="white-space:nowrap">' + t('settings.addModel') + '</button></div>' +
+        '<div style="color:var(--text3);font-size:12px;margin-top:8px">💡 ' + t('settings.manualAddModelTip') + '</div></div></div>';
+      resultEl.innerHTML = h;
       return;
     }
+
+    const resp = await authFetch('/api/settings/providers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, baseUrl, apiKey, api }) });
+    const saveR = await resp.json();
+    if (!saveR.ok) {
+      showToastMsg(t('common.fail') + ': ' + (saveR.error || ''), 'error');
+      return;
+    }
+
+    await loadSettingsProviders();
+    await loadModels();
+    renderCapabilityDashboard();
+
     window._apDiscoverData = { id, baseUrl, apiKey, api, models, alreadySaved: true };
     let h = '<div class="discover-model-list"><div class="discover-header"><span>' + t('settings.foundModels', { count: models.length }) + '</span>' +
       '<label class="discover-check-all"><input type="checkbox" id="apCheckAll" onchange="toggleDiscoverAll(this.checked)" checked> ' + t('settings.selectAll') + '</label></div>' +
@@ -441,10 +478,8 @@ async function submitAddProvider() {
     h += '</div><button class="settings-btn settings-btn-primary" onclick="confirmAddProvider()" style="margin-top:10px;width:100%">' + t('settings.confirmAdd') + '</button></div>';
     resultEl.innerHTML = h;
   } catch (e) {
-    const formEl = document.getElementById('stAddProviderForm');
-    if (formEl) formEl.classList.add('hidden');
-    quickAddModelForProvider(id);
-    showToastMsg(t('settings.providerSavedNoDiscover'));
+    resultEl.innerHTML = '';
+    showToastMsg(t('common.fail') + ': ' + e.message, 'error');
   }
 }
 
@@ -471,6 +506,30 @@ async function confirmAddProvider() {
   await loadSettingsProviders();
   await loadModels();
   renderCapabilityDashboard();
+}
+
+async function submitQuickAddModelFromDiscover(pid) {
+  const rawId = document.getElementById('qaId-' + pid)?.value?.trim();
+  const name = document.getElementById('qaName-' + pid)?.value?.trim();
+  const api = document.getElementById('qaApi-' + pid)?.value;
+  if (!rawId) { showToastMsg(t('settings.fillRequired'), 'error'); return; }
+  const id = rawId.includes('/') ? rawId : pid + '/' + rawId;
+
+  const body = { id, name: name || rawId, provider: pid, input: ['text'], contextWindow: 128000, maxTokens: 8192 };
+  if (api === 'dashscope-image' || api === 'openai-image') {
+    body.output = ['image'];
+    body.api = api;
+  } else if (api) {
+    body.api = api;
+  }
+
+  try {
+    await authFetch('/api/settings/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    showToastMsg(t('settings.saved'));
+    const resultEl = document.getElementById('apDiscoverResult');
+    if (resultEl) resultEl.innerHTML = '';
+    await loadSettingsProviders(); await loadModels(); renderCapabilityDashboard();
+  } catch (e) { showToastMsg(t('common.fail'), 'error'); }
 }
 
 async function refreshProviderModels(pid) {
@@ -672,7 +731,21 @@ async function saveModelCapabilities(encodedModelId) {
 }
 
 function quickAddModelForProvider(pid) {
-  const el = document.getElementById('provQuickAdd-' + pid); if (!el) return;
+  let el = document.getElementById('provQuickAdd-' + pid);
+  if (!el) {
+    const provCard = document.getElementById('prov-' + pid);
+    if (provCard) {
+      const div = document.createElement('div');
+      div.id = 'provQuickAdd-' + pid;
+      div.className = 'hidden';
+      provCard.appendChild(div);
+      el = div;
+    }
+  }
+  if (!el) {
+    showToastMsg(t('settings.providerNotFound'), 'error');
+    return;
+  }
   if (!el.classList.contains('hidden')) { el.classList.add('hidden'); el.innerHTML = ''; return; }
   el.classList.remove('hidden');
 

@@ -211,14 +211,15 @@ async function deleteGroupConfirm(gid) {
 
 // ── Collaboration Chain Config (M4.2) ──
 function editCollabChain(gid) {
-  const g = customGroups.find(x => x.id === gid); if (!g) return;
+  const g = customGroups.find(x => x.id === gid);
+  if (!g) return;
   const sg = escJs(gid);
   const chain = g.collabChain || [];
   const members = (g.members || []).map(mid => AGENTS.find(a => a.id === mid)).filter(Boolean);
 
   let h = '<div class="chain-panel">';
   h += '<div class="chain-panel-hd"><span class="chain-panel-title">🔗 协作链</span>';
-  h += '<button class="collab-flow-btn" style="margin-left:auto;margin-right:8px" onclick="closeManagePanel();showFlowPanelForChannel(\'' + sg + '\')">📋 协作流记录</button>';
+  h += '<button class="collab-flow-btn" style="margin-left:auto;margin-right:8px" onclick="closeManagePanel();startChat(\'' + gid + '\');setTimeout(function(){showFlowPanelForChannel(\'' + gid + '\')},100)">📋 协作流记录</button>';
   h += '<button class="modal-close" onclick="closeManagePanel()">&times;</button></div>';
 
   if (chain.length === 0) {
