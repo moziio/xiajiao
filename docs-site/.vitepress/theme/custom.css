@@ -1,0 +1,183 @@
+:root {
+  --vp-c-brand-1: #e85d3a;
+  --vp-c-brand-2: #d44f2e;
+  --vp-c-brand-3: #c04424;
+  --vp-c-brand-soft: rgba(232, 93, 58, 0.14);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(
+    120deg,
+    #e85d3a 30%,
+    #f0a030
+  );
+
+  --vp-home-hero-image-background-image: linear-gradient(
+    -45deg,
+    #e85d3a50 50%,
+    #f0a03050 50%
+  );
+  --vp-home-hero-image-filter: blur(44px);
+
+  --vp-custom-block-tip-border: rgba(232, 93, 58, 0.4);
+  --vp-custom-block-tip-text: var(--vp-c-brand-1);
+  --vp-custom-block-tip-bg: var(--vp-c-brand-soft);
+}
+
+.dark {
+  --vp-c-brand-1: #f07050;
+  --vp-c-brand-2: #e85d3a;
+  --vp-c-brand-3: #d44f2e;
+  --vp-c-brand-soft: rgba(240, 112, 80, 0.16);
+
+  --vp-home-hero-image-background-image: linear-gradient(
+    -45deg,
+    #e85d3a30 50%,
+    #f0a03030 50%
+  );
+}
+
+/* Hero section */
+.VPHero .VPImage {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease;
+}
+
+.VPHero .VPImage:hover {
+  transform: scale(1.02);
+}
+
+/* Feature cards */
+.VPFeature {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.VPFeature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.VPFeature .icon {
+  font-size: 1.5rem;
+}
+
+.VPFeature .title {
+  font-weight: 700 !important;
+}
+
+/* Navbar */
+.VPNavBarTitle .title {
+  font-weight: 700 !important;
+}
+
+/* Document headings */
+.vp-doc h1 {
+  background: linear-gradient(120deg, #e85d3a, #d44f2e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .vp-doc h1 {
+  background: linear-gradient(120deg, #f07050, #f0a030);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vp-doc h2 {
+  border-bottom: 2px solid var(--vp-c-brand-soft);
+  padding-bottom: 0.5rem;
+}
+
+/* Tables */
+.vp-doc table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.vp-doc th {
+  background: var(--vp-c-brand-soft);
+  font-weight: 600;
+}
+
+.vp-doc tr:nth-child(even) td {
+  background: var(--vp-c-bg-soft);
+}
+
+/* Links */
+.vp-doc a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+
+/* Code blocks */
+.vp-doc div[class*="language-"] {
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+}
+
+/* Inline code */
+.vp-doc :not(pre) > code {
+  border-radius: 4px;
+  padding: 2px 6px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+}
+
+/* Custom blocks */
+.vp-doc .custom-block {
+  border-radius: 8px;
+}
+
+/* Footer */
+.VPFooter {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* Sidebar */
+.VPSidebarItem .text {
+  transition: color 0.2s ease;
+}
+
+/* Search */
+.DocSearch-Button {
+  border-radius: 8px !important;
+}
+
+/* Responsive hero */
+@media (min-width: 640px) {
+  .VPHero .main .name {
+    font-size: 3rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero .main .name {
+    font-size: 3.5rem;
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better info/warning/danger blocks */
+.vp-doc .custom-block.info {
+  border-left: 4px solid var(--vp-c-brand-1);
+}
+
+.vp-doc .custom-block.warning {
+  border-left: 4px solid #f0a030;
+}
+
+.vp-doc .custom-block.danger {
+  border-left: 4px solid #e53e3e;
+}
+
+.vp-doc .custom-block.tip {
+  border-left: 4px solid var(--vp-c-brand-1);
+}

@@ -15,6 +15,7 @@ export default defineConfig({
     ['meta', { property: 'og:description', content: '6 个 npm 依赖，npm start 即跑。多 Agent 群聊、协作流、持久记忆、RAG 知识库。' }],
     ['meta', { property: 'og:image', content: 'https://moziio.github.io/xiajiao/images/hero-light-top.png' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'keywords', content: 'AI Agent, 多Agent协作, 群聊, Tool Calling, RAG, 持久记忆, SOUL.md, 开源, Node.js, 虾饺' }],
   ],
 
   themeConfig: {
@@ -25,9 +26,15 @@ export default defineConfig({
       { text: '指南', link: '/guide/what-is-xiajiao' },
       { text: '功能', link: '/features/multi-agent-chat' },
       { text: '部署', link: '/deployment/local' },
+      { text: '实战案例', link: '/guide/recipes' },
       {
         text: '更多',
         items: [
+          { text: 'SOUL.md 写作指南', link: '/guide/soul-guide' },
+          { text: '架构设计', link: '/guide/architecture' },
+          { text: '开发者指南', link: '/guide/dev-guide' },
+          { text: '常见问题', link: '/guide/faq' },
+          { text: '---', link: '' },
           { text: '更新日志', link: 'https://github.com/moziio/xiajiao/blob/master/CHANGELOG.md' },
           { text: '贡献指南', link: 'https://github.com/moziio/xiajiao/blob/master/CONTRIBUTING.md' },
           { text: '问题反馈', link: 'https://github.com/moziio/xiajiao/issues' },
@@ -45,7 +52,22 @@ export default defineConfig({
             { text: '快速开始', link: '/guide/quick-start' },
             { text: '安装指南', link: '/guide/installation' },
             { text: '模型配置', link: '/guide/model-config' },
+          ]
+        },
+        {
+          text: '进阶',
+          items: [
+            { text: 'SOUL.md 写作指南', link: '/guide/soul-guide' },
+            { text: '实战案例', link: '/guide/recipes' },
+            { text: '架构设计', link: '/guide/architecture' },
+          ]
+        },
+        {
+          text: '开发',
+          items: [
+            { text: '开发者指南', link: '/guide/dev-guide' },
             { text: '常见问题', link: '/guide/faq' },
+            { text: '更新日志', link: '/guide/changelog' },
           ]
         }
       ],
@@ -97,7 +119,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: '基于 MIT 协议开源',
+      message: '基于 MIT 协议开源 · <a href="https://github.com/moziio/xiajiao">GitHub</a> · <a href="https://github.com/moziio/xiajiao/discussions">社区</a>',
       copyright: 'Copyright © 2026 虾饺 IM'
     },
 
@@ -111,7 +133,8 @@ export default defineConfig({
     },
 
     outline: {
-      label: '页面导航'
+      label: '页面导航',
+      level: [2, 3]
     },
 
     returnToTopLabel: '回到顶部',

@@ -199,3 +199,5 @@ Agent 通过 `rag_query` 工具自动检索：
 - [Agent 持久记忆](/features/agent-memory) — 个性化记忆系统
 - [Tool Calling](/features/tool-calling) — rag_query 工具详情
 - [协作流](/features/collaboration-flow) — 多 Agent 自动协作
+- [实战案例](/guide/recipes) — 私人知识助理、客户支持等 RAG 实战方案
+- [架构设计](/guide/architecture) — RAG 管线的代码实现详解

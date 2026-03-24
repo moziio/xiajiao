@@ -228,3 +228,5 @@ Agent 会主动 `memory_write` 保存这些偏好。
 - [RAG 知识库](/features/rag) — 文档级别的知识检索
 - [Tool Calling](/features/tool-calling) — memory_write / memory_search 工具详情
 - [多 Agent 群聊](/features/multi-agent-chat) — Agent 如何协作
+- [SOUL.md 写作指南](/guide/soul-guide) — 在 SOUL.md 中配置记忆行为
+- [实战案例](/guide/recipes) — 利用记忆实现面试教练、学习助手等
