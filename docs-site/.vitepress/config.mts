@@ -44,6 +44,8 @@ export default defineConfig({
             { text: '虾饺是什么', link: '/guide/what-is-xiajiao' },
             { text: '快速开始', link: '/guide/quick-start' },
             { text: '安装指南', link: '/guide/installation' },
+            { text: '模型配置', link: '/guide/model-config' },
+            { text: '常见问题', link: '/guide/faq' },
           ]
         }
       ],
