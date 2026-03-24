@@ -94,6 +94,7 @@ export default defineConfig({
             { text: 'Agent 持久记忆', link: '/features/agent-memory' },
             { text: 'RAG 知识库', link: '/features/rag' },
             { text: '协作流', link: '/features/collaboration-flow' },
+            { text: '渠道接入', link: '/features/integrations' },
           ]
         }
       ],

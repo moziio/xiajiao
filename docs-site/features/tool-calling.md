@@ -201,6 +201,61 @@ Agent 主动把重要信息写入持久记忆。
 
 虾饺的工具数量不如 Coze 多，但胜在**跨 Agent 调用**和**完全透明的调用过程**。
 
+## 工具调用的实际输出
+
+以下是虾饺 Web 界面中 Tool Calling 的真实展示效果：
+
+```
+你：@代码助手 最新的 Bun 和 Node.js 性能对比数据
+
+代码助手：让我搜索最新的对比数据。
+
+  🔧 正在调用 web_search...
+  ├── 查询: "Bun vs Node.js performance benchmark 2026"
+  ├── 引擎: Google
+  └── ✅ 找到 8 条结果
+
+根据最新的基准测试数据（2026 年 3 月）：
+
+| 指标 | Node.js 22 | Bun 1.x |
+|------|-----------|---------|
+| HTTP 请求/秒 | ~45,000 | ~78,000 |
+| 启动时间 | ~50ms | ~8ms |
+| 内存 (Hello World) | ~40MB | ~20MB |
+| npm install 速度 | 1x | ~3x |
+
+注意：实际性能取决于工作负载类型。Node.js 在长时间运行的服务中...
+
+  🧠 正在写入记忆...
+  └── ✅ 已记住: "用户关注 Bun vs Node.js 性能对比"
+```
+
+每个工具调用都在聊天界面实时显示进度，用户可以清晰看到 Agent 的"思考过程"。
+
+## 自定义工具开发
+
+想添加自己的工具？只需在 `server/services/tools.js` 中注册：
+
+```javascript
+my_tool: {
+  description: "查询公司内部系统",
+  parameters: {
+    type: "object",
+    properties: {
+      system: { type: "string", enum: ["crm", "erp", "jira"] },
+      query: { type: "string", description: "查询内容" }
+    },
+    required: ["system", "query"]
+  },
+  handler: async ({ system, query }) => {
+    const result = await internalAPI.query(system, query);
+    return { data: result };
+  }
+}
+```
+
+然后在 Agent 配置中启用这个工具。LLM 会根据工具的 `description` 和 `parameters` 自动判断何时调用。
+
 ## 下一步
 
 - [Agent 持久记忆](/features/agent-memory) — memory_write 和 memory_search 的完整机制

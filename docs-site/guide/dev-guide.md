@@ -222,8 +222,105 @@ git push origin feature/my-feature
 | ⭐⭐ 中等 | 测试 | 补充测试用例 |
 | ⭐⭐⭐ 进阶 | 功能 | 工作流引擎、MCP 集成 |
 
+## 实战：添加一个搜索引擎
+
+以 Brave Search 为例，展示添加一个搜索引擎的完整过程：
+
+### 1. 在 `search-engines.js` 中添加适配器
+
+```javascript
+async function bravSearch(query) {
+  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}`;
+  const res = await fetch(url, {
+    headers: { 'X-Subscription-Token': process.env.BRAVE_API_KEY }
+  });
+  const data = await res.json();
+  return data.web.results.map(r => ({
+    title: r.title,
+    url: r.url,
+    snippet: r.description
+  }));
+}
+```
+
+### 2. 注册到引擎列表
+
+```javascript
+const engines = {
+  google: googleSearch,
+  bing: bingSearch,
+  brave: bravSearch,  // ← 新增
+  // ...
+};
+```
+
+### 3. 写测试
+
+```javascript
+describe('Brave Search', () => {
+  it('should return search results', async () => {
+    const results = await bravSearch('Node.js');
+    assert.ok(results.length > 0);
+    assert.ok(results[0].title);
+    assert.ok(results[0].url);
+  });
+});
+```
+
+### 4. 提交 PR
+
+```bash
+git checkout -b feature/brave-search
+git add server/services/search-engines.js server/test/search.test.js
+git commit -m "feat: add Brave Search engine adapter"
+git push origin feature/brave-search
+```
+
+整个过程只改 1 个文件 + 1 个测试文件，~30 行代码。
+
+## 调试技巧
+
+### 查看 LLM 请求/响应
+
+在 `server/services/llm.js` 中添加临时日志：
+
+```javascript
+console.log('LLM Request:', JSON.stringify(messages, null, 2));
+console.log('LLM Response chunk:', chunk);
+```
+
+### 检查 SQLite 数据
+
+```bash
+sqlite3 data/im.db ".tables"
+sqlite3 data/im.db "SELECT * FROM messages ORDER BY created_at DESC LIMIT 5;"
+sqlite3 data/im.db "SELECT * FROM settings;"
+```
+
+### 检查 Agent 记忆
+
+```bash
+sqlite3 data/workspace-{agentId}/memory.db \
+  "SELECT type, content, created_at FROM memories ORDER BY created_at DESC LIMIT 10;"
+```
+
+### VSCode 调试配置
+
+```json
+{
+  "type": "node",
+  "request": "launch",
+  "name": "Debug Xiajiao",
+  "program": "${workspaceFolder}/server/index.js",
+  "runtimeVersion": "22",
+  "env": { "OWNER_KEY": "admin" }
+}
+```
+
 ## 下一步
 
-- [架构设计](/guide/architecture) — 理解代码结构
+- [架构设计](/guide/architecture) — 理解代码结构和模块走读
+- [API 与协议参考](/guide/api-reference) — HTTP API 和 WebSocket 协议
+- [性能调优](/guide/performance) — 生产环境配置
 - [常见问题](/guide/faq) — 技术 FAQ
 - [GitHub Issues](https://github.com/moziio/xiajiao/issues) — 找一个 Issue 开始

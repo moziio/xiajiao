@@ -194,6 +194,54 @@ Agent 通过 `rag_query` 工具自动检索：
 
 默认使用 `text-embedding-3-small`。如果你用通义千问等国产模型，系统会使用对应 Provider 的 embedding 模型。中文文档建议使用中文优化的 embedding 模型。
 
+### 4. 搜索关键词技巧
+
+RAG 的 BM25 路依赖关键词匹配。如果搜索"支付怎么用"没结果，试试文档中的原始术语"payment API"。
+
+### 5. 什么文档效果好 / 不好
+
+| 效果好 | 效果差 |
+|--------|--------|
+| API 文档（结构化、术语清晰） | 扫描版 PDF（OCR 质量差） |
+| 技术规范（段落分明） | 表格密集的 Excel 导出 |
+| 产品手册（问答式） | 纯图片的 PPT 导出 |
+| Markdown 笔记（天然结构化） | 法律合同（长句、嵌套引用） |
+
+## 实际检索效果示例
+
+以下是一个真实的 RAG 检索过程——从用户提问到 Agent 给出答案：
+
+```
+用户：@代码助手 我们的订单状态有哪些？
+
+系统内部流程：
+┌─ BM25 路：FTS5 搜索 "订单 状态"
+│  结果 1: "订单状态包括：pending、paid、shipped、completed、cancelled" (score: 8.2)
+│  结果 2: "创建订单接口 POST /api/orders" (score: 3.1)
+│
+├─ 向量路：embedding("订单状态有哪些") → 余弦相似度搜索
+│  结果 1: "enum OrderStatus { PENDING, PAID, SHIPPED... }" (sim: 0.89)
+│  结果 2: "订单状态流转：待支付→已支付→已发货→已完成" (sim: 0.85)
+│
+├─ RRF 融合：合并两路结果，取 Top-5
+│
+└─ LLM 重排：对 5 个候选评分
+   最终注入 Agent 上下文的 3 个 chunk
+
+代码助手回复：
+"根据你的文档，订单状态共有 5 种：
+1. pending（待支付）
+2. paid（已支付）
+3. shipped（已发货）
+4. completed（已完成）
+5. cancelled（已取消）
+
+状态流转规则：pending → paid → shipped → completed
+任何状态可以直接 → cancelled
+
+参考来源：API 文档 v2.3 第 4.2 节"
+```
+
 ## 下一步
 
 - [Agent 持久记忆](/features/agent-memory) — 个性化记忆系统

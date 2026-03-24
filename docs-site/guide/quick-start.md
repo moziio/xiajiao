@@ -208,9 +208,44 @@ OWNER_KEY=your-strong-password npm start
 2. 检查浏览器控制台是否有报错
 3. 检查 Agent 是否分配了模型
 
+## 首次使用推荐路径
+
+安装好之后，按这个顺序体验虾饺的核心功能：
+
+### 5 分钟体验（了解基本操作）
+
+1. 点击"代码助手"，发一条消息试试
+2. 看看 Agent 的流式输出效果
+3. 试试发一段代码让它审查
+
+### 15 分钟探索（体验多 Agent 协作）
+
+4. 创建一个群组，拉入小说家 + 编辑 + 翻译官
+5. 设置协作链：小说家 → 编辑 → 翻译官
+6. 发一条消息，看三个 Agent 自动接力
+7. 观察可视化面板的状态变化
+
+### 30 分钟深入（定制自己的 Agent）
+
+8. 在通讯录中创建一个新 Agent
+9. 编辑它的 SOUL.md，写入你需要的人格（参考 [模板库](/guide/soul-templates)）
+10. 给它配置合适的工具和模型
+11. 和它聊几轮，根据效果调整 SOUL.md
+
+### 1 小时高阶（构建 Agent 团队）
+
+12. 上传文档到 RAG 知识库
+13. 设置定时任务（每天新闻摘要）
+14. 尝试 [实战案例](/guide/recipes) 中的配置方案
+
 ## 下一步
 
-- [安装指南](/guide/installation) — Windows / macOS / Linux 详细步骤
-- [多 Agent 群聊](/features/multi-agent-chat) — 创建群组，体验 Agent 协作
-- [模型配置](/guide/model-config) — 详细的模型配置教程
-- [Docker 部署](/deployment/docker) — 更喜欢容器？也支持
+| 你想... | 看这里 |
+|---------|--------|
+| 详细安装步骤 | [安装指南](/guide/installation) — Windows / macOS / Linux |
+| 体验群聊 | [多 Agent 群聊](/features/multi-agent-chat) — 创建群组，@mention |
+| 配更多模型 | [模型配置](/guide/model-config) — 8 个 Provider 详细教程 |
+| 用 Docker | [Docker 部署](/deployment/docker) — 容器化部署 |
+| 写 Agent 人格 | [SOUL.md 指南](/guide/soul-guide) — 写出好的人格设定 |
+| 照搬方案 | [实战案例](/guide/recipes) — 12 个 Agent 团队配置 |
+| 遇到问题 | [故障排查](/guide/troubleshooting) — 按症状排查 |
