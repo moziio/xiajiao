@@ -261,6 +261,42 @@ meta-llama/llama-3.1-70b-instruct
 |-------|---------|------|
 | 所有 Agent | Ollama | qwen2.5 / llama3.1 |
 
+## 省钱攻略
+
+### 原则
+
+1. **按任务匹配模型**：不是所有任务都需要 GPT-4o / Claude Opus
+2. **翻译、总结、格式转换**用便宜模型；**创作、代码、推理**用贵模型
+3. **SOUL.md 越精准，prompt token 越少**，每次调用省几百 token
+
+### 成本对比实测
+
+以一条"写 500 字技术博客"为例，不同模型的成本：
+
+| 模型 | Input tokens | Output tokens | 单次成本 |
+|------|-------------|---------------|---------|
+| GPT-4o | ~800 | ~600 | ~$0.012 |
+| Claude Sonnet | ~800 | ~600 | ~$0.009 |
+| DeepSeek Chat | ~800 | ~600 | ~¥0.004 |
+| Qwen Turbo | ~800 | ~600 | ~¥0.003 |
+| Ollama (本地) | ~800 | ~600 | ¥0 |
+
+### 省钱配置示例
+
+```
+虾饺管家（系统管理）→ Qwen Turbo（¥0.003/千tokens，够用）
+翻译官（翻译任务）→ DeepSeek Chat（便宜且翻译质量不错）
+代码助手（代码生成）→ Claude Sonnet（代码质量高，值得花钱）
+日常闲聊 Agent → Ollama qwen2.5（免费）
+```
+
+### 控制 token 消耗的技巧
+
+1. **精简 SOUL.md**：去掉冗余描述，每少 100 字 = 每次调用省 ~100 tokens
+2. **限制记忆注入数量**：`AUTO_MEMORY_TOP_K=3`，只注入最相关的 3 条
+3. **关闭不需要的工具**：每个工具定义约 100-200 tokens
+4. **短对话多开新会话**：避免历史消息累积拉高 input token
+
 ## 配置排错
 
 ### API Key 无效
@@ -301,8 +337,22 @@ meta-llama/llama-3.1-70b-instruct
 2. 确认端口正确：默认 11434
 3. 如果虾饺和 Ollama 在不同机器上，确认 Ollama 绑定了 `0.0.0.0`
 
+### 配置验证清单
+
+配完一个 Provider 后，快速验证：
+
+```
+✅ API Base URL 末尾带 /v1（OpenAI 兼容协议）
+✅ API Key 无空格、无换行
+✅ 模型名称与 Provider 文档一致
+✅ API 类型正确（Anthropic 选 anthropic-messages，其他选 openai-completions）
+✅ 创建一个测试 Agent，发一条消息验证回复
+```
+
 ## 下一步
 
 - [快速开始](/guide/quick-start) — 配置好模型后开始聊天
 - [多 Agent 群聊](/features/multi-agent-chat) — 体验多 Agent 协作
+- [性能调优](/guide/performance) — 优化 LLM 调用性能
+- [术语表](/guide/glossary) — 不懂的术语看这里
 - [常见问题](/guide/faq) — 其他常见问题

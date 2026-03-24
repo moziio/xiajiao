@@ -295,8 +295,77 @@ sudo ufw allow 18800
 npm install --arch=arm64 --platform=darwin sharp
 ```
 
+### 公司网络需要代理
+
+```bash
+# 设置 npm 代理
+npm config set proxy http://proxy.company.com:8080
+npm config set https-proxy http://proxy.company.com:8080
+
+# 设置 Git 代理
+git config --global http.proxy http://proxy.company.com:8080
+
+# 安装完成后可以取消
+npm config delete proxy
+npm config delete https-proxy
+```
+
+### WSL2 中安装
+
+Windows 用户可以在 WSL2 中运行虾饺：
+
+```bash
+# 确认 WSL2 版本
+wsl --version
+
+# 在 WSL2 中安装 Node.js 22
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+source ~/.bashrc
+nvm install 22
+
+# 正常安装
+git clone https://github.com/moziio/xiajiao.git
+cd xiajiao && npm install && npm start
+```
+
+从 Windows 浏览器访问 `http://localhost:18800` 即可。WSL2 自动做了端口转发。
+
+### 离线环境安装
+
+在无网络的机器上部署：
+
+```bash
+# 在有网络的机器上准备离线包
+git clone https://github.com/moziio/xiajiao.git
+cd xiajiao && npm install
+tar czf xiajiao-offline.tar.gz .
+
+# 传到目标机器后
+tar xzf xiajiao-offline.tar.gz
+npm start
+```
+
+::: warning
+目标机器仍需安装 Node.js 22+。可以提前下载 Node.js 二进制包一起打包。
+:::
+
+## 安装后自检清单
+
+```
+✅ node -v → v22.x 或更高
+✅ npm start → 无报错
+✅ 浏览器打开 http://localhost:18800 → 看到登录页
+✅ 用默认密码 admin 登录成功
+✅ 设置 → 模型管理 → 添加至少一个 LLM Provider
+✅ 创建 Agent → 发消息 → 收到 AI 回复
+✅ data/ 目录已创建且包含 im.db
+```
+
 ## 下一步
 
 - [快速开始](/guide/quick-start) — 配置模型，开始聊天
 - [模型配置](/guide/model-config) — 详细的 LLM Provider 配置教程
+- [本地部署](/deployment/local) — 后台运行、开机自启、数据备份
+- [Docker 部署](/deployment/docker) — 容器化部署
 - [多 Agent 群聊](/features/multi-agent-chat) — 创建群组，体验协作
+- [故障排查](/guide/troubleshooting) — 更多问题解决方案

@@ -154,7 +154,43 @@ Agent 工具：RAG 知识库 + 持久记忆
 
 </div>
 
-<p style="text-align: center;"><a href="/guide/recipes">查看全部 10 个实战案例 →</a></p>
+<p style="text-align: center;"><a href="/guide/recipes">查看全部 12 个实战案例 →</a></p>
+
+</div>
+
+<!-- Why Xiajiao Technical Highlights -->
+<div style="text-align: center; margin: 3rem 0 1rem;">
+  <h2 style="border: none;">🔬 为什么能这么轻？</h2>
+  <p style="color: var(--vp-c-text-2); max-width: 600px; margin: 0 auto;">别人用框架的地方，虾饺用标准库。别人用外部服务的地方，虾饺用 SQLite。</p>
+</div>
+
+<div style="max-width: 700px; margin: 0 auto 3rem; padding: 0 1rem;">
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 Express</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:http</code> 裸写 15 个端点。少一个依赖 = 少一个安全风险。</div>
+</div>
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 PostgreSQL</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:sqlite</code> 内置数据库。WAL 并发读写，FTS5 全文搜索。</div>
+</div>
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 React/Vue</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">Vanilla JS 前端。改完代码刷新浏览器，不等 Webpack 编译。</div>
+</div>
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 Jest</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:test</code> 标准库跑 53 个测试。零测试依赖，零配置文件。</div>
+</div>
+
+</div>
+
+<p style="text-align: center; margin-top: 1rem;"><a href="/guide/architecture">查看完整架构设计 →</a></p>
 
 </div>
 
@@ -255,7 +291,40 @@ Agent 工具：RAG 知识库 + 持久记忆
 <p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">所有数据存在你本地。零遥测。唯一的外部通信是你主动配置的 LLM API。用 Ollama = 完全离线。<a href="/guide/security">安全详解 →</a></p>
 </details>
 
-<p style="text-align: center;"><a href="/guide/faq">查看全部 20+ 常见问题 →</a></p>
+<p style="text-align: center;"><a href="/guide/faq">查看全部 30+ 常见问题 →</a></p>
+
+</div>
+
+<!-- Developer Voices Section -->
+<div style="text-align: center; margin: 2rem 0;">
+  <h2 style="border: none;">💬 开发者的声音</h2>
+</div>
+
+<div style="max-width: 700px; margin: 0 auto 3rem; padding: 0 1rem;">
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
+  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"终于有一个 AI 平台不需要我先花半小时配 Docker + PostgreSQL + Redis 了。"</div>
+  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：独立开发者日常使用</div>
+</div>
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
+  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"用 SOUL.md 定义 Agent 人格太直觉了。改一个 .md 文件，Agent 性格就变了。"</div>
+  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：AI Agent 原型验证</div>
+</div>
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
+  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"6 个依赖。我用一天就读完了全部源码。这在 2026 年的 JS 项目里简直是奇迹。"</div>
+  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：想 Fork 二次开发</div>
+</div>
+
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
+  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"协作链太惊艳了。一句话触发，三个 Agent 串联干活，面板实时显示进度。"</div>
+  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：内容自动化生产</div>
+</div>
+
+</div>
 
 </div>
 

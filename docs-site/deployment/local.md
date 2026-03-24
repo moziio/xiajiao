@@ -246,9 +246,90 @@ npm install --global windows-build-tools
 
 或者使用预编译的二进制包（通常自动下载）。
 
+### 如何让局域网内其他设备访问？
+
+虾饺默认监听 `0.0.0.0:18800`，局域网内其他设备直接访问 `http://你的IP:18800` 即可。
+
+```bash
+# 查看本机 IP
+# Linux/macOS
+ip addr | grep "inet "
+# Windows
+ipconfig
+```
+
+确保防火墙允许 18800 端口入站。
+
+### Windows 如何设置开机自启？
+
+**方法 1：任务计划程序**
+
+1. 打开"任务计划程序"
+2. 创建基本任务 → 触发器选"计算机启动时"
+3. 操作选"启动程序"
+4. 程序：`node`，参数：`server/index.js`，起始目录：虾饺安装路径
+
+**方法 2：放入启动文件夹**
+
+把 `start-xiajiao.bat` 的快捷方式放到：
+
+```
+C:\Users\你的用户名\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+```
+
+### macOS 后台运行
+
+使用 `launchd`，创建 `~/Library/LaunchAgents/com.xiajiao.plist`：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.xiajiao</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>/path/to/xiajiao/server/index.js</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>WorkingDirectory</key>
+  <string>/path/to/xiajiao</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>OWNER_KEY</key>
+    <string>your-secret</string>
+  </dict>
+</dict>
+</plist>
+```
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.xiajiao.plist
+```
+
+## 升级虾饺
+
+```bash
+cd xiajiao
+git pull                # 拉取最新代码
+npm install             # 更新依赖（如有变化）
+# 重启服务（根据你的运行方式）
+pm2 restart xiajiao     # PM2
+sudo systemctl restart xiajiao   # systemd
+```
+
+`data/` 目录不受 `git pull` 影响，升级不会丢失任何数据。
+
 ## 下一步
 
 - [Docker 部署](/deployment/docker) — 更喜欢容器？
 - [云服务器部署](/deployment/cloud) — 想公网访问？
 - [模型配置](/guide/model-config) — 配置不同的 LLM Provider
+- [性能调优](/guide/performance) — 生产环境优化
 - [安全与隐私](/guide/security) — 数据安全、API Key 保护、攻击面分析
+- [故障排查](/guide/troubleshooting) — 遇到问题看这里

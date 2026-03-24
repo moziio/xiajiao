@@ -223,6 +223,88 @@ Agent 会主动 `memory_write` 保存这些偏好。
 → 你可以纠正或补充
 ```
 
+### 4. 在 SOUL.md 中引导记忆行为
+
+在 Agent 的 SOUL.md 里明确告诉它何时记忆：
+
+```markdown
+## 记忆规则
+- 用户提到的技术偏好、工作环境 → memory_write(semantic)
+- 重要的决定或讨论结论 → memory_write(episodic)
+- 用户反复提到的输出偏好 → memory_write(procedural)
+- 不记录临时性的闲聊内容
+```
+
+## 实际对话演示
+
+以下是一个完整的记忆形成和使用过程：
+
+**第一次对话（记忆形成）：**
+
+```
+你：我是 Python 后端开发，在一家金融公司。项目用 FastAPI + PostgreSQL，部署在 AWS。
+
+代码助手：明白！我记住了你的技术栈偏好。
+
+  🧠 正在写入记忆...
+  ├── [semantic] 用户是 Python 后端开发，金融行业
+  ├── [semantic] 技术栈：FastAPI + PostgreSQL，部署在 AWS
+  └── ✅ 已保存 2 条记忆
+
+以后给你写代码会优先使用 Python + FastAPI，数据库操作用 SQLAlchemy...
+```
+
+**一周后的对话（记忆生效）：**
+
+```
+你：帮我写一个用户注册接口
+
+代码助手：
+  🧠 检索相关记忆...
+  ├── [semantic] 用户是 Python 后端开发，金融行业 (相似度: 0.82)
+  ├── [semantic] 技术栈：FastAPI + PostgreSQL (相似度: 0.91)
+  └── 注入到上下文
+
+好的，给你一个 FastAPI + SQLAlchemy 的用户注册接口：
+
+（直接给出 FastAPI 代码，不问"你用什么框架"）
+```
+
+**如果没有记忆**，Agent 会说"你想用什么框架？Flask 还是 Django 还是 FastAPI？"——多了一轮无意义的确认。
+
+## 手动查看和管理记忆
+
+### 通过命令行查看
+
+```bash
+# 查看某个 Agent 的所有记忆
+sqlite3 data/workspace-{agentId}/memory.db \
+  "SELECT type, content, created_at FROM memories ORDER BY created_at DESC;"
+
+# 按类型统计
+sqlite3 data/workspace-{agentId}/memory.db \
+  "SELECT type, COUNT(*) as count FROM memories GROUP BY type;"
+
+# 搜索包含特定关键词的记忆
+sqlite3 data/workspace-{agentId}/memory.db \
+  "SELECT type, content FROM memories WHERE content LIKE '%Python%';"
+```
+
+### 删除错误的记忆
+
+```bash
+# 删除某条不准确的记忆
+sqlite3 data/workspace-{agentId}/memory.db \
+  "DELETE FROM memories WHERE content LIKE '%过时的信息%';"
+```
+
+### 导出备份
+
+```bash
+# 备份记忆数据库
+cp data/workspace-{agentId}/memory.db memory-backup-$(date +%Y%m%d).db
+```
+
 ## 下一步
 
 - [RAG 知识库](/features/rag) — 文档级别的知识检索
