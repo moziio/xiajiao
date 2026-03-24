@@ -39,8 +39,6 @@ ChatGPT / Claude 是 **单 Agent 对话工具**——一个 AI 和你聊天。
 | 维度 | 虾饺 | Dify | FastGPT |
 |------|------|------|---------|
 | 外部依赖 | **0 个**（SQLite 内置） | PostgreSQL + Redis + Sandbox | MongoDB + PostgreSQL + OneAPI |
-| 安装时间 | 10 秒 | 5-10 分钟 | 5-10 分钟 |
-| 镜像大小 | ~150MB | ~2GB+ | ~1GB+ |
 | npm 依赖 | 6 个 | N/A（Python） | N/A |
 | 部署命令 | `npm start` | `docker compose up` | `docker compose up` |
 
@@ -94,9 +92,7 @@ npm install
 
 ### Windows 上安装失败
 
-最常见的原因是 `better-sqlite3` 原生模块编译问题。大多数情况下会自动下载预编译版本，无需手动编译。
-
-如果确实编译失败：
+如果遇到原生模块编译问题：
 
 ```powershell
 npm install --global windows-build-tools
@@ -398,7 +394,7 @@ curl -b cookies.txt -X POST http://localhost:18800/api/messages \
 
 也可以在 Agent 的 SOUL.md 里预设定时行为。
 
-## 下一步
+## 相关文档
 
 - [快速开始](/guide/quick-start) — 3 步跑起来
 - [模型配置](/guide/model-config) — 详细的模型配置教程

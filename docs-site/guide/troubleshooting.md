@@ -380,7 +380,7 @@ free -h && df -h
    - 复现步骤：怎么操作才出现这个问题
 3. 加入 [GitHub Discussions](https://github.com/moziio/xiajiao/discussions) 讨论
 
-## 下一步
+## 相关文档
 
 - [快速开始](/guide/quick-start) — 确认安装步骤
 - [安全与隐私](/guide/security) — 生产环境安全加固

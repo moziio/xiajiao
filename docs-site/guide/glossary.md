@@ -242,7 +242,7 @@ Agent 的工作空间目录（`data/workspace-{id}/`）。包含 Agent 的 SOUL.
 
 ### 协作链
 
-虾饺的协作流功能。在群组中设置 Agent 的接力顺序，如 `小说家 → 编辑 → 翻译官`。一条消息触发后，Agent 按顺序自动执行。
+协作流中的**线性接力顺序**配置：在群组中设置 Agent 的接力顺序，如 `小说家 → 编辑 → 翻译官`。一条消息触发后，Agent 按顺序自动执行。完整的协作流还包括可视化面板与人工干预等，不单指协作链。
 
 ```
 用户发一条消息
@@ -257,3 +257,11 @@ Agent 的工作空间目录（`data/workspace-{id}/`）。包含 Agent 的 SOUL.
 ### 虾饺
 
 广式点心（Har Gow）。薄如蝉翼的外皮包裹着鲜嫩的虾仁。项目取名自此——小巧精致，内料丰富。最少的依赖，最全的能力。
+
+## 相关文档
+
+- [架构设计](/guide/architecture) — 理解整体架构与模块划分
+- [SOUL.md 写作指南](/guide/soul-guide) — Agent 人格与 SOUL.md 相关术语
+- [RAG 知识库](/features/rag) — RAG、Embedding、Chunk、BM25 等概念
+- [多 Agent 群聊](/features/multi-agent-chat) — Agent、@mention、群组、Leader
+- [API 与协议参考](/guide/api-reference) — WebSocket、HTTP API 等协议术语

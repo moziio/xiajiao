@@ -5,7 +5,7 @@ description: 参与虾饺 IM 开发——代码规范、开发环境、测试、
 
 # 开发者指南
 
-欢迎参与虾饺的开发！虾饺的代码量不大（~5000 行），结构清晰，适合入门开源贡献。
+欢迎参与虾饺的开发！虾饺的代码量适中（后端约 ~9500 行，不含前端 UI），结构清晰，适合入门开源贡献。
 
 ## 开发环境
 
@@ -53,7 +53,7 @@ npm test
 ```javascript
 /**
  * 在记忆库中搜索相似记忆，用于去重和检索。
- * 使用余弦相似度，阈值 0.9 以上视为重复。
+ * 使用余弦相似度，阈值 0.85 以上视为重复（`DEDUP_THRESHOLD`）。
  * @param {string} agentId - Agent 标识
  * @param {string} text - 搜索文本
  * @param {number} topK - 返回数量
@@ -317,7 +317,7 @@ sqlite3 data/workspace-{agentId}/memory.db \
 }
 ```
 
-## 下一步
+## 相关文档
 
 - [架构设计](/guide/architecture) — 理解代码结构和模块走读
 - [API 与协议参考](/guide/api-reference) — HTTP API 和 WebSocket 协议

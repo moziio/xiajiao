@@ -25,7 +25,7 @@ features:
     linkText: 了解更多
   - icon: 🔧
     title: Tool Calling
-    details: 7 个内置工具——网络搜索、知识库检索、记忆读写、跨 Agent 调用、渠道管理、定时任务。
+    details: 7 个内置工具（6 类能力）——网络搜索、知识库检索、记忆读写、跨 Agent 调用、渠道管理、定时任务。
     link: /features/tool-calling
     linkText: 了解更多
   - icon: 🧠
@@ -50,10 +50,10 @@ features:
     linkText: 了解更多
 ---
 
-<!-- Demo GIF Section -->
+<!-- Demo Section -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
-  <h2 style="border: none;">🎬 一句话触发 Agent 协作链</h2>
-  <p style="color: var(--vp-c-text-2);">创作 → 编辑 → 翻译，全自动接力。35 秒看完完整流程：</p>
+  <h2 style="border: none;">💬 像聊天一样驱动 Agent 团队</h2>
+  <p style="color: var(--vp-c-text-2);">和 Agent 用 IM 对话，它会自动调用工具、查询状态、管理渠道——全程可见。</p>
 </div>
 
 <p align="center">
@@ -78,10 +78,6 @@ features:
     <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">53</div>
     <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">单元测试</div>
   </div>
-  <div style="text-align: center;">
-    <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);"><10s</div>
-    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">安装时间</div>
-  </div>
 </div>
 
 <!-- Quick Start Section -->
@@ -100,7 +96,7 @@ npm start                    # 打开 http://localhost:18800
 </div>
 
 <div style="text-align: center; color: var(--vp-c-text-2); margin-bottom: 2rem;">
-  <p>没有 Docker，没有数据库，没有环境变量。就这三行。</p>
+  <p>没有 Docker，无需 PostgreSQL / Redis 等外部数据库（内置 SQLite），没有额外环境变量。就这三行。</p>
 </div>
 
 <!-- Use Cases Section -->
@@ -158,6 +154,35 @@ Agent 工具：RAG 知识库 + 持久记忆
 
 </div>
 
+<!-- Real Screenshots Section -->
+<div style="text-align: center; margin: 3rem 0 1rem;">
+  <h2 style="border: none;">📸 真实界面截图</h2>
+  <p style="color: var(--vp-c-text-2);">以下截图来自虾饺的真实运行环境，非设计稿。</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 900px; margin: 0 auto 3rem; padding: 0 1rem;">
+  <div>
+    <img src="/images/summer-night-ai-art.png" alt="协作链面板与夏夜星空 AI 配图——文生图填满聊天区" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">协作链 + 夏夜星空 AI 配图（文生图）</p>
+  </div>
+  <div>
+    <img src="/images/hero-light-middle.png" alt="群聊 @mention 路由" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">群聊 @mention 精确路由</p>
+  </div>
+  <div>
+    <img src="/images/poetry-translation-light.png" alt="小说家写诗与翻译官接力翻译" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">小说家写诗 + 翻译官接力翻译</p>
+  </div>
+  <div>
+    <img src="/images/hero-light-bottom.png" alt="AI 创作群聊" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">Agent 创作诗歌 + AI 生图</p>
+  </div>
+  <div>
+    <img src="/images/news-agent.png" alt="新闻 Agent" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">新闻 Agent 搜索并结构化输出</p>
+  </div>
+</div>
+
 <!-- Why Xiajiao Technical Highlights -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
   <h2 style="border: none;">🔬 为什么能这么轻？</h2>
@@ -204,8 +229,7 @@ Agent 工具：RAG 知识库 + 持久记忆
 | 维度 | 虾饺 | Dify / FastGPT |
 |------|------|----------------|
 | 安装 | `npm start` | `docker compose up`（需 PostgreSQL + Redis） |
-| 依赖 | 6 个 npm 包 | 几百个包 + 多个外部服务 |
-| 镜像 | ~150MB | ~2GB+ |
+| 依赖 | 6 个 npm 包 | 多个包 + 多个外部服务 |
 | Agent 交互 | IM 群聊 @mention | 工作流画布 |
 | Agent 关系 | 平等协作，互相 @mention | 预设 DAG 管线 |
 | 数据存储 | 完全本地 SQLite | 需配置数据库 |
@@ -295,39 +319,6 @@ Agent 工具：RAG 知识库 + 持久记忆
 
 </div>
 
-<!-- Developer Voices Section -->
-<div style="text-align: center; margin: 2rem 0;">
-  <h2 style="border: none;">💬 开发者的声音</h2>
-</div>
-
-<div style="max-width: 700px; margin: 0 auto 3rem; padding: 0 1rem;">
-
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-
-<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
-  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"终于有一个 AI 平台不需要我先花半小时配 Docker + PostgreSQL + Redis 了。"</div>
-  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：独立开发者日常使用</div>
-</div>
-
-<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
-  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"用 SOUL.md 定义 Agent 人格太直觉了。改一个 .md 文件，Agent 性格就变了。"</div>
-  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：AI Agent 原型验证</div>
-</div>
-
-<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
-  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"6 个依赖。我用一天就读完了全部源码。这在 2026 年的 JS 项目里简直是奇迹。"</div>
-  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：想 Fork 二次开发</div>
-</div>
-
-<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem; border-left: 3px solid var(--vp-c-brand-1);">
-  <div style="font-size: 0.9rem; font-style: italic; color: var(--vp-c-text-2);">"协作链太惊艳了。一句话触发，三个 Agent 串联干活，面板实时显示进度。"</div>
-  <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--vp-c-text-3);">— 场景：内容自动化生产</div>
-</div>
-
-</div>
-
-</div>
-
 <!-- Documentation Links Section -->
 <div style="text-align: center; margin: 2rem 0;">
   <h2 style="border: none;">📖 深入了解</h2>
@@ -347,12 +338,12 @@ Agent 工具：RAG 知识库 + 持久记忆
   <a href="/guide/soul-templates" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">📋</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">模板库</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">20+ 可复制模板</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">20 可复制模板</div>
   </a>
   <a href="/guide/recipes" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">🍳</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">实战案例</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">10 个照搬方案</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">12 个照搬方案</div>
   </a>
   <a href="/guide/comparison" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">⚔️</div>

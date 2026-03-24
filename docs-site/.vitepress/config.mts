@@ -41,9 +41,7 @@ export default defineConfig({
           { text: 'API 与协议参考', link: '/guide/api-reference' },
           { text: '故障排查', link: '/guide/troubleshooting' },
           { text: '术语表', link: '/guide/glossary' },
-          { text: '---', link: '' },
-          { text: '更新日志', link: 'https://github.com/moziio/xiajiao/blob/master/CHANGELOG.md' },
-          { text: '贡献指南', link: 'https://github.com/moziio/xiajiao/blob/master/CONTRIBUTING.md' },
+          { text: '更新日志', link: '/guide/changelog' },
           { text: '问题反馈', link: 'https://github.com/moziio/xiajiao/issues' },
           { text: '社区讨论', link: 'https://github.com/moziio/xiajiao/discussions' },
         ]

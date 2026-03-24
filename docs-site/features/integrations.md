@@ -7,6 +7,13 @@ description: 虾饺 IM 的多渠道接入能力——飞书、钉钉、企业微
 
 虾饺不只是一个独立的 Web 应用——它可以把 Agent 接入你日常使用的工作平台。
 
+<p align="center">
+  <img src="/images/demo.png" alt="虾饺管家管理渠道连接" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+</p>
+<p align="center" style="color: var(--vp-c-text-2);">
+  <em>通过虾饺管家 Agent 对话式管理渠道接入 — 自动调用 manage_channel 工具。</em>
+</p>
+
 ## 架构概览
 
 ```
@@ -259,7 +266,7 @@ Web 端用户问：刚才说的部署流程，第三步详细说说
 
 在外部渠道（如飞书）中，Tool Calling 的中间过程不会实时显示（受限于平台消息格式）。Agent 会等工具调用完成后，一次性发送最终回复。如果需要查看完整的 Tool Calling 过程，可以在虾饺 Web 端查看同一条消息。
 
-## 下一步
+## 相关文档
 
 - [Tool Calling](/features/tool-calling) — `manage_channel` 工具详解
 - [快速开始](/guide/quick-start) — 先在 Web 端跑起来

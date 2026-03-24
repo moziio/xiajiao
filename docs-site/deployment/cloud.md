@@ -454,7 +454,7 @@ flyctl deploy
 | Netlify | 静态站点托管，不支持 Node.js 长驻服务 |
 | AWS Lambda | 无状态函数，不适合有状态应用 |
 
-## 下一步
+## 相关文档
 
 - [Docker 部署](/deployment/docker) — 更喜欢容器化？
 - [本地运行](/deployment/local) — 本地开发调试

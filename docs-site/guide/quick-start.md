@@ -35,12 +35,12 @@ npm install
 
 | 包 | 作用 | 为什么不能去掉 |
 |---|------|--------------|
-| `ws` | WebSocket 服务 | Node.js 内置 HTTP 不含 WebSocket |
-| `better-sqlite3` | SQLite FFI 驱动 | `node:sqlite` 是异步的，需要同步 API 做 embedding |
-| `marked` | Markdown→HTML | SOUL.md 渲染 |
-| `pdf-parse` | PDF 文本提取 | RAG 知识库需要解析 PDF |
-| `highlight.js` | 代码高亮 | 消息中的代码块着色 |
-| `sharp` | 图片处理 | 上传图片缩略图 |
+| `ws` | WebSocket 服务端 | Node.js 标准库没有 WebSocket 服务端实现 |
+| `formidable` | 文件上传解析 | `multipart/form-data` 的 boundary 分割和流式解析，标准库不提供 |
+| `node-cron` | 定时任务调度 | Cron 表达式解析（`0 9 * * 1` → 每周一 9 点），标准库不支持 |
+| `pdf-parse` | PDF 文本提取 | [RAG 知识库](/features/rag)需要从 PDF 提取文字 |
+| `@larksuiteoapi/node-sdk` | 飞书连接器 | 飞书的 WebSocket 长连接协议是私有的，必须用官方 SDK |
+| `@modelcontextprotocol/sdk` | MCP 协议 | Model Context Protocol 的 JSON-RPC + 能力协商，手写容易不兼容 |
 
 </details>
 
@@ -56,12 +56,19 @@ npm start
 Server running on http://localhost:18800
 ```
 
+浏览器打开 `http://localhost:18800`，看到登录界面：
+
+<p align="center">
+  <img src="/images/login.png" alt="虾饺登录界面" style="max-width: 400px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+</p>
+
 ## 第 4 步：配置 LLM
 
-1. 浏览器打开 `http://localhost:18800`
-2. 输入默认密码 `admin` 登录
-3. 进入 **设置 → 模型管理**
-4. 添加你的 LLM API Key
+各厂商的 Base URL、模型名与排错见 [模型配置大全](/guide/model-config)。
+
+1. 输入默认密码 `admin` 登录
+2. 进入 **设置 → 模型管理**
+3. 添加你的 LLM API Key
 
 ### 支持的模型厂商
 
@@ -228,9 +235,14 @@ OWNER_KEY=your-strong-password npm start
 ### 30 分钟深入（定制自己的 Agent）
 
 8. 在通讯录中创建一个新 Agent
-9. 编辑它的 SOUL.md，写入你需要的人格（参考 [模板库](/guide/soul-templates)）
+9. 编辑它的 [SOUL.md](/guide/soul-guide)，写入你需要的人格（参考 [模板库](/guide/soul-templates)）
 10. 给它配置合适的工具和模型
 11. 和它聊几轮，根据效果调整 SOUL.md
+
+<div style="text-align: center; margin: 1.5rem 0;">
+  <img src="/images/agent-management.png" alt="Agent 管理面板 — 新建 Agent 与列表" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Agent 管理面板 — 在列表中管理多个 Agent，下方即可填写信息创建新 Agent</p>
+</div>
 
 ### 1 小时高阶（构建 Agent 团队）
 
@@ -249,3 +261,9 @@ OWNER_KEY=your-strong-password npm start
 | 写 Agent 人格 | [SOUL.md 指南](/guide/soul-guide) — 写出好的人格设定 |
 | 照搬方案 | [实战案例](/guide/recipes) — 12 个 Agent 团队配置 |
 | 遇到问题 | [故障排查](/guide/troubleshooting) — 按症状排查 |
+
+## 相关文档
+
+- [模型配置大全](/guide/model-config) — 各 Provider 的 API 与模型名、排错清单
+- [SOUL.md 编写指南](/guide/soul-guide) — 定义 Agent 角色与专长
+- [实战案例](/guide/recipes) — 12 个可复制的 Agent 团队配置

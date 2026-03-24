@@ -179,11 +179,11 @@ FastGPT 的知识库应用 → 虾饺的 Agent + RAG。
 ✅ 设置备份脚本
 ```
 
-## 下一步
+## 相关文档
 
 - [快速开始](/guide/quick-start) — 安装虾饺
 - [SOUL.md 写作指南](/guide/soul-guide) — 写好 Agent 人格设定
-- [SOUL.md 模板库](/guide/soul-templates) — 20+ 现成模板
+- [SOUL.md 模板库](/guide/soul-templates) — 20 现成模板
 - [模型配置](/guide/model-config) — 8 个 Provider 配置教程
 - [平台对比](/guide/comparison) — 详细功能对比
 - [实战案例](/guide/recipes) — 12 个 Agent 团队配置方案

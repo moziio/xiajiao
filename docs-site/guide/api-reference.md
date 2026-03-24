@@ -467,7 +467,7 @@ wscat -c "ws://localhost:18800/ws" -H "Cookie: session=your-token"
 # 之后该频道的所有消息会推送过来
 ```
 
-## 下一步
+## 相关文档
 
 - [架构设计](/guide/architecture) — 了解代码结构和模块
 - [开发者指南](/guide/dev-guide) — 参与开发和贡献

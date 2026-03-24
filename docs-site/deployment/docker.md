@@ -44,12 +44,12 @@ docker run -d -p 18800:18800 \
 |------|------|
 | 基础镜像 | `node:22-alpine` |
 | 构建方式 | `npm ci --production` |
-| 镜像大小 | ~150MB |
+| 镜像大小 | 较小（基于 Alpine） |
 | 暴露端口 | 18800 |
 | 工作目录 | `/app` |
 
-::: info 为什么这么小？
-虾饺只有 6 个 npm 依赖，Alpine 基础镜像只有 ~50MB。没有 Python、Java 等额外运行时。
+::: info 为什么镜像小？
+虾饺只有 6 个 npm 依赖，基于 Alpine 基础镜像。没有 Python、Java 等额外运行时。
 :::
 
 ## 持久化存储
@@ -247,17 +247,6 @@ server {
 
 ## 常见问题
 
-### better-sqlite3 编译失败
-
-如果构建镜像时 `better-sqlite3` 编译失败：
-
-```dockerfile
-# 确保 Dockerfile 中有 build 依赖
-RUN apk add --no-cache python3 make g++
-```
-
-通常 Alpine 镜像已经处理了这个问题。
-
 ### 容器启动后无法访问
 
 1. 检查端口映射：`docker ps` 查看 PORTS 列
@@ -381,7 +370,7 @@ services:
 ✅ 定期备份脚本已配置
 ```
 
-## 下一步
+## 相关文档
 
 - [云服务器部署](/deployment/cloud) — 公网访问 + HTTPS + 域名
 - [本地运行](/deployment/local) — 不想用 Docker？直接 npm start

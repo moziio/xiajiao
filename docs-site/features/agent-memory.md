@@ -7,7 +7,12 @@ description: 三分类记忆系统——语义、情景、程序性记忆，embe
 
 虾饺实现了一套**三分类持久记忆系统**，让 Agent 越用越懂你。
 
-这是虾饺和大多数 AI 聊天工具最大的区别之一：对话不再是"用完即弃"的一次性交互。Agent 能**跨对话**记住重要信息。
+<div style="text-align: center; margin: 1.5rem 0;">
+  <img src="/images/memory-panel.png" alt="记忆管理面板 — Agent 的记忆条目在此查看和管理" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">记忆管理面板 — Agent 的记忆条目在此查看和管理</p>
+</div>
+
+这是虾饺和大多数 AI 聊天工具最大的区别之一：对话不再是"用完即弃"的一次性交互。Agent 能**跨对话**记住重要信息。写入与检索通过 [Tool Calling](/features/tool-calling) 中的 `memory_write` / `memory_search` 暴露给模型。
 
 ## 为什么需要持久记忆？
 
@@ -73,8 +78,8 @@ description: 三分类记忆系统——语义、情景、程序性记忆，embe
 │  文本 → embedding                    余弦相似度搜索记忆库      │
 │     ↓                                    ↓                   │
 │  相似度去重                           Top-K 结果                │
-│  ├── 相似度 > 0.9 → 更新已有记忆        ↓                     │
-│  └── 相似度 ≤ 0.9 → 插入新记忆        注入 System Prompt       │
+│  ├── 相似度 > 0.85 → 更新已有记忆       ↓                     │
+│  └── 相似度 ≤ 0.85 → 插入新记忆       注入 System Prompt       │
 │     ↓                                    ↓                   │
 │  存入 SQLite                          Agent 带着记忆回复       │
 │                                                              │
@@ -89,7 +94,7 @@ description: 三分类记忆系统——语义、情景、程序性记忆，embe
 | 向量存储 | embedding 存入 SQLite | 无需外部向量库 |
 | embedding 模型 | 跟随 Agent 配置的 LLM Provider | 默认用 `text-embedding-3-small` |
 | 相似度计算 | 余弦相似度 | JavaScript 原生计算，无依赖 |
-| 去重阈值 | 0.9 | 相似度 > 0.9 视为同一条记忆 |
+| 去重阈值 | 0.85 | 相似度 > 0.85 视为同一条记忆 |
 
 ### Embedding 去重机制
 
@@ -98,12 +103,12 @@ description: 三分类记忆系统——语义、情景、程序性记忆，embe
 ```
 新记忆："用户喜欢 Python"
 已有记忆："用户偏好 Python 语言"
-→ 余弦相似度 = 0.95 > 0.9
+→ 余弦相似度 = 0.95 > 0.85
 → 更新已有记忆，不重复插入
 
 新记忆："用户今天想了解 Docker"
 已有记忆："用户偏好 Python 语言"
-→ 余弦相似度 = 0.3 < 0.9
+→ 余弦相似度 = 0.3 < 0.85
 → 插入为新记忆
 ```
 
@@ -305,12 +310,12 @@ sqlite3 data/workspace-{agentId}/memory.db \
 cp data/workspace-{agentId}/memory.db memory-backup-$(date +%Y%m%d).db
 ```
 
-## 下一步
+## 相关文档
 
+- [Tool Calling](/features/tool-calling) — `memory_write` / `memory_search` 工具详情与权限配置
 - [RAG 知识库](/features/rag) — 文档级别的知识检索
-- [Tool Calling](/features/tool-calling) — memory_write / memory_search 工具详情
 - [多 Agent 群聊](/features/multi-agent-chat) — Agent 如何协作
 - [SOUL.md 写作指南](/guide/soul-guide) — 在 SOUL.md 中配置记忆行为
-- [SOUL.md 模板库](/guide/soul-templates) — 20+ 个可直接复制的 Agent 人格模板
+- [模板库](/guide/soul-templates) — 20 个可直接复制的 Agent 人格模板
 - [安全与隐私](/guide/security) — 数据安全与 API Key 保护
 - [实战案例](/guide/recipes) — 利用记忆实现面试教练、学习助手等
