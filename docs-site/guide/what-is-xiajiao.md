@@ -145,6 +145,42 @@ Dify / FastGPT 适合构建面向客户的 AI 应用。虾饺适合个人/团队
 
 > **设计哲学**：每个依赖都是负债，不是资产。能用标准库的，绝不引入第三方包。
 
+## 一条消息背后发生了什么
+
+当你在虾饺中发送 `@代码助手 写一个登录接口`，背后经历了 14 个步骤：
+
+```
+1. 消息存入 SQLite
+2. WebSocket 广播给所有在线客户端
+3. 解析 @mention → 目标: 代码助手
+4. 加载代码助手的 SOUL.md
+5. 检索代码助手的持久记忆（"用户偏好 Python，公司用阿里云"）
+6. 注入记忆到 System Prompt
+7. 组装完整上下文发给 LLM API（流式模式）
+8. LLM 决定调用 web_search 工具
+9. 执行搜索 → 结果回注上下文
+10. LLM 继续生成代码
+11. 逐 token 通过 WebSocket 推送到浏览器
+12. 完整回复存入 SQLite
+13. 代码助手主动 memory_write（"用户需要登录接口"）
+14. 如果有协作链 → 触发下一个 Agent
+```
+
+整个过程对用户完全透明——Tool Calling 的每一步都在聊天界面实时显示。
+
+## 不适合什么场景？
+
+虾饺**不是万能的**，这些场景建议用其他平台：
+
+| 场景 | 推荐 | 原因 |
+|------|------|------|
+| 构建面向客户的 AI 应用 | Dify | 工作流 + API 发布 + 多租户 |
+| 不想自托管 | Coze / ChatGPT Team | SaaS 免运维 |
+| 需要 100+ 插件 | Coze | 丰富的插件生态 |
+| 大规模并发 | 自建微服务 | SQLite 单进程限制 |
+
+详细对比见 [平台对比](/guide/comparison)。
+
 ## 名字的含义
 
 **虾饺**取名自广式点心——小巧精致，内料丰富。
@@ -155,13 +191,20 @@ Dify / FastGPT 适合构建面向客户的 AI 应用。虾饺适合个人/团队
 
 | 状态 | 特性 |
 |------|------|
-| ✅ 已完成 | 多 Agent 群聊、Tool Calling、持久记忆、RAG、协作流 |
+| ✅ 已完成 | 多 Agent 群聊、Tool Calling、持久记忆、RAG、协作流、RBAC |
 | 🚧 进行中 | 工作流引擎、Agent 间协商 |
 | 📋 计划中 | MCP 工具市场、语音输入、移动端适配 |
 | 🤔 探索中 | Agent 自主学习、多租户支持 |
 
 ## 下一步
 
-准备好了？跟着 [快速开始](/guide/quick-start) 三步跑起来。
-
-想深入了解？看看 [模型配置](/guide/model-config)，配好你的 LLM Provider。
+| 你想... | 看这里 |
+|---------|--------|
+| 立刻试试 | [快速开始](/guide/quick-start) — 3 步跑起来 |
+| 配置模型 | [模型配置大全](/guide/model-config) — 8 个 Provider 详细教程 |
+| 学 Agent 设计 | [SOUL.md 写作指南](/guide/soul-guide) — 写出好的 Agent 人格 |
+| 复制 Agent 模板 | [SOUL.md 模板库](/guide/soul-templates) — 20+ 个模板 |
+| 照搬方案 | [实战案例](/guide/recipes) — 12 个 Agent 团队配置 |
+| 了解技术 | [架构设计](/guide/architecture) — 代码结构和数据流 |
+| 对比平台 | [平台对比](/guide/comparison) — vs Dify/Coze/FastGPT |
+| 确认安全 | [安全与隐私](/guide/security) — 数据主权详解 |
