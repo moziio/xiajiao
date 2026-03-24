@@ -21,6 +21,7 @@
   <a href="#-quick-start">Quick Start</a> ·
   <a href="#-why-xiajiao">Why Xiajiao</a> ·
   <a href="#-features">Features</a> ·
+  <a href="https://moziio.github.io/xiajiao/">Docs</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>

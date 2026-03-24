@@ -21,6 +21,7 @@
   <a href="#-快速开始">快速开始</a> ·
   <a href="#-为什么选虾饺">为什么选虾饺</a> ·
   <a href="#-功能全景">功能全景</a> ·
+  <a href="https://moziio.github.io/xiajiao/">文档站</a> ·
   <a href="CHANGELOG.md">更新日志</a> ·
   <a href="CONTRIBUTING.md">贡献指南</a>
 </p>
