@@ -69,10 +69,17 @@ export default defineConfig({
           ]
         },
         {
+          text: '参考',
+          items: [
+            { text: 'API 与协议参考', link: '/guide/api-reference' },
+            { text: '故障排查', link: '/guide/troubleshooting' },
+            { text: '常见问题', link: '/guide/faq' },
+          ]
+        },
+        {
           text: '开发',
           items: [
             { text: '开发者指南', link: '/guide/dev-guide' },
-            { text: '常见问题', link: '/guide/faq' },
             { text: '更新日志', link: '/guide/changelog' },
           ]
         }

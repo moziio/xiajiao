@@ -258,8 +258,83 @@ server/
 
 PR 和 Issue 都欢迎。详见 [贡献指南](https://github.com/moziio/xiajiao/blob/master/CONTRIBUTING.md)。
 
+## 运维与进阶
+
+### 怎么给不同 Agent 配不同的模型？
+
+每个 Agent 可以独立指定模型。在 Agent 配置中设置对应的模型名称即可：
+
+- 代码助手 → `claude-sonnet`（代码能力强）
+- 翻译官 → `gpt-4o`（多语言最强）
+- 日常助理 → `qwen-turbo`（便宜够用）
+
+详见 [模型配置大全](/guide/model-config)。
+
+### 怎么备份和迁移数据？
+
+```bash
+# 完整备份（消息+记忆+知识库+上传文件）
+tar czf xiajiao-backup.tar.gz data/ public/uploads/
+
+# 迁移到新机器
+scp xiajiao-backup.tar.gz new-server:/opt/
+ssh new-server "cd /opt && tar xzf xiajiao-backup.tar.gz"
+```
+
+### SQLite 能支持多少用户并发？
+
+虾饺开启了 SQLite WAL 模式，支持并发读写。对于 1-50 人的团队完全够用。
+
+如果你是百人规模的团队，建议：
+- 部署在 SSD 硬盘上
+- 定期 `VACUUM` 优化数据库
+- 考虑前置 Nginx 缓存静态资源
+
+### 怎么升级虾饺？
+
+```bash
+cd xiajiao
+git pull                # 拉取最新代码
+npm install             # 更新依赖（如果有变化）
+pm2 restart xiajiao     # 重启服务
+```
+
+`data/` 目录不受影响，升级不会丢数据。
+
+### 忘记密码怎么办？
+
+停止服务，用新密码重启：
+
+```bash
+OWNER_KEY="new-password" npm start
+```
+
+密码存在环境变量中，不在数据库里。
+
+### 怎么查看 Agent 的记忆内容？
+
+```bash
+sqlite3 data/workspace-{agentId}/memory.db \
+  "SELECT type, content, created_at FROM memories ORDER BY created_at DESC LIMIT 20;"
+```
+
+### 能把虾饺部署在内网完全离线使用吗？
+
+可以。虾饺 + Ollama 本地模型 = 零外部网络连接。
+
+1. 在有网的机器上 `npm install`（下载 6 个依赖）
+2. 打包整个目录传到内网机器
+3. 内网机器安装 Ollama + 下载模型
+4. 启动虾饺，配置 Ollama 地址
+
+详见 [安全与隐私](/guide/security)。
+
 ## 下一步
 
 - [快速开始](/guide/quick-start) — 3 步跑起来
 - [模型配置](/guide/model-config) — 详细的模型配置教程
 - [多 Agent 群聊](/features/multi-agent-chat) — 核心功能介绍
+- [故障排查](/guide/troubleshooting) — 遇到问题看这里
+- [安全与隐私](/guide/security) — 数据安全详解
+- [平台对比](/guide/comparison) — 和 Dify/Coze/FastGPT 的区别
+- [API 参考](/guide/api-reference) — 接口和协议详情
