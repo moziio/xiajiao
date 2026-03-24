@@ -30,6 +30,8 @@ export default defineConfig({
         items: [
           { text: '更新日志', link: 'https://github.com/moziio/xiajiao/blob/master/CHANGELOG.md' },
           { text: '贡献指南', link: 'https://github.com/moziio/xiajiao/blob/master/CONTRIBUTING.md' },
+          { text: '问题反馈', link: 'https://github.com/moziio/xiajiao/issues' },
+          { text: '社区讨论', link: 'https://github.com/moziio/xiajiao/discussions' },
         ]
       }
     ],
