@@ -31,9 +31,12 @@ export default defineConfig({
         text: '更多',
         items: [
           { text: 'SOUL.md 写作指南', link: '/guide/soul-guide' },
+          { text: 'SOUL.md 模板库', link: '/guide/soul-templates' },
+          { text: '平台对比', link: '/guide/comparison' },
+          { text: '安全与隐私', link: '/guide/security' },
           { text: '架构设计', link: '/guide/architecture' },
-          { text: '开发者指南', link: '/guide/dev-guide' },
           { text: '常见问题', link: '/guide/faq' },
+          { text: '开发者指南', link: '/guide/dev-guide' },
           { text: '---', link: '' },
           { text: '更新日志', link: 'https://github.com/moziio/xiajiao/blob/master/CHANGELOG.md' },
           { text: '贡献指南', link: 'https://github.com/moziio/xiajiao/blob/master/CONTRIBUTING.md' },

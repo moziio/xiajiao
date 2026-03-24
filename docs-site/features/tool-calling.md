@@ -206,5 +206,7 @@ Agent 主动把重要信息写入持久记忆。
 - [Agent 持久记忆](/features/agent-memory) — memory_write 和 memory_search 的完整机制
 - [RAG 知识库](/features/rag) — rag_query 的三阶段检索管线
 - [协作流](/features/collaboration-flow) — 不用手动 @mention，让 Agent 自动接力
+- [安全与隐私](/guide/security) — 数据安全与 API Key 保护
+- [平台对比](/guide/comparison) — 虾饺 vs Dify vs Coze vs FastGPT
 - [架构设计](/guide/architecture) — 了解 Tool Calling 循环的完整代码实现
 - [模型配置](/guide/model-config) — 配置支持 Tool Calling 的模型

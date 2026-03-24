@@ -281,3 +281,4 @@ sudo chown -R 1000:1000 /opt/xiajiao-data
 
 - [云服务器部署](/deployment/cloud) — 公网访问 + HTTPS + 域名
 - [本地运行](/deployment/local) — 不想用 Docker？直接 npm start
+- [安全与隐私](/guide/security) — 数据安全、API Key 保护、攻击面分析

@@ -236,4 +236,6 @@ Leader：代码助手
 - [Tool Calling](/features/tool-calling) — Agent 不只聊天，还能搜索、记忆、调用其他 Agent
 - [Agent 持久记忆](/features/agent-memory) — Agent 如何记住你的偏好
 - [SOUL.md 写作指南](/guide/soul-guide) — 如何写出高质量的 Agent 人格设定
+- [SOUL.md 模板库](/guide/soul-templates) — 20+ 个可直接复制的 Agent 人格模板
+- [平台对比](/guide/comparison) — 虾饺 vs Dify vs Coze vs FastGPT
 - [实战案例](/guide/recipes) — 10 个可直接照搬的 Agent 团队配置方案

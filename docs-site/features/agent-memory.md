@@ -229,4 +229,6 @@ Agent 会主动 `memory_write` 保存这些偏好。
 - [Tool Calling](/features/tool-calling) — memory_write / memory_search 工具详情
 - [多 Agent 群聊](/features/multi-agent-chat) — Agent 如何协作
 - [SOUL.md 写作指南](/guide/soul-guide) — 在 SOUL.md 中配置记忆行为
+- [SOUL.md 模板库](/guide/soul-templates) — 20+ 个可直接复制的 Agent 人格模板
+- [安全与隐私](/guide/security) — 数据安全与 API Key 保护
 - [实战案例](/guide/recipes) — 利用记忆实现面试教练、学习助手等

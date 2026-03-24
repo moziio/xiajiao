@@ -379,3 +379,4 @@ pm2 start xiajiao
 - [Docker 部署](/deployment/docker) — 更喜欢容器化？
 - [本地运行](/deployment/local) — 本地开发调试
 - [模型配置](/guide/model-config) — 配置不同的 LLM Provider
+- [安全与隐私](/guide/security) — 数据安全、API Key 保护、攻击面分析

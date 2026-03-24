@@ -251,3 +251,4 @@ npm install --global windows-build-tools
 - [Docker 部署](/deployment/docker) — 更喜欢容器？
 - [云服务器部署](/deployment/cloud) — 想公网访问？
 - [模型配置](/guide/model-config) — 配置不同的 LLM Provider
+- [安全与隐私](/guide/security) — 数据安全、API Key 保护、攻击面分析
