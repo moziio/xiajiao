@@ -277,8 +277,114 @@ RUN apk add --no-cache python3 make g++
 sudo chown -R 1000:1000 /opt/xiajiao-data
 ```
 
+## Docker Compose + Ollama（完全私有方案）
+
+一键部署虾饺 + Ollama，零外部 API 依赖：
+
+```yaml
+# docker-compose.ollama.yml
+services:
+  xiajiao:
+    build: .
+    ports:
+      - "18800:18800"
+    volumes:
+      - ./volumes/data:/app/data
+      - ./volumes/uploads:/app/public/uploads
+    environment:
+      - OWNER_KEY=${OWNER_KEY:-admin}
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  ollama-models:
+```
+
+```bash
+# 启动
+docker compose -f docker-compose.ollama.yml up -d
+
+# 下载模型
+docker exec ollama ollama pull qwen2.5
+
+# 在虾饺中配置
+# API Base URL: http://ollama:11434/v1
+# API Key: ollama
+# 模型名: qwen2.5
+```
+
+::: tip 无 GPU？
+去掉 `deploy.resources` 段，Ollama 会用 CPU 运行（较慢但可用）。
+:::
+
+## 日志管理
+
+### 结构化日志输出
+
+```bash
+# JSON 格式日志（方便接入 ELK/Loki）
+docker logs xiajiao 2>&1 | jq '.'
+
+# 按时间范围查看
+docker logs --since "2026-03-19T00:00:00" xiajiao
+
+# 限制日志文件大小（docker-compose.yml）
+```
+
+在 `docker-compose.yml` 中限制日志大小防止磁盘爆满：
+
+```yaml
+services:
+  xiajiao:
+    # ... 其他配置 ...
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+## 生产环境检查清单
+
+部署到生产环境前，确认以下事项：
+
+```
+✅ OWNER_KEY 已修改（不是默认的 admin）
+✅ Volume 已挂载（docker inspect 确认 Mounts）
+✅ restart: unless-stopped 已设置
+✅ 健康检查已配置
+✅ 日志大小限制已设置
+✅ 防火墙只开放必要端口
+✅ 如需公网访问，Nginx 反向代理 + HTTPS
+✅ 定期备份脚本已配置
+```
+
 ## 下一步
 
 - [云服务器部署](/deployment/cloud) — 公网访问 + HTTPS + 域名
 - [本地运行](/deployment/local) — 不想用 Docker？直接 npm start
+- [性能调优](/guide/performance) — 生产环境优化
 - [安全与隐私](/guide/security) — 数据安全、API Key 保护、攻击面分析
+- [故障排查](/guide/troubleshooting) — 遇到问题看这里

@@ -276,9 +276,46 @@ sqlite3 data/im.db ".recover" | sqlite3 data/im-recovered.db
 | 企业内网 | 不连外网（Ollama 本地模型），完全隔离 |
 | 医疗/金融 | 配合 VPN + IP 白名单 + 定期审计 |
 
+## 安全自查清单
+
+上线前逐一检查：
+
+```
+身份认证
+  ✅ OWNER_KEY 已修改（不是默认 admin）
+  ✅ OWNER_KEY 长度 >= 16 字符
+  ✅ API Key 不在代码或 Git 中
+
+网络
+  ✅ 18800 端口不直接暴露到公网
+  ✅ Nginx 反向代理已配置
+  ✅ HTTPS 已启用（Let's Encrypt）
+  ✅ WebSocket 超时设置合理（86400s）
+  ✅ 安全头已添加（X-Frame-Options 等）
+
+系统
+  ✅ 防火墙只开放 22/80/443
+  ✅ SSH 禁用密码登录
+  ✅ Fail2ban 已安装
+  ✅ 自动安全更新已开启
+  ✅ data/ 目录权限正确（仅 Node.js 进程可读写）
+
+备份
+  ✅ 自动备份脚本已配置
+  ✅ 备份恢复已测试过
+  ✅ 备份文件不在公开路径
+
+Agent 安全
+  ✅ SOUL.md 含防 Prompt Injection 规则
+  ✅ Agent 工具权限最小化（不需要的工具关掉）
+  ✅ RAG 上传文件经过审查
+```
+
 ## 下一步
 
 - [云服务器部署](/deployment/cloud) — 包含 Nginx + HTTPS + 防火墙完整配置
 - [Docker 部署](/deployment/docker) — 容器隔离
+- [API 与协议参考](/guide/api-reference) — 了解所有 API 端点
+- [故障排查](/guide/troubleshooting) — 安全相关故障
 - [常见问题](/guide/faq) — 安全相关 FAQ
 - [架构设计](/guide/architecture) — 了解代码结构做安全审计

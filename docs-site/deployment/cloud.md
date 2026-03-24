@@ -374,9 +374,91 @@ pm2 start xiajiao
 └─────────────┘
 ```
 
+## 一键部署平台
+
+如果不想自己管服务器，这些平台支持一键部署 Node.js 应用：
+
+### Railway
+
+```bash
+# 安装 Railway CLI
+npm install -g @railway/cli
+
+# 登录并部署
+railway login
+railway init
+railway up
+```
+
+在 Railway 控制台设置：
+- **Start Command**: `node server/index.js`
+- **Port**: `18800`
+- **环境变量**: `OWNER_KEY=your-secret`
+- **Volume**: 添加持久化存储挂载到 `/app/data`
+
+::: warning 注意
+Railway 的免费套餐有用量限制。虾饺需要持久化文件系统，确保配置了 Volume。
+:::
+
+### Render
+
+1. 在 [render.com](https://render.com) 创建 "Web Service"
+2. 连接 GitHub 仓库
+3. 设置：
+   - **Build Command**: `npm install`
+   - **Start Command**: `node server/index.js`
+   - **Environment**: `OWNER_KEY=your-secret`
+4. 添加 Disk 持久化存储（挂载路径 `/app/data`）
+
+### Fly.io
+
+创建 `fly.toml`：
+
+```toml
+app = "xiajiao"
+
+[build]
+  builder = "heroku/buildpacks:22"
+
+[env]
+  IM_PORT = "18800"
+
+[[services]]
+  internal_port = 18800
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+[mounts]
+  source = "xiajiao_data"
+  destination = "/app/data"
+```
+
+```bash
+flyctl launch
+flyctl secrets set OWNER_KEY=your-secret
+flyctl deploy
+```
+
+### 不推荐的平台
+
+| 平台 | 原因 |
+|------|------|
+| Vercel | Serverless，不支持 WebSocket 和持久文件系统 |
+| Netlify | 静态站点托管，不支持 Node.js 长驻服务 |
+| AWS Lambda | 无状态函数，不适合有状态应用 |
+
 ## 下一步
 
 - [Docker 部署](/deployment/docker) — 更喜欢容器化？
 - [本地运行](/deployment/local) — 本地开发调试
 - [模型配置](/guide/model-config) — 配置不同的 LLM Provider
+- [性能调优](/guide/performance) — 生产环境优化
 - [安全与隐私](/guide/security) — 数据安全、API Key 保护、攻击面分析
+- [故障排查](/guide/troubleshooting) — 遇到问题看这里
