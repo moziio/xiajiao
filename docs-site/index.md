@@ -369,6 +369,11 @@ Agent 工具：RAG 知识库 + 持久记忆
     <div style="font-weight: 600; margin-top: 0.5rem;">安全与隐私</div>
     <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">数据完全私有</div>
   </a>
+  <a href="/guide/migration" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
+    <div style="font-size: 1.5rem;">🚚</div>
+    <div style="font-weight: 600; margin-top: 0.5rem;">迁移指南</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">从其他平台迁移</div>
+  </a>
   <a href="/guide/model-config" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">🔌</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">模型配置</div>

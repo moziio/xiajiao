@@ -400,15 +400,72 @@ ws.onopen = () => {
 
 ## 错误码
 
-| HTTP 状态码 | 含义 |
-|------------|------|
-| `200` | 成功 |
-| `400` | 请求参数错误 |
-| `401` | 未认证或 Token 过期 |
-| `403` | 权限不足 |
-| `404` | 资源不存在 |
-| `429` | 请求过于频繁 |
-| `500` | 服务器内部错误 |
+| HTTP 状态码 | 含义 | 常见原因 |
+|------------|------|---------|
+| `200` | 成功 | — |
+| `400` | 请求参数错误 | 缺少必填字段、JSON 格式错误 |
+| `401` | 未认证或 Token 过期 | 未登录、Session 过期、Cookie 丢失 |
+| `403` | 权限不足 | Guest 用户访问管理接口 |
+| `404` | 资源不存在 | 频道/Agent/消息 ID 错误 |
+| `429` | 请求过于频繁 | 短时间内发送过多消息（速率限制） |
+| `500` | 服务器内部错误 | LLM API 调用失败、数据库异常 |
+
+## curl 快速测试
+
+以下示例可以在终端中直接运行，方便开发调试。
+
+### 登录获取 Token
+
+```bash
+# 登录
+curl -c cookies.txt -X POST http://localhost:18800/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"password":"admin"}'
+```
+
+### 查看 Agent 列表
+
+```bash
+curl -b cookies.txt http://localhost:18800/api/agents | python3 -m json.tool
+```
+
+### 发送消息
+
+```bash
+curl -b cookies.txt -X POST http://localhost:18800/api/messages \
+  -H "Content-Type: application/json" \
+  -d '{"channelId":"ch_xxx","content":"@代码助手 hello","type":"text"}'
+```
+
+### 获取消息历史
+
+```bash
+curl -b cookies.txt "http://localhost:18800/api/messages?channelId=ch_xxx&limit=10"
+```
+
+::: tip
+`-c cookies.txt` 保存 Cookie，`-b cookies.txt` 发送 Cookie。这样多个 curl 命令可以共享登录状态。
+:::
+
+## WebSocket 调试
+
+使用 `wscat` 调试 WebSocket：
+
+```bash
+npm install -g wscat
+
+# 连接（用浏览器 DevTools 获取 session token）
+wscat -c "ws://localhost:18800/ws" -H "Cookie: session=your-token"
+
+# 连上后发送认证
+> {"type":"auth","token":"your-session-token"}
+# 收到 auth_ok
+< {"type":"auth_ok","userId":"user_xxx"}
+
+# 订阅频道
+> {"type":"subscribe","channelId":"ch_xxx"}
+# 之后该频道的所有消息会推送过来
+```
 
 ## 下一步
 
@@ -416,3 +473,4 @@ ws.onopen = () => {
 - [开发者指南](/guide/dev-guide) — 参与开发和贡献
 - [安全与隐私](/guide/security) — 认证和安全机制
 - [故障排查](/guide/troubleshooting) — 常见问题修复
+- [术语表](/guide/glossary) — API 中用到的术语

@@ -34,6 +34,7 @@ export default defineConfig({
           { text: 'SOUL.md 模板库', link: '/guide/soul-templates' },
           { text: '平台对比', link: '/guide/comparison' },
           { text: '安全与隐私', link: '/guide/security' },
+          { text: '迁移指南', link: '/guide/migration' },
           { text: '架构设计', link: '/guide/architecture' },
           { text: '常见问题', link: '/guide/faq' },
           { text: '开发者指南', link: '/guide/dev-guide' },
@@ -68,6 +69,7 @@ export default defineConfig({
             { text: '实战案例', link: '/guide/recipes' },
             { text: '平台对比', link: '/guide/comparison' },
             { text: '安全与隐私', link: '/guide/security' },
+            { text: '迁移指南', link: '/guide/migration' },
             { text: '架构设计', link: '/guide/architecture' },
           ]
         },

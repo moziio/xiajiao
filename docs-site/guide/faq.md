@@ -329,6 +329,75 @@ sqlite3 data/workspace-{agentId}/memory.db \
 
 详见 [安全与隐私](/guide/security)。
 
+## 进阶开发
+
+### 怎么给虾饺添加一个新的 API 端点？
+
+在 `server/api/` 目录下修改对应模块，添加路由处理：
+
+```javascript
+// 在 server/api/routes.js 中
+if (path === '/api/my-endpoint' && method === 'GET') {
+  return { status: 200, data: { hello: 'world' } };
+}
+```
+
+重启服务后即生效，不需要编译或构建。
+
+### 怎么添加一个新的内置工具？
+
+在 `server/services/tools.js` 中注册：
+
+```javascript
+registerTool({
+  name: 'my_tool',
+  description: '我的自定义工具',
+  parameters: {
+    type: 'object',
+    properties: {
+      input: { type: 'string', description: '输入内容' }
+    }
+  },
+  handler: async ({ input }) => {
+    return { result: `处理了: ${input}` };
+  }
+});
+```
+
+详见 [开发者指南](/guide/dev-guide)。
+
+### 虾饺的数据库 Schema 是什么？
+
+详见 [API 与协议参考](/guide/api-reference#数据库表结构)——包含所有表结构、字段说明。
+
+### 怎么用虾饺的 API 做集成？
+
+虾饺的 HTTP API 可以用于构建自动化流程：
+
+```bash
+# 1. 登录
+curl -c cookies.txt -X POST http://localhost:18800/api/login \
+  -H "Content-Type: application/json" -d '{"password":"admin"}'
+
+# 2. 发送消息给 Agent
+curl -b cookies.txt -X POST http://localhost:18800/api/messages \
+  -H "Content-Type: application/json" \
+  -d '{"channelId":"ch_xxx","content":"@代码助手 生成日报","type":"text"}'
+```
+
+配合 Cron 可以实现定时自动化。
+
+### 怎么用定时任务做自动化？
+
+虾饺支持通过 `manage_schedule` 工具设置 Cron 定时任务：
+
+```
+你：@虾饺管家 每天早上 9 点让新闻助手搜索 AI 新闻并发摘要
+管家：好的，已设置定时任务 (0 9 * * *)
+```
+
+也可以在 Agent 的 SOUL.md 里预设定时行为。
+
 ## 下一步
 
 - [快速开始](/guide/quick-start) — 3 步跑起来
@@ -338,3 +407,4 @@ sqlite3 data/workspace-{agentId}/memory.db \
 - [安全与隐私](/guide/security) — 数据安全详解
 - [平台对比](/guide/comparison) — 和 Dify/Coze/FastGPT 的区别
 - [API 参考](/guide/api-reference) — 接口和协议详情
+- [术语表](/guide/glossary) — 不懂的术语看这里
