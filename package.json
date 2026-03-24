@@ -5,7 +5,10 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "test": "node --test --test-force-exit server/tests/*.js"
+    "test": "node --test --test-force-exit server/tests/*.js",
+    "docs:dev": "vitepress dev docs-site",
+    "docs:build": "vitepress build docs-site",
+    "docs:preview": "vitepress preview docs-site"
   },
   "keywords": [
     "ai",
@@ -38,5 +41,8 @@
     "node-cron": "^4.2.1",
     "pdf-parse": "^1.1.4",
     "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
   }
 }

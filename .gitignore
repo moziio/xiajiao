@@ -39,6 +39,10 @@ Desktop.ini
 # Internal dev notes
 docs/dev/
 
+# VitePress build output
+docs-site/.vitepress/dist/
+docs-site/.vitepress/cache/
+
 # Editor
 .vscode/
 .idea/
