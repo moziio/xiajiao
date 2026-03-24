@@ -181,3 +181,137 @@ html {
 .vp-doc .custom-block.tip {
   border-left: 4px solid var(--vp-c-brand-1);
 }
+
+/* Details/Accordion (homepage FAQ) */
+details {
+  transition: background 0.2s ease;
+}
+
+details:hover {
+  background: var(--vp-c-bg-elv) !important;
+}
+
+details summary {
+  transition: color 0.2s ease;
+}
+
+details[open] summary {
+  color: var(--vp-c-brand-1);
+  margin-bottom: 0.5rem;
+}
+
+/* Documentation navigation cards */
+.vp-doc a[style*="border-radius: 8px"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Table improvements */
+.vp-doc table {
+  display: table;
+  overflow-x: auto;
+}
+
+.vp-doc td, .vp-doc th {
+  padding: 10px 14px;
+}
+
+.vp-doc tr {
+  transition: background 0.15s ease;
+}
+
+.vp-doc tr:hover td {
+  background: var(--vp-c-brand-soft);
+}
+
+/* Code group tabs */
+.vp-code-group .tabs label {
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.vp-code-group .tabs label.active {
+  color: var(--vp-c-brand-1) !important;
+}
+
+/* Badge styling (sidebar) */
+.VPBadge {
+  border-radius: 4px !important;
+}
+
+/* Better blockquotes */
+.vp-doc blockquote {
+  border-left: 4px solid var(--vp-c-brand-1);
+  background: var(--vp-c-bg-soft);
+  border-radius: 0 8px 8px 0;
+  padding: 0.8rem 1.2rem;
+  color: var(--vp-c-text-2);
+  font-style: normal;
+}
+
+.vp-doc blockquote p {
+  margin: 0;
+}
+
+/* Homepage metric numbers */
+div[style*="font-size: 2rem"] {
+  background: linear-gradient(135deg, var(--vp-c-brand-1), #f0a030);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Smooth page transitions */
+.VPContent {
+  transition: opacity 0.2s ease;
+}
+
+/* Better horizontal rules */
+.vp-doc hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--vp-c-brand-soft), transparent);
+  margin: 2rem 0;
+}
+
+/* Print styles */
+@media print {
+  .VPNav, .VPSidebar, .VPFooter, .VPLocalNav {
+    display: none !important;
+  }
+
+  .VPContent {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* Focus states for accessibility */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Improve mobile sidebar */
+@media (max-width: 960px) {
+  .VPSidebar {
+    transition: transform 0.3s ease;
+  }
+}
+
+/* Animate brand button */
+.VPButton.brand {
+  transition: all 0.2s ease;
+}
+
+.VPButton.brand:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(232, 93, 58, 0.3);
+}
+
+/* Navigation bar glass effect */
+.VPNav {
+  backdrop-filter: blur(12px);
+}

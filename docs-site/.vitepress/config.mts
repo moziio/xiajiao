@@ -58,7 +58,10 @@ export default defineConfig({
           text: '进阶',
           items: [
             { text: 'SOUL.md 写作指南', link: '/guide/soul-guide' },
+            { text: 'SOUL.md 模板库', link: '/guide/soul-templates' },
             { text: '实战案例', link: '/guide/recipes' },
+            { text: '平台对比', link: '/guide/comparison' },
+            { text: '安全与隐私', link: '/guide/security' },
             { text: '架构设计', link: '/guide/architecture' },
           ]
         },

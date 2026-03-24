@@ -228,36 +228,82 @@ Agent 工具：RAG 知识库 + 持久记忆
   <p><a href="/guide/model-config">查看完整模型配置教程 →</a></p>
 </div>
 
+<!-- FAQ Highlights Section -->
+<div style="text-align: center; margin: 2rem 0;">
+  <h2 style="border: none;">❓ 常见疑问</h2>
+</div>
+
+<div style="max-width: 700px; margin: 0 auto 2rem; padding: 0 1rem;">
+
+<details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
+<summary style="font-weight: 600; cursor: pointer;">虾饺和 ChatGPT / Claude 有什么区别？</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">ChatGPT 是"一个 AI 聊天"。虾饺是"一群 AI 协作"——你可以创建多个 Agent，它们各有人格和技能，可以在群组中互相@、自动接力。而且数据完全在你本地。</p>
+</details>
+
+<details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
+<summary style="font-weight: 600; cursor: pointer;">收费吗？</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">虾饺完全免费开源（MIT）。你只需要付 LLM API 的钱——用 Ollama 本地模型连这都省了。</p>
+</details>
+
+<details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
+<summary style="font-weight: 600; cursor: pointer;">和 Dify 比呢？</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">Dify 是"AI 应用开发平台"——帮你构建面向用户的 AI 产品。虾饺是"Agent 团队协作"——Agent 是你的同事。<a href="/guide/comparison">详细对比 →</a></p>
+</details>
+
+<details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
+<summary style="font-weight: 600; cursor: pointer;">安全吗？数据会被发到哪里？</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">所有数据存在你本地。零遥测。唯一的外部通信是你主动配置的 LLM API。用 Ollama = 完全离线。<a href="/guide/security">安全详解 →</a></p>
+</details>
+
+<p style="text-align: center;"><a href="/guide/faq">查看全部 20+ 常见问题 →</a></p>
+
+</div>
+
 <!-- Documentation Links Section -->
 <div style="text-align: center; margin: 2rem 0;">
   <h2 style="border: none;">📖 深入了解</h2>
 </div>
 
-<div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; max-width: 800px; margin: 0 auto 3rem; padding: 0 1rem;">
-  <a href="/guide/quick-start" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 140px;">
+<div style="display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; max-width: 900px; margin: 0 auto 3rem; padding: 0 1rem;">
+  <a href="/guide/quick-start" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">🚀</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">快速开始</div>
-    <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">3 步跑起来</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">3 步跑起来</div>
   </a>
-  <a href="/guide/soul-guide" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 140px;">
+  <a href="/guide/soul-guide" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">📝</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">SOUL.md 指南</div>
-    <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">5 个实战模板</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">写出好人格</div>
   </a>
-  <a href="/guide/recipes" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 140px;">
+  <a href="/guide/soul-templates" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
+    <div style="font-size: 1.5rem;">📋</div>
+    <div style="font-weight: 600; margin-top: 0.5rem;">模板库</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">20+ 可复制模板</div>
+  </a>
+  <a href="/guide/recipes" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">🍳</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">实战案例</div>
-    <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">10 个照搬方案</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">10 个照搬方案</div>
   </a>
-  <a href="/guide/architecture" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 140px;">
+  <a href="/guide/comparison" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
+    <div style="font-size: 1.5rem;">⚔️</div>
+    <div style="font-weight: 600; margin-top: 0.5rem;">平台对比</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">vs Dify/Coze</div>
+  </a>
+  <a href="/guide/architecture" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">🏗️</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">架构设计</div>
-    <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">技术深度解析</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">技术深度解析</div>
   </a>
-  <a href="/guide/model-config" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 140px;">
+  <a href="/guide/security" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
+    <div style="font-size: 1.5rem;">🔒</div>
+    <div style="font-weight: 600; margin-top: 0.5rem;">安全与隐私</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">数据完全私有</div>
+  </a>
+  <a href="/guide/model-config" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
     <div style="font-size: 1.5rem;">🔌</div>
     <div style="font-weight: 600; margin-top: 0.5rem;">模型配置</div>
-    <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">8 个 Provider</div>
+    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">8 个 Provider</div>
   </a>
 </div>
 
