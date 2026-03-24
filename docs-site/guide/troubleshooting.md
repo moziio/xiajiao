@@ -349,10 +349,35 @@ docker logs xiajiao --tail 50
 free -h && df -h
 ```
 
+## 诊断决策树
+
+遇到问题不知道从哪里下手？按这个流程走：
+
+```
+虾饺能打开吗？
+├── 打不开
+│   ├── 端口被占用？ → IM_PORT=3000 npm start
+│   ├── Node.js 版本 < 22？ → 升级 Node.js
+│   └── npm install 失败？ → 安装编译工具 (python3/make/g++)
+│
+├── 能打开但登录失败
+│   └── 忘记密码？ → OWNER_KEY=new-password npm start
+│
+└── 能登录但 Agent 不回复
+    ├── API Key 正确吗？ → 设置 → 模型管理 → 测试连接
+    ├── Agent 分配了模型吗？ → Agent 设置 → 检查模型配置
+    ├── 浏览器控制台有报错？ → F12 → Console
+    └── WebSocket 连接正常？ → F12 → Network → WS
+```
+
 ## 还是解决不了？
 
-1. 搜索 [GitHub Issues](https://github.com/moziio/xiajiao/issues)
-2. 提交新 Issue（附上错误日志、Node.js 版本、操作系统）
+1. 搜索 [GitHub Issues](https://github.com/moziio/xiajiao/issues)（可能有人遇到过同样的问题）
+2. 提交新 Issue，请附上以下信息：
+   - Node.js 版本：`node -v`
+   - 操作系统：Windows / macOS / Linux（具体版本）
+   - 错误日志：终端输出或 `pm2 logs`
+   - 复现步骤：怎么操作才出现这个问题
 3. 加入 [GitHub Discussions](https://github.com/moziio/xiajiao/discussions) 讨论
 
 ## 下一步
@@ -360,5 +385,7 @@ free -h && df -h
 - [快速开始](/guide/quick-start) — 确认安装步骤
 - [安全与隐私](/guide/security) — 生产环境安全加固
 - [Docker 部署](/deployment/docker) — 容器化部署
+- [性能调优](/guide/performance) — 性能问题深度排查
 - [模型配置](/guide/model-config) — 模型相关问题
+- [API 与协议参考](/guide/api-reference) — 排查 API 错误码
 - [常见问题](/guide/faq) — 更多 Q&A

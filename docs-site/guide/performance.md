@@ -206,15 +206,99 @@ gzip_comp_level 6;
 
 **优化**：链中非关键节点用快速模型——编辑和翻译不需要最强推理能力。
 
+## RAG 性能优化
+
+RAG 检索是除 LLM 之外最耗时的操作。
+
+### 文档索引优化
+
+| 优化 | 做法 | 效果 |
+|------|------|------|
+| 控制单文档大小 | < 50 页 / < 100KB 文本 | 索引速度 2x |
+| 删除无用文档 | 定期清理过期文档 | 减少检索噪音 |
+| 精选文档格式 | 纯文本/Markdown > PDF > 扫描件 | 切片质量更高 |
+
+### 检索参数调优
+
+```
+BM25 权重 vs 向量权重 → 默认 0.5:0.5 足够
+RRF k 参数 → 默认 60，几乎不需要改
+top_k → 3 条足够大多数场景，5 条适合长文档
+```
+
+### 大知识库场景
+
+文档超过 100 个时：
+
+```bash
+# 定期重建 FTS5 索引
+sqlite3 data/workspace-xxx/rag.db "INSERT INTO docs_fts(docs_fts) VALUES('rebuild');"
+
+# 清理碎片
+sqlite3 data/workspace-xxx/rag.db "VACUUM;"
+```
+
+## 负载估算
+
+虾饺是单进程 SQLite 架构，适合小规模使用。以下是典型场景的资源消耗：
+
+| 场景 | 并发用户 | 内存 | CPU | 磁盘 IOPS |
+|------|---------|------|-----|----------|
+| 个人使用 | 1 | ~60MB | < 5% | 极低 |
+| 小团队（3-5人） | 3-5 | ~100MB | < 15% | 低 |
+| 中团队（10人） | 5-10 | ~200MB | < 30% | 中等 |
+| 上限 | ~20 同时在线 | ~400MB | < 60% | 较高 |
+
+::: tip 瓶颈在 LLM 不在虾饺
+真正的并发瓶颈是 LLM API 的速率限制和响应时间（2-15 秒/次），不是虾饺本身。SQLite WAL 的写入性能（5000 QPS）对 Agent 聊天来说绰绰有余。
+:::
+
+## 简易压测
+
+快速验证虾饺在你的硬件上的表现：
+
+```bash
+# 测试 HTTP 响应速度（静态资源）
+for i in $(seq 1 100); do
+  curl -s -o /dev/null -w "%{time_total}\n" http://localhost:18800/
+done | awk '{sum+=$1} END {print "avg:", sum/NR, "s"}'
+
+# 测试 API 响应速度（需要先登录获取 token）
+curl -s -o /dev/null -w "%{time_total}s\n" \
+  -H "Cookie: session=your-session-token" \
+  http://localhost:18800/api/channels
+```
+
 ## 监控建议
 
-| 监控项 | 工具 | 告警阈值 |
-|--------|------|---------|
-| 内存使用 | PM2 / htop | > 500MB |
-| CPU 使用 | PM2 / htop | > 80% 持续 5 分钟 |
-| 磁盘空间 | df -h | < 1GB |
-| 数据库大小 | ls -lh data/im.db | > 1GB |
-| 进程存活 | PM2 / systemd | 进程退出 |
+| 监控项 | 工具 | 告警阈值 | 处理方案 |
+|--------|------|---------|---------|
+| 内存使用 | PM2 / htop | > 500MB | PM2 自动重启 |
+| CPU 使用 | PM2 / htop | > 80% 持续 5 分钟 | 检查是否有死循环 |
+| 磁盘空间 | df -h | < 1GB | 清理日志 + VACUUM |
+| 数据库大小 | ls -lh data/im.db | > 1GB | VACUUM + 归档旧消息 |
+| 进程存活 | PM2 / systemd | 进程退出 | 自动重启 |
+| WAL 文件大小 | ls -lh data/im.db-wal | > 100MB | 重启应用触发 checkpoint |
+
+### PM2 监控脚本
+
+```bash
+# 创建简单监控脚本
+cat > /opt/monitor-xiajiao.sh << 'SCRIPT'
+#!/bin/bash
+MEM=$(pm2 jlist | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['monit']['memory']//1024//1024)")
+DISK=$(df -h / | awk 'NR==2{print $5}' | tr -d '%')
+DB_SIZE=$(stat -f%z data/im.db 2>/dev/null || stat -c%s data/im.db)
+DB_MB=$((DB_SIZE/1024/1024))
+
+echo "Memory: ${MEM}MB | Disk: ${DISK}% | DB: ${DB_MB}MB"
+
+[ "$MEM" -gt 500 ] && echo "WARNING: Memory > 500MB"
+[ "$DISK" -gt 90 ] && echo "WARNING: Disk > 90%"
+[ "$DB_MB" -gt 1024 ] && echo "WARNING: DB > 1GB"
+SCRIPT
+chmod +x /opt/monitor-xiajiao.sh
+```
 
 ## 下一步
 
@@ -223,3 +307,4 @@ gzip_comp_level 6;
 - [安全与隐私](/guide/security) — 生产环境安全加固
 - [架构设计](/guide/architecture) — 深入理解代码结构
 - [故障排查](/guide/troubleshooting) — 性能问题诊断
+- [术语表](/guide/glossary) — WAL、FTS5 等术语解释

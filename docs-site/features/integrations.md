@@ -238,9 +238,31 @@ Web 端用户问：刚才说的部署流程，第三步详细说说
   → Agent memory_search → 找到之前的记忆 → 继续详细解答
 ```
 
+## 渠道接入 FAQ
+
+### 飞书 Bot 收不到消息
+
+1. 确认"事件订阅"已启用 `im.message.receive_v1`
+2. 确认已选择"使用长连接接收事件"
+3. 确认应用已发布（草稿状态无法收消息）
+4. 检查虾饺终端日志是否有 WebSocket 连接信息
+
+### 一个 Agent 能同时接多个渠道吗？
+
+可以。同一个 Agent 可以同时服务 Web 端 + 飞书 + 钉钉。Agent 的记忆在所有渠道间共享——在飞书问的问题，Agent 在 Web 端也记得。
+
+### 渠道接入会影响 Web 端使用吗？
+
+不会。渠道接入是附加功能，Web 端的所有功能不受影响。
+
+### 渠道消息的 Tool Calling 怎么显示？
+
+在外部渠道（如飞书）中，Tool Calling 的中间过程不会实时显示（受限于平台消息格式）。Agent 会等工具调用完成后，一次性发送最终回复。如果需要查看完整的 Tool Calling 过程，可以在虾饺 Web 端查看同一条消息。
+
 ## 下一步
 
 - [Tool Calling](/features/tool-calling) — `manage_channel` 工具详解
 - [快速开始](/guide/quick-start) — 先在 Web 端跑起来
 - [云服务器部署](/deployment/cloud) — 渠道接入需要服务在线
 - [安全与隐私](/guide/security) — 渠道 Token 安全
+- [故障排查](/guide/troubleshooting) — 连接问题排查

@@ -315,3 +315,112 @@ summary:focus-visible {
 .VPNav {
   backdrop-filter: blur(12px);
 }
+
+/* Sidebar active item brand highlight */
+.VPSidebarItem.is-active > .item > .indicator {
+  background: var(--vp-c-brand-1) !important;
+}
+
+.VPSidebarItem.is-active > .item > .link > .text {
+  color: var(--vp-c-brand-1) !important;
+  font-weight: 600;
+}
+
+/* Dark mode: softer code blocks */
+.dark .vp-doc div[class*="language-"] {
+  background: #1a1a2e;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Dark mode: inline code contrast */
+.dark .vp-doc :not(pre) > code {
+  background: rgba(240, 112, 80, 0.12);
+  color: #f07050;
+}
+
+/* Improved table in dark mode */
+.dark .vp-doc th {
+  background: rgba(240, 112, 80, 0.1);
+}
+
+.dark .vp-doc tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Custom block icons */
+.vp-doc .custom-block.tip::before {
+  content: "💡";
+  position: absolute;
+  top: 0.7rem;
+  left: -0.4rem;
+  font-size: 1rem;
+}
+
+/* Animated gradient for homepage hero tagline */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.VPHero .tagline {
+  background: linear-gradient(90deg, var(--vp-c-text-1), var(--vp-c-brand-1), var(--vp-c-text-1));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* TOC (outline) active item highlight */
+.VPDocOutlineItem .outline-link.active {
+  color: var(--vp-c-brand-1) !important;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+/* Subtle hover for sidebar groups */
+.VPSidebarItem .item:hover {
+  background: var(--vp-c-bg-soft);
+  border-radius: 6px;
+}
+
+/* Pagination (prev/next) cards */
+.pager-link {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pager-link:hover {
+  border-color: var(--vp-c-brand-1) !important;
+  box-shadow: 0 2px 12px rgba(232, 93, 58, 0.1);
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vp-c-divider);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-c-brand-soft);
+}
+
+/* Selection highlight */
+::selection {
+  background: rgba(232, 93, 58, 0.2);
+  color: inherit;
+}
+
+/* Subtle text shadow for hero title */
+.VPHero .name {
+  text-shadow: 0 2px 20px rgba(232, 93, 58, 0.15);
+}
