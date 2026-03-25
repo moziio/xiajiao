@@ -1,308 +1,305 @@
 ---
-title: 协作流 — 虾饺 IM
-description: 协作链自动接力、可视化面板实时状态、人工干预节点、一句话触发 Agent 流水线。
+title: "Collaboration Flow — Xiajiao (虾饺) IM"
+description: "Collaboration chains for automatic handoffs, a live visual panel, human-in-the-loop steps, and one-message Agent pipelines."
 ---
 
-# 协作流
+# Collaboration flow
 
-虾饺的协作流让多个 Agent **自动接力**完成一项任务——你只需要发一句话，整条流水线自动运转。
-
-<p align="center">
-  <img src="/images/collab-flow.png" alt="多 Agent 协作——AI 生成水墨插画 + 团队总结" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-</p>
-<p align="center" style="color: var(--vp-c-text-2);">
-  <em>真实案例：小说家完成创作后自动生成水墨插画，并输出团队工作总结。</em>
-</p>
-
-## 什么是协作流？
-
-协作流 = **协作链** + **可视化面板**。
-
-- **协作链**：在群组中配置 Agent 接力顺序，消息自动流转
-- **可视化面板**：实时展示每个 Agent 的状态、输出、进度
+Xiajiao (虾饺) collaboration flow lets multiple Agents **hand off automatically**—send one message and the whole pipeline runs.
 
 <p align="center">
-  <img src="/images/collab-flow-running.png" alt="协作流可视化面板——运行中" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/collab-flow.png" alt="Multi-agent collaboration — poem plus ink-style illustration and team summary" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 <p align="center" style="color: var(--vp-c-text-2);">
-  <em>协作流运行中：小说家（15s 完成）→ 翻译官（处理中）→ 发布，进度 33%。顶部可视化面板实时展示每个节点状态。</em>
+  <em>Real case: Novelist finishes copy, ink-style art generates, team summary follows.</em>
 </p>
 
-简单说：你给第一个 Agent 下达指令，后面的 Agent 自动一个接一个地干活，每个环节的进展你都能看到。与 [多 Agent 群聊](/features/multi-agent-chat) 中的群组、@mention 配合使用效果最好。
+## What is collaboration flow?
+
+Collaboration flow = **collaboration chain** + **visual panel**.
+
+- **Chain**: define Agent order in a group; messages flow automatically  
+- **Panel**: live status, outputs, and progress per Agent  
 
 <p align="center">
-  <img src="/images/poem-with-ai-art.png" alt="协作链运行中：用户请求写诗配插图，小说家回复与链上节点同屏" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/collab-flow-running.png" alt="Collaboration flow panel — running" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 <p align="center" style="color: var(--vp-c-text-2);">
-  <em>协作链与用户指令同屏：@小说家 写诗并配插图时，链上状态与 Agent 输出（含后续文生图）一并可见。</em>
+  <em>Running: Novelist (15s done) → Translator (in progress) → Publish, 33%. The top panel shows each node.</em>
 </p>
 
-## 与手动 @mention 的区别
+You instruct the first Agent; the rest run in sequence with full visibility. Works best with groups and @mention from [Multi-agent group chat](/features/multi-agent-chat).
 
-| 维度 | 手动 @mention | 协作流 |
-|------|--------------|--------|
-| 触发方式 | 你手动 @每个 Agent | 发一条消息自动触发 |
-| 流转 | Agent 各自独立回复 | 上一个的输出自动传给下一个 |
-| 可见性 | 在聊天流中看回复 | 可视化面板实时展示状态 |
-| 人工干预 | 随时可以 @别的 Agent | 可以在节点间暂停确认 |
-| 适合 | 灵活的临时协作 | 重复性的标准流程 |
+<p align="center">
+  <img src="/images/poem-with-ai-art.png" alt="Chain and chat together — poem request with illustration on-chain" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+</p>
+<p align="center" style="color: var(--vp-c-text-2);">
+  <em>Chain state and chat together: @Novelist poem + art shows chain progress and Agent output (including later image gen).</em>
+</p>
 
-## 协作链
+## vs manual @mention
 
-### 配置方式
+| Dimension | Manual @mention | Collaboration flow |
+|-----------|-----------------|---------------------|
+| Trigger | You @ each Agent | One user message |
+| Flow | Independent replies | Previous output feeds next |
+| Visibility | Thread only | Live panel + thread |
+| Human steps | @ anytime | Pause/confirm between nodes |
+| Best for | Ad hoc work | Repeatable pipelines |
 
-在群组设置中定义 Agent 接力顺序：
+## Collaboration chain
+
+### Configuration
+
+In group settings, define order:
 
 ```
-小说家 → 编辑 → 翻译官
+Novelist → Editor → Translator
 ```
 
-每个箭头表示"前一个完成后，输出自动传给下一个"。
+Each arrow means: when the previous Agent finishes, its output is passed to the next.
 
-### 运行示例
+### Example run
 
 ```
-你：写一首关于月光的诗
+You: Write a poem about moonlight
 
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  ✍️ 小说家   │ ──→ │  📝 编辑     │ ──→ │  🌐 翻译官   │
+│  ✍️ Novelist │ ──→ │  📝 Editor   │ ──→ │  🌐 Translator │
 │             │     │             │     │             │
-│ 创作诗歌     │     │ 润色修改     │     │ 英译         │
-│ 状态：已完成  │     │ 状态：进行中  │     │ 状态：等待中  │
+│ Write poem  │     │ Polish      │     │ EN translate│
+│ Done        │     │ Running     │     │ Waiting     │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-**实际效果**：
+**What happens**
 
-1. **小说家** 收到"写一首关于月光的诗"，创作诗歌
-2. 诗歌自动传给 **编辑**（附带上下文："小说家写了以下诗歌，请润色"）
-3. 润色后的诗歌自动传给 **翻译官**（附带上下文："请将以下润色后的诗歌翻译成英文"）
-4. 最终输出：原创诗歌 + 润色版 + 英文翻译
+1. **Novelist** gets “Write a poem about moonlight” and writes.  
+2. Text goes to **Editor** with context: “Novelist produced the following—please polish.”  
+3. Polished text goes to **Translator** with context: “Translate the polished poem to English.”  
+4. Final: original + polished + English.  
 
 <p align="center">
-  <img src="/images/hero-light-translation.png" alt="翻译官输出英文诗歌" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/hero-light-translation.png" alt="Translator outputs English poem" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 <p align="center" style="color: var(--vp-c-text-2);">
-  <em>翻译官在协作链中接力完成英文翻译 — "Beneath the Stars"</em>
+  <em>Translator handoff in the chain — “Beneath the Stars”</em>
 </p>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/poetry-translation-light.png" alt="浅色模式 — 小说家创作诗歌，翻译官接力英译" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">浅色模式 — 小说家创作诗歌，翻译官自动接力翻译为英文</p>
+  <img src="/images/poetry-translation-light.png" alt="Light mode — Novelist then Translator" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Light mode — Novelist writes, Translator follows to English</p>
 </div>
 
-### 协作链的上下文传递
+### Context passed along
 
-每个 Agent 不仅收到上一个 Agent 的输出，还收到完整的协作上下文：
-
-```
-[协作链上下文]
-协作链：小说家 → 编辑 → 翻译官
-当前步骤：第 2 步（编辑）
-用户原始指令：写一首关于月光的诗
-上一步输出（小说家）：
-  月光如水洒庭前，
-  清辉万里照无眠...
-
-请基于以上内容完成你的任务。
-```
-
-## 可视化面板
-
-协作链运行时，界面上显示一个实时状态面板。
-
-### 节点状态
-
-每个 Agent 节点有四种状态：
-
-| 状态 | 图标 | 说明 |
-|------|------|------|
-| ⏳ 等待中 | 灰色 | 还没轮到 |
-| 🔄 运行中 | 蓝色动画 | 正在处理 |
-| ✅ 已完成 | 绿色 | 输出已就绪 |
-| ❌ 出错 | 红色 | 处理失败 |
-
-### 面板功能
-
-| 功能 | 说明 |
-|------|------|
-| **实时进度** | 看到当前执行到哪一步 |
-| **中间输出** | 展开节点查看每一步的完整输出 |
-| **耗时统计** | 每个节点的处理耗时 |
-| **终止** | 随时停止整条链 |
-| **历史回放** | 查看过去的协作链运行记录 |
-
-## 人工干预
-
-协作流不是"设好就不管"——你可以在关键节点介入。
-
-### 确认后继续
+Each Agent sees prior output **and** chain metadata:
 
 ```
-小说家(完成) → [等待你确认] → 编辑 → 翻译官
+[Collaboration chain context]
+Chain: Novelist → Editor → Translator
+Step: 2 of 3 (Editor)
+User original: Write a poem about moonlight
+Previous (Novelist):
+  Moonlight spills across the yard,
+  pale light miles wide, no sleep tonight...
+
+Complete your task based on the above content.
 ```
 
-如果小说家写的诗不满意，你可以：
-- **修改后继续** — 编辑小说家的输出，再让编辑接力
-- **终止** — 停止整条链
-- **重新生成** — 让小说家重新创作
+## Visual panel
 
-### 编辑中间结果
+While the chain runs, a live panel shows state per node.
 
-你可以在任何节点之间修改中间结果：
+### Node states
 
-```
-1. 小说家写了诗 ✅
-2. 你觉得第二句不太好 → 手动改掉
-3. 修改后的版本传给编辑
-4. 编辑继续润色
-```
+| State | Icon | Meaning |
+|-------|------|---------|
+| Waiting | Gray | Not started |
+| Running | Blue animation | In progress |
+| Done | Green | Output ready |
+| Error | Red | Failed |
 
-这种人机协同是虾饺协作流的核心设计理念——**AI 做 80% 的重活，你把控关键节点**。
+### Panel features
 
-## 实际应用场景
+| Feature | Description |
+|---------|-------------|
+| **Progress** | Which step is active |
+| **Intermediate output** | Expand a node to read full text |
+| **Timing** | Per-node duration |
+| **Stop** | Abort the whole chain |
+| **History** | Past chain runs |
 
-### 场景 1：内容生产流水线
+## Human in the loop
 
-```
-协作链：小说家 → 编辑 → 翻译官
+Flows are not fire-and-forget—you can step in at key points.
 
-你：写一篇关于远程办公的文章
-→ 小说家创作初稿（~800 字中文）
-→ 编辑润色、修改结构
-→ 翻译官翻译成英文
-→ 得到中英双语文章
-```
-
-### 场景 2：代码审查流程
+### Confirm before continue
 
 ```
-协作链：代码助手 → 编辑
-
-你：写一个 Express 的 JWT 认证中间件
-→ 代码助手编写代码 + 注释
-→ 编辑审查代码风格、补充文档
+Novelist (done) → [wait for you] → Editor → Translator
 ```
 
-### 场景 3：研究报告
+If the poem is wrong:
+
+- **Edit and continue** — fix Novelist’s text, then let Editor proceed  
+- **Stop** — end the chain  
+- **Regenerate** — ask Novelist to rewrite  
+
+### Edit intermediate results
 
 ```
-协作链：代码助手 → 翻译官
-
-你：调研 2024 年最流行的 CSS 框架
-→ 代码助手调用 web_search 搜索、整理对比报告
-→ 翻译官翻译成英文（适合发海外社区）
+1. Novelist finishes ✅
+2. You dislike line 2 — edit it manually
+3. Edited text goes to Editor
+4. Editor keeps polishing
 ```
 
-### 场景 4：客户支持
+Design goal: **AI handles 80% of the heavy lifting; you control the key decision points.**
+
+## Scenarios
+
+### 1. Content pipeline
 
 ```
-协作链：代码助手(RAG检索) → 编辑(润色回复)
+Chain: Novelist → Editor → Translator
 
-客户：你们的 API 怎么分页？
-→ 代码助手从知识库检索 API 文档
-→ 编辑整理成友好的客户回复
+You: Write an article about remote work (~800 words CN)
+→ Novelist drafts
+→ Editor restructures and polishes
+→ Translator produces English
+→ Bilingual article
 ```
 
-## 协作链配置建议
+### 2. Code review
 
-### 链条长度
+```
+Chain: Code assistant → Editor
 
-| 长度 | 建议 |
-|------|------|
-| 2 个 Agent | ✅ 最常用，效率高 |
-| 3 个 Agent | ✅ 适合内容生产 |
-| 4+ 个 Agent | ⚠️ 每一步都有延迟，总体耗时较长 |
+You: Write an Express JWT auth middleware
+→ Code assistant writes code + comments
+→ Editor checks style and docs
+```
 
-### Agent 选择
+### 3. Research brief
 
-- **第一个** Agent 应该是"生产者"——创作、检索、代码生成
-- **中间的** Agent 应该是"加工者"——编辑、审查、优化
-- **最后一个** Agent 应该是"输出者"——翻译、格式化、发布
+```
+Chain: Code assistant → Translator
 
-### 与手动协作的结合
+You: Survey top CSS frameworks in 2024
+→ Code assistant searches and summarizes
+→ Translator outputs English for global forums
+```
 
-你不需要在协作链和手动 @mention 之间二选一。同一个群组可以：
+### 4. Support
 
-- 有协作链处理标准流程
-- 同时用 @mention 做临时交互
-- 协作链运行中，你可以 @链外的 Agent 做其他事
+```
+Chain: Code assistant (RAG) → Editor (tone)
 
-## 工作流引擎（Roadmap）
+Customer: How does your API paginate?
+→ Code assistant pulls from KB
+→ Editor turns it into a friendly reply
+```
 
-工作流引擎是比协作链更强大的编排机制，目前在路线图中：
+## Chain design tips
 
-| 特性 | 协作链（已实现） | 工作流引擎（规划中） |
-|------|----------------|-------------------|
-| 拓扑 | 线性 | DAG（有向无环图） |
-| 条件分支 | ❌ | ✅ 根据结果走不同路径 |
-| 循环 | ❌ | ✅ 支持重试、迭代 |
-| 错误处理 | 终止 | 重试 / 跳过 / 回退 |
-| 人工审批 | 简单暂停 | 完整审批流 |
-| 变量传递 | 输出→输入 | 结构化变量 |
+### Length
 
-::: info 为什么先做协作链？
-协作链覆盖了 80% 的场景，配置简单（一行字定义顺序），理解直观。工作流引擎是面向更复杂场景的进阶能力，我们会在协作链稳定后推出。
+| Length | Guidance |
+|--------|----------|
+| 2 Agents | Most common, fast |
+| 3 Agents | Good for content pipelines |
+| 4+ | Each hop adds latency |
+
+### Roles
+
+- **First**: producer (write, retrieve, code)  
+- **Middle**: processors (edit, review)  
+- **Last**: publishers (translate, format)  
+
+### Mix with manual @mention
+
+Same group can have:
+
+- A chain for standard flows  
+- @mention for one-offs  
+- Side @mentions while a chain runs  
+
+## Workflow engine (roadmap)
+
+A full workflow engine is on the roadmap—more powerful than linear chains:
+
+| Capability | Chain (today) | Workflow engine (planned) |
+|------------|-----------------|---------------------------|
+| Topology | Linear | DAG |
+| Branching | No | Yes |
+| Loops | No | Retries / iterations |
+| Errors | Stop | Retry / skip / rollback |
+| Human approval | Simple pause | Full approval flows |
+| Variables | Output → input | Structured variables |
+
+::: info Why chains first?
+Chains cover 80% of real use cases, are trivial to configure, and are easy to reason about. The workflow engine targets advanced automation after chains mature.
 :::
 
-## 配置协作链的完整步骤
+## Setup checklist
 
-### 第 1 步：创建群组
+### Step 1: Create a group
 
-在通讯录中点击"创建群组"，起一个名字，比如"写作工作室"。若还不熟悉群组与 @mention，请先阅读 [多 Agent 群聊](/features/multi-agent-chat)。
+In Contacts, **New group**—e.g. “Writing studio.” If groups are new, read [Multi-agent group chat](/features/multi-agent-chat).
 
-### 第 2 步：添加 Agent 成员
+### Step 2: Add Agents
 
-把参与协作的 Agent 拉入群组。比如小说家、编辑、翻译官。
+Add Novelist, Editor, Translator, etc.
 
-### 第 3 步：设置协作链
+### Step 3: Set the chain
 
-在群组设置中找到"协作链"配置：
-
-```
-协作链顺序：小说家 → 编辑 → 翻译官
-Leader：小说家（默认接收消息）
-```
-
-### 第 4 步：测试
-
-发一条消息试试。观察可视化面板中各节点的状态变化：
+In group settings:
 
 ```
-状态面板显示：
-├── 小说家 ⏳ 生成中 (3.2s)
-├── 编辑   ⏸ 等待中
-└── 翻译官 ⏸ 等待中
-
-→ 小说家完成后：
-├── 小说家 ✅ 完成 (5.1s)
-├── 编辑   ⏳ 生成中 (1.5s)
-└── 翻译官 ⏸ 等待中
-
-→ 全部完成：
-├── 小说家 ✅ 完成 (5.1s)
-├── 编辑   ✅ 完成 (3.2s)
-└── 翻译官 ✅ 完成 (4.8s)
-总耗时：13.1 秒
+Chain: Novelist → Editor → Translator
+Leader: Novelist (default receiver)
 ```
 
-### 性能优化技巧
+### Step 4: Test
 
-协作链中 Agent 串行执行，总时间 = 各环节之和。优化方式：
+Send a message and watch the panel:
 
-| 技巧 | 说明 |
-|------|------|
-| 快速模型用于非关键环节 | 编辑/翻译用 GPT-4o-mini，创作用 GPT-4o |
-| 精简 SOUL.md | 每个 Agent 的 SOUL.md 控制在 500 字内 |
-| 控制输出长度 | 中间环节输出越短，下一环节越快 |
-| 减少不必要的记忆注入 | 协作链中间环节通常不需要历史记忆 |
+```
+Panel:
+├── Novelist generating (3.2s)
+├── Editor   waiting
+└── Translator waiting
 
-## 相关文档
+Novelist done:
+├── Novelist done (5.1s)
+├── Editor   generating (1.5s)
+└── Translator waiting
 
-- [多 Agent 群聊](/features/multi-agent-chat) — 群聊基础与 @mention 路由
-- [实战案例](/guide/recipes) — AI 写作工作室、代码审查等协作链方案
-- [Tool Calling](/features/tool-calling) — Agent 工具能力
-- [Agent 持久记忆](/features/agent-memory) — Agent 如何记住上下文
-- [SOUL.md 写作指南](/guide/soul-guide) — 控制 Agent 在协作链中的行为
-- [模板库](/guide/soul-templates) — 20 个可直接复制的 Agent 人格模板
-- [平台对比](/guide/comparison) — 虾饺 vs Dify vs Coze vs FastGPT
+All done:
+├── Novelist done (5.1s)
+├── Editor   done (3.2s)
+└── Translator done (4.8s)
+Total: 13.1s
+```
+
+### Performance
+
+Chains are serial: total time ≈ sum of steps.
+
+| Tip | Detail |
+|-----|--------|
+| Fast models for non-critical hops | Editor/Translator on mini models; creator on stronger model |
+| Tight SOUL.md | ~500 chars per Agent |
+| Shorter intermediate outputs | Faster next hop |
+| Less memory inject mid-chain | Middle steps often need no long history |
+
+## Related docs
+
+- [Multi-agent group chat](/features/multi-agent-chat) — groups and @mention  
+- [Recipes](/guide/recipes) — writing studio, code review chains  
+- [Tool Calling](/features/tool-calling)  
+- [Agent persistent memory](/features/agent-memory)  
+- [SOUL.md guide](/guide/soul-guide) — behavior inside chains  
+- [Templates](/guide/soul-templates)  
+- [Platform comparison](/guide/comparison) — Xiajiao (虾饺) vs Dify vs Coze vs FastGPT  

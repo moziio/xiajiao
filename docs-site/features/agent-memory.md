@@ -1,321 +1,309 @@
 ---
-title: Agent 持久记忆 — 虾饺 IM
-description: 三分类记忆系统——语义、情景、程序性记忆，embedding 自动注入，Agent 越用越懂你。
+title: "Agent Persistent Memory — Xiajiao (虾饺) IM"
+description: "Three memory types—semantic, episodic, procedural—with embedding injection so Agents learn you over time."
 ---
 
-# Agent 持久记忆
+# Agent persistent memory
 
-虾饺实现了一套**三分类持久记忆系统**，让 Agent 越用越懂你。
+Xiajiao (虾饺) implements a **three-way persistent memory** system so Agents get to know you over time.
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/memory-panel.png" alt="记忆管理面板 — Agent 的记忆条目在此查看和管理" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">记忆管理面板 — Agent 的记忆条目在此查看和管理</p>
+  <img src="/images/memory-panel.png" alt="Memory panel — view and manage entries" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Memory panel — inspect and manage an Agent’s memories</p>
 </div>
 
-这是虾饺和大多数 AI 聊天工具最大的区别之一：对话不再是"用完即弃"的一次性交互。Agent 能**跨对话**记住重要信息。写入与检索通过 [Tool Calling](/features/tool-calling) 中的 `memory_write` / `memory_search` 暴露给模型。
+This is one of the biggest differences from typical chat UIs: conversations are not disposable. Agents **remember across threads**. Writes and reads go through [Tool Calling](/features/tool-calling) via `memory_write` / `memory_search`.
 
-## 为什么需要持久记忆？
+## Why persistent memory?
 
-普通的 AI 聊天工具每次对话都是从零开始。你告诉过它的偏好、项目背景、约定的规则——下次全忘了。
+Most chat UIs start cold every time. Preferences, project context, and rules you set—gone next session.
 
-| 没有记忆 | 有持久记忆 |
-|----------|-----------|
-| 每次都要重新说明技术栈 | "你用 Python + AWS，我记得" |
-| 忘了之前的讨论 | "上次你说想用 Docker 部署" |
-| 重复犯同样的错误 | "你说过回复要简洁，不要啰嗦" |
-| 所有人一样的回复风格 | 根据你的偏好个性化回复 |
+| Without memory | With persistent memory |
+|----------------|------------------------|
+| Repeat your stack every time | “You use Python on AWS—I remember.” |
+| Forgets prior threads | “Last time you wanted Docker deploy.” |
+| Repeats mistakes | “You asked for concise replies.” |
+| One-size style | Personalized to you |
 
-## 三分类记忆体系
+## Three memory types
 
-虾饺的记忆系统参考认知科学的长期记忆分类：
+Inspired by cognitive science’s long-term memory split:
 
-### 1. 语义记忆（Semantic Memory）
+### 1. Semantic memory
 
-存储**事实和知识**——关于你和项目的客观信息。
+**Facts and knowledge**—objective information about you and the project.
 
-| 示例 | 用途 |
-|------|------|
-| "用户偏好 Python" | 回答技术问题时优先用 Python |
-| "公司使用阿里云" | 推荐云服务时考虑阿里云 |
-| "项目用 PostgreSQL 数据库" | 写 SQL 时用 PG 语法 |
-| "团队采用 Git Flow 分支策略" | 推荐分支操作时遵循 Git Flow |
+| Example | Use |
+|---------|-----|
+| “User prefers Python” | Prefer Python in answers |
+| “Company uses Alibaba Cloud” | Factor into cloud advice |
+| “Project uses PostgreSQL” | SQL examples use PG |
+| “Team uses Git Flow” | Branching suggestions follow it |
 
-### 2. 情景记忆（Episodic Memory）
+### 2. Episodic memory
 
-存储**对话事件和经历**——发生过什么。
+**Events and episodes**—what happened in past conversations.
 
-| 示例 | 用途 |
-|------|------|
-| "上次讨论了 Docker 部署方案" | 延续之前的讨论 |
-| "用户提到想做微信接入" | 记住未完成的需求 |
-| "上周五一起调试了登录 Bug" | 建立连续的协作体验 |
-| "用户对上次的翻译质量不满意" | 改进下次翻译策略 |
+| Example | Use |
+|---------|-----|
+| “We discussed Docker deploy last time” | Continue that thread |
+| “User mentioned WeChat integration” | Track open requests |
+| “We debugged login last Friday” | Continuous collaboration feel |
+| “User disliked last translation” | Adjust next time |
 
-### 3. 程序性记忆（Procedural Memory）
+### 3. Procedural memory
 
-存储**行为模式和偏好**——你希望 Agent 怎么做。
+**Patterns and preferences**—how you want the Agent to behave.
 
-| 示例 | 用途 |
-|------|------|
-| "回复要简洁" | 控制输出风格 |
-| "代码示例用 TypeScript" | 选择示例语言 |
-| "不要用 emoji" | 控制输出格式 |
-| "生成代码前先确认需求" | 控制工作流程 |
+| Example | Use |
+|---------|-----|
+| “Keep replies short” | Tone and length |
+| “Code samples in TypeScript” | Example language |
+| “No emoji in output” | Formatting |
+| “Confirm requirements before code” | Workflow |
 
-## 技术架构
+## Technical architecture
 
-### 整体流程
+### End-to-end flow
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
-│  写入                                  检索                   │
+│  Write                              Read                     │
 │                                                              │
-│  Agent 对话中                         Agent 新对话开始         │
+│  During chat                        New message              │
 │     ↓                                    ↓                   │
-│  调用 memory_write                    用户消息做 embedding     │
+│  memory_write                         Embed user text         │
 │     ↓                                    ↓                   │
-│  文本 → embedding                    余弦相似度搜索记忆库      │
+│  Text → embedding                    Cosine search memory   │
 │     ↓                                    ↓                   │
-│  相似度去重                           Top-K 结果                │
-│  ├── 相似度 > 0.85 → 更新已有记忆       ↓                     │
-│  └── 相似度 ≤ 0.85 → 插入新记忆       注入 System Prompt       │
+│  Dedup by similarity                  Top-K memories        │
+│  ├── sim > 0.85 → update existing        ↓                   │
+│  └── sim ≤ 0.85 → insert new          Inject into system    │
 │     ↓                                    ↓                   │
-│  存入 SQLite                          Agent 带着记忆回复       │
+│  Store in SQLite                     Agent replies with it   │
 │                                                              │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 存储设计
+### Storage design
 
-| 组件 | 技术 | 说明 |
-|------|------|------|
-| 数据库 | SQLite | 每个 Agent 独立数据库文件 |
-| 向量存储 | embedding 存入 SQLite | 无需外部向量库 |
-| embedding 模型 | 跟随 Agent 配置的 LLM Provider | 默认用 `text-embedding-3-small` |
-| 相似度计算 | 余弦相似度 | JavaScript 原生计算，无依赖 |
-| 去重阈值 | 0.85 | 相似度 > 0.85 视为同一条记忆 |
+| Piece | Tech | Notes |
+|-------|------|-------|
+| DB | SQLite | One DB file per Agent |
+| Vectors | Embeddings in SQLite | No external vector DB |
+| Embed model | Same provider as Agent LLM | Default `text-embedding-3-small` |
+| Similarity | Cosine | Pure JS |
+| Dedup threshold | 0.85 | Above = same memory, update |
 
-### Embedding 去重机制
-
-当 Agent 写入新记忆时，系统自动检查是否已有高度相似的记忆：
+### Dedup example
 
 ```
-新记忆："用户喜欢 Python"
-已有记忆："用户偏好 Python 语言"
-→ 余弦相似度 = 0.95 > 0.85
-→ 更新已有记忆，不重复插入
+New: "User likes Python"
+Existing: "User prefers Python language"
+→ cosine = 0.95 > 0.85
+→ update existing row
 
-新记忆："用户今天想了解 Docker"
-已有记忆："用户偏好 Python 语言"
-→ 余弦相似度 = 0.3 < 0.85
-→ 插入为新记忆
+New: "User wants to learn Docker today"
+Existing: "User prefers Python language"
+→ cosine = 0.3 < 0.85
+→ insert new row
 ```
 
-## 自动注入记忆
+## Auto-inject memory
 
-当 Agent 配置了 `autoInjectMemory: true` 时，无需手动操作，每次对话自动触发：
+With `autoInjectMemory: true`, each turn:
 
-**流程**：
+1. User sends a message  
+2. Embed the text  
+3. Cosine-search the Agent’s memory DB  
+4. Take Top-K (default 10)  
+5. Format by the three types  
+6. Inject into the `[MEMORY]` section of the system prompt  
 
-1. 用户发送消息
-2. 消息文本做 embedding
-3. 在 Agent 记忆库中余弦相似度搜索
-4. 取 Top-K 最相关的记忆（默认 10 条）
-5. 按三分类格式化拼接
-6. 注入到 System Prompt 的 `[MEMORY]` 区段
-
-**注入后的 System Prompt 结构**：
+**Example system prompt snippet**
 
 ```markdown
-# 代码助手
+# Code assistant
 
-你是一位全栈开发工程师...
+You are a full-stack engineer...
 
 ## [MEMORY]
-以下是你对这位用户的记忆，请参考：
+What you remember about this user:
 
-### 语义记忆
-- 用户偏好 Python，公司用 AWS
-- 项目使用 PostgreSQL 数据库
+### Semantic
+- User prefers Python; company on AWS
+- Project uses PostgreSQL
 
-### 情景记忆
-- 上次讨论了 Docker 部署方案，用户希望用 docker-compose
+### Episodic
+- Last time: Docker deploy with docker-compose
 
-### 程序性记忆
-- 回复要简洁，代码示例优先用 Python
+### Procedural
+- Replies should be concise; code samples prefer Python
 ```
 
-::: tip 性能影响
-自动注入通常增加 200-500 个 token 到 System Prompt，对大多数模型来说可以忽略。如果记忆条数很多，系统只取 Top-K 最相关的，不会无限膨胀。
+::: tip Performance
+Auto-inject usually adds ~200–500 tokens—fine for most models. With many memories, only Top-K is used.
 :::
 
-## 手动使用 memory 工具
+## Manual `memory` tools
 
-即使不开启自动注入，Agent 也可以通过工具手动管理记忆：
+Without auto-inject, Agents can still use tools:
 
 ### memory_write
 
 ```
-Agent：[调用 memory_write]
-参数：{
+Agent: [memory_write]
+args: {
   "type": "semantic",
-  "content": "用户是后端开发，主要用 Python"
+  "content": "User is backend, mostly Python"
 }
 ```
 
 ### memory_search
 
 ```
-Agent：[调用 memory_search]
-参数：{
-  "query": "用户的技术栈"
+Agent: [memory_search]
+args: {
+  "query": "user tech stack"
 }
-返回：[
-  { type: "semantic", content: "用户偏好 Python，公司用 AWS", similarity: 0.87 },
-  { type: "semantic", content: "项目使用 PostgreSQL", similarity: 0.72 }
+returns: [
+  { type: "semantic", content: "User prefers Python; AWS", similarity: 0.87 },
+  { type: "semantic", content: "Project uses PostgreSQL", similarity: 0.72 }
 ]
 ```
 
-## 记忆隔离
+## Isolation
 
-每个 Agent 有独立的记忆空间，互不干扰：
-
-```
-代码助手的记忆：用户偏好 Python、回复要简洁
-翻译官的记忆：用户需要中英翻译、偏好信达雅风格
-小说家的记忆：用户喜欢唐诗宋词风格、偏好七言律诗
-```
-
-这意味着你可以和不同 Agent 建立不同的"默契"——代码助手知道你的技术偏好，翻译官记住你的翻译口味。
-
-## 与其他平台记忆系统对比
-
-|  | 虾饺 | ChatGPT Memory | Claude Projects |
-|--|------|----------------|-----------------|
-| 记忆分类 | 三分类（语义/情景/程序） | 扁平列表 | Project Knowledge |
-| 持久化 | ✅ SQLite 本地存储 | ✅ 云端 | ✅ 云端 |
-| embedding 去重 | ✅ | ❌ 手动管理 | ❌ |
-| 自动注入 | ✅ 可配置 | ✅ | ✅ |
-| 多 Agent 隔离 | ✅ 每个 Agent 独立 | ❌ 全局共享 | ❌ 全局共享 |
-| 数据私有 | ✅ 本地运行 | ❌ 云端 | ❌ 云端 |
-
-## 最佳实践
-
-### 1. 培养 Agent 记忆
-
-前几次对话时主动告诉 Agent 你的偏好：
+Each Agent has its own memory—no cross-talk:
 
 ```
-你：我是一个 Python 后端开发，公司用 AWS，项目用 FastAPI + PostgreSQL。
-    回复时优先给 Python 代码，简洁一点，不要啰嗦。
+Code assistant: Python prefs, concise replies
+Translator: EN↔ZH needs, literary tone
+Novelist: Tang-Song style, seven-character lines
 ```
 
-Agent 会主动 `memory_write` 保存这些偏好。
+Different “rapport” per Agent.
 
-### 2. 利用程序性记忆控制行为
+## Compared to others
+
+| | Xiajiao (虾饺) | ChatGPT Memory | Claude Projects |
+|---|----------------|----------------|-----------------|
+| Taxonomy | 3 types | Flat list | Project knowledge |
+| Persistence | Local SQLite | Cloud | Cloud |
+| Embed dedup | Yes | No | No |
+| Auto inject | Configurable | Yes | Yes |
+| Multi-Agent isolation | Per Agent | Global | Global |
+| Data locality | Local | Cloud | Cloud |
+
+## Best practices
+
+### 1. Seed memories early
 
 ```
-你：以后代码示例不要用 var，全部用 const 和 let。
-→ 保存为程序性记忆，所有后续代码遵循此规则
+You: I am a Python backend dev at a fintech. Stack FastAPI + PostgreSQL on AWS.
+     Prefer Python samples and keep answers short.
 ```
 
-### 3. 定期检查记忆
+The Agent will `memory_write` these preferences.
+
+### 2. Use procedural memory for behavior
 
 ```
-你：列出你记住的关于我的所有信息
-→ Agent 调用 memory_search 展示所有记忆
-→ 你可以纠正或补充
+You: Never use var in samples—only const and let.
+→ saved as procedural; future code follows it
 ```
 
-### 4. 在 SOUL.md 中引导记忆行为
+### 3. Review periodically
 
-在 Agent 的 SOUL.md 里明确告诉它何时记忆：
+```
+You: List everything you remember about me
+→ memory_search and show; you can correct
+```
+
+### 4. Guide memory in SOUL.md
 
 ```markdown
-## 记忆规则
-- 用户提到的技术偏好、工作环境 → memory_write(semantic)
-- 重要的决定或讨论结论 → memory_write(episodic)
-- 用户反复提到的输出偏好 → memory_write(procedural)
-- 不记录临时性的闲聊内容
+## Memory rules
+- Stack, prefs, work context → memory_write(semantic)
+- Important decisions → memory_write(episodic)
+- Repeated output prefs → memory_write(procedural)
+- Skip ephemeral small talk
 ```
 
-## 实际对话演示
+## Full example
 
-以下是一个完整的记忆形成和使用过程：
-
-**第一次对话（记忆形成）：**
+**First session**
 
 ```
-你：我是 Python 后端开发，在一家金融公司。项目用 FastAPI + PostgreSQL，部署在 AWS。
+You: Python backend at a finance firm. FastAPI + PostgreSQL on AWS.
 
-代码助手：明白！我记住了你的技术栈偏好。
+Code assistant: Noted—I’ll remember your stack.
 
-  🧠 正在写入记忆...
-  ├── [semantic] 用户是 Python 后端开发，金融行业
-  ├── [semantic] 技术栈：FastAPI + PostgreSQL，部署在 AWS
-  └── ✅ 已保存 2 条记忆
+  Writing memory...
+  ├── [semantic] Python backend, finance
+  ├── [semantic] FastAPI + PostgreSQL on AWS
+  └── Saved 2 entries
 
-以后给你写代码会优先使用 Python + FastAPI，数据库操作用 SQLAlchemy...
+I’ll default to Python + FastAPI and SQLAlchemy for DB code...
 ```
 
-**一周后的对话（记忆生效）：**
+**A week later**
 
 ```
-你：帮我写一个用户注册接口
+You: Write a user registration endpoint
 
-代码助手：
-  🧠 检索相关记忆...
-  ├── [semantic] 用户是 Python 后端开发，金融行业 (相似度: 0.82)
-  ├── [semantic] 技术栈：FastAPI + PostgreSQL (相似度: 0.91)
-  └── 注入到上下文
+Code assistant:
+  Retrieving memories...
+  ├── [semantic] Python backend, finance (0.82)
+  ├── [semantic] FastAPI + PostgreSQL (0.91)
+  └── Injected into context
 
-好的，给你一个 FastAPI + SQLAlchemy 的用户注册接口：
-
-（直接给出 FastAPI 代码，不问"你用什么框架"）
+Here is a FastAPI + SQLAlchemy registration route:
+(no “which framework?” round-trip)
 ```
 
-**如果没有记忆**，Agent 会说"你想用什么框架？Flask 还是 Django 还是 FastAPI？"——多了一轮无意义的确认。
+Without memory, you’d get a generic “Flask or Django or FastAPI?” question.
 
-## 手动查看和管理记忆
+## Inspect and manage via SQLite
 
-### 通过命令行查看
+### View via command line
 
 ```bash
-# 查看某个 Agent 的所有记忆
+# List all memories for an Agent
 sqlite3 data/workspace-{agentId}/memory.db \
   "SELECT type, content, created_at FROM memories ORDER BY created_at DESC;"
 
-# 按类型统计
+# Count by type
 sqlite3 data/workspace-{agentId}/memory.db \
-  "SELECT type, COUNT(*) as count FROM memories GROUP BY type;"
+  "SELECT type, COUNT(*) AS c FROM memories GROUP BY type;"
 
-# 搜索包含特定关键词的记忆
+# Search memories containing a keyword
 sqlite3 data/workspace-{agentId}/memory.db \
   "SELECT type, content FROM memories WHERE content LIKE '%Python%';"
 ```
 
-### 删除错误的记忆
+### Delete incorrect memories
 
 ```bash
-# 删除某条不准确的记忆
+# Remove an inaccurate memory row
 sqlite3 data/workspace-{agentId}/memory.db \
-  "DELETE FROM memories WHERE content LIKE '%过时的信息%';"
+  "DELETE FROM memories WHERE content LIKE '%stale fact%';"
 ```
 
-### 导出备份
+### Export backup
 
 ```bash
-# 备份记忆数据库
+# Back up the memory database
 cp data/workspace-{agentId}/memory.db memory-backup-$(date +%Y%m%d).db
 ```
 
-## 相关文档
+## Related docs
 
-- [Tool Calling](/features/tool-calling) — `memory_write` / `memory_search` 工具详情与权限配置
-- [RAG 知识库](/features/rag) — 文档级别的知识检索
-- [多 Agent 群聊](/features/multi-agent-chat) — Agent 如何协作
-- [SOUL.md 写作指南](/guide/soul-guide) — 在 SOUL.md 中配置记忆行为
-- [模板库](/guide/soul-templates) — 20 个可直接复制的 Agent 人格模板
-- [安全与隐私](/guide/security) — 数据安全与 API Key 保护
-- [实战案例](/guide/recipes) — 利用记忆实现面试教练、学习助手等
+- [Tool Calling](/features/tool-calling) — `memory_write` / `memory_search` and ACLs
+- [RAG](/features/rag) — document-level retrieval
+- [Multi-agent group chat](/features/multi-agent-chat) — collaboration
+- [SOUL.md guide](/guide/soul-guide) — memory behavior in SOUL.md
+- [Templates](/guide/soul-templates) — 20 persona templates
+- [Security & privacy](/guide/security)
+- [Recipes](/guide/recipes) — interview coach, study buddy, etc.

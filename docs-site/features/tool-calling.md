@@ -1,254 +1,254 @@
 ---
-title: Tool Calling — 虾饺 IM
-description: 7 个内置工具，Agent 不只聊天，还能搜索网络、检索知识库、读写记忆、调用其他 Agent。
+title: "Tool Calling — Xiajiao (虾饺) IM"
+description: "Seven built-in tools: Agents do more than chat—search the web, query the knowledge base, read/write memory, and call other Agents."
 ---
 
-# Tool Calling（工具调用）
+# Tool calling
 
-Agent 不只聊天——它们能**动手做事**。虾饺提供 7 个内置工具，全部开箱即用；与 [Agent 持久记忆](/features/agent-memory)、[RAG 知识库](/features/rag)、[外部平台集成](/features/integrations) 配合使用时能力更完整。
+Agents do more than chat—they **take action**. Xiajiao (虾饺) ships seven built-in tools, ready to use. Together with [Agent persistent memory](/features/agent-memory), [RAG](/features/rag), and [integrations](/features/integrations), the stack is complete.
 
 <p align="center">
-  <img src="/images/tool-calling.png" alt="Tool Calling 实时调用" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/tool-calling.png" alt="Tool calling in real time" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 <p align="center" style="color: var(--vp-c-text-2);">
-  <em>Agent 实时调用 memory_search 回忆上下文，memory_write 持久化洞察 — 全过程可见。</em>
+  <em>The Agent calls memory_search for context and memory_write to persist insights—fully visible in the UI.</em>
 </p>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/tool-config.png" alt="工具管理面板 — 为每个 Agent 独立配置可用工具" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">工具管理面板 — 为每个 Agent 独立配置可用工具，支持一键开关</p>
+  <img src="/images/tool-config.png" alt="Tool management — per-Agent tool toggles" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Tool panel — configure tools per Agent with one-click toggles</p>
 </div>
 
-## 工作原理
+## How it works
 
-Tool Calling 实现了一个完整的 LLM 调用循环。Agent 不是一次性回复，而是"思考—行动—观察—再思考"的循环：
+Tool calling implements a full LLM loop. The Agent does not reply once and stop—it **thinks → acts → observes → thinks** again:
 
 ```
 ┌──────────────────────────────────────────────────────┐
 │                                                      │
-│  用户消息                                             │
+│  User message                                        │
 │     ↓                                                │
-│  LLM 推理：需要工具吗？                                │
+│  LLM: need a tool?                                   │
 │     │                                                │
-│     ├─ 否 → 直接生成回复 → 发送给用户                   │
+│     ├─ no → reply directly → user                     │
 │     │                                                │
-│     └─ 是 → 生成工具调用请求                           │
+│     └─ yes → tool call request                        │
 │              ↓                                       │
-│           执行工具（可能多个）                           │
+│           Run tool(s) (maybe several)                 │
 │              ↓                                       │
-│           工具结果回注到上下文                           │
+│           Feed results back into context              │
 │              ↓                                       │
-│           LLM 再次推理（可能再次调用工具）                │
+│           LLM again (may call more tools)             │
 │              ↓                                       │
-│           最终回复                                     │
+│           Final reply                                │
 │                                                      │
 └──────────────────────────────────────────────────────┘
 ```
 
-::: info 透明可见
-整个过程对用户完全透明——聊天界面实时显示 Agent 正在调用哪个工具、传入了什么参数、返回了什么结果。不是黑箱。
+::: info Fully transparent
+You always see which tool runs, arguments, and results in the chat UI—not a black box.
 :::
 
-## 7 个内置工具详解
+## The seven built-in tools
 
-### 1. `web_search` — 网络搜索
+### 1. `web_search` — web search
 
-Agent 可以搜索互联网获取实时信息。
+Search the internet for up-to-date information.
 
-| 属性 | 说明 |
-|------|------|
-| 引擎数量 | 6 个 |
-| 引擎列表 | auto / DuckDuckGo / Brave / Kimi / Perplexity / Grok |
-| 模式 | `auto` 模式自动选择可用引擎 |
-| 故障切换 | 一个引擎失败自动尝试下一个 |
+| Property | Description |
+|----------|-------------|
+| Engines | 6 |
+| List | auto / DuckDuckGo / Brave / Kimi / Perplexity / Grok |
+| Mode | `auto` picks an available engine |
+| Failover | Try the next engine if one fails |
 
-**使用场景**：
-
-```
-你：@代码助手 Node.js 22 有什么新特性？
-代码助手：[调用 web_search: "Node.js 22 new features"] → 获取搜索结果 → 整理回复
-```
-
-### 2. `rag_query` — 知识库检索
-
-从你上传的文档中检索相关信息。
-
-| 属性 | 说明 |
-|------|------|
-| 检索方式 | BM25 + 向量混合检索 |
-| 排序 | RRF 融合 + LLM 重排序 |
-| 分块 | 200 字小块 + 800 字大块 |
-
-**使用场景**：
+**Example**
 
 ```
-你：@代码助手 我们的 API 认证方式是什么？
-代码助手：[调用 rag_query: "API 认证方式"] → 从你上传的 API 文档中检索 → 精准回答
+You: @Code assistant What is new in Node.js 22?
+Code assistant: [web_search: "Node.js 22 new features"] → summarizes results
 ```
 
-详见 [RAG 知识库](/features/rag)。
+### 2. `rag_query` — knowledge base
 
-### 3. `memory_write` — 写入持久记忆
+Retrieve from documents you uploaded.
 
-Agent 主动把重要信息写入持久记忆。
+| Property | Description |
+|----------|-------------|
+| Retrieval | BM25 + vector hybrid |
+| Ranking | RRF fusion + LLM rerank |
+| Chunking | ~200 chars / ~800 chars |
 
-| 属性 | 说明 |
-|------|------|
-| 记忆类型 | semantic / episodic / procedural |
-| 存储方式 | embedding + SQLite |
-| 去重 | embedding 相似度去重，防止重复存储 |
-
-**使用场景**：
+**Example**
 
 ```
-你：我是后端开发，主要用 Python，公司用 AWS
-代码助手：[调用 memory_write: type="semantic", content="用户是后端开发，主要用 Python，公司用 AWS"]
-→ 下次对话时自动记住这些偏好
+You: @Code assistant How do we authenticate API calls?
+Code assistant: [rag_query: "API authentication"] → answers from your docs
 ```
 
-### 4. `memory_search` — 搜索记忆
+See [RAG](/features/rag).
 
-检索 Agent 的持久记忆。
+### 3. `memory_write` — write persistent memory
 
-**使用场景**：
+The Agent stores important facts in long-term memory.
 
-```
-你：我上次让你帮我查的那个部署方案是什么来着？
-代码助手：[调用 memory_search: "部署方案"] → 找到之前的记忆 → 回忆并回答
-```
+| Property | Description |
+|----------|-------------|
+| Types | semantic / episodic / procedural |
+| Storage | embeddings + SQLite |
+| Dedup | embedding similarity to avoid duplicates |
 
-详见 [Agent 持久记忆](/features/agent-memory)。
-
-### 5. `call_agent` — 跨 Agent 调用
-
-一个 Agent 可以调用另一个 Agent 完成子任务。
-
-| 属性 | 说明 |
-|------|------|
-| 嵌套保护 | 最多 3 层（A→B→C 允许，A→B→C→D 拒绝） |
-| 调用方式 | 指定目标 Agent ID + 消息内容 |
-| 返回值 | 被调用 Agent 的完整回复 |
-
-**使用场景**：
+**Example**
 
 ```
-你：@代码助手 帮我写一个 README 的英文版
-代码助手：好的，我先写中文版，然后调用翻译官翻译。
-  [调用 call_agent: agent="translator", message="请把以下 README 翻译成英文：..."]
-翻译官：[返回英文翻译]
-代码助手：这是完整的英文 README：...
+You: I am a backend dev, mostly Python, company uses AWS
+Code assistant: [memory_write: type="semantic", content="User is backend, Python, AWS"]
+→ remembered for later sessions
 ```
 
-::: warning 嵌套保护
-3 层嵌套限制是为了防止 Agent 之间无限递归调用（A 调 B、B 调 A、A 又调 B...）。
+### 4. `memory_search` — search memory
+
+Query an Agent’s persistent memory.
+
+**Example**
+
+```
+You: What was that deployment plan you looked up for me?
+Code assistant: [memory_search: "deployment plan"] → recalls and answers
+```
+
+See [Agent persistent memory](/features/agent-memory).
+
+### 5. `call_agent` — call another Agent
+
+One Agent delegates a subtask to another.
+
+| Property | Description |
+|----------|-------------|
+| Nesting guard | Max 3 levels (A→B→C ok; A→B→C→D blocked) |
+| Invocation | Target Agent ID + message |
+| Return | Full reply from the callee |
+
+**Example**
+
+```
+You: @Code assistant Write an English README for me
+Code assistant: Sure — I'll draft in Chinese first, then call the Translator to translate.
+  [call_agent: agent="translator", message="Please translate the following README to English: ..."]
+Translator: [returns English translation]
+Code assistant: Here is the full English README: ...
+```
+
+::: warning Nesting limit
+The 3-level cap prevents infinite ping-pong (A calls B, B calls A, …).
 :::
 
-### 6. `manage_channel` — 渠道管理
+### 6. `manage_channel` — channel management
 
-管理外部平台连接器——让 Agent 能接入飞书、钉钉等平台。平台能力与配置步骤见 [外部集成](/features/integrations)。
+Manage external connectors so Agents can reach Feishu (Lark), DingTalk, and more. See [Integrations](/features/integrations) for capabilities and setup.
 
-| 操作 | 说明 |
-|------|------|
-| 创建连接器 | 配置平台类型和认证信息 |
-| 启动 | 开始监听外部平台消息 |
-| 停止 | 暂停监听 |
+| Action | Description |
+|--------|-------------|
+| Create connector | Platform type and credentials |
+| Start | Begin listening for inbound messages |
+| Stop | Pause listening |
 
-**支持的平台**：飞书（Lark）/ 钉钉 / 企微 / Telegram
+**Supported platforms**: Feishu (Lark) / DingTalk / WeCom / Telegram
 
-### 7. `manage_schedule` — 定时任务
+### 7. `manage_schedule` — scheduled jobs
 
-让 Agent 按 Cron 表达式定期执行任务。
+Run tasks on a Cron schedule.
 
-| 属性 | 说明 |
-|------|------|
-| 语法 | 标准 Cron 表达式 |
-| 示例 | `0 9 * * 1` = 每周一上午 9 点 |
-| 能力 | 创建 / 删除 / 列出定时任务 |
+| Property | Description |
+|----------|-------------|
+| Syntax | Standard Cron |
+| Example | `0 9 * * 1` = every Monday 09:00 |
+| Ops | create / delete / list jobs |
 
-**使用场景**：
+**Example**
 
 ```
-你：@虾饺管家 每天早上 9 点给我一份新闻摘要
-虾饺管家：[调用 manage_schedule: cron="0 9 * * *", task="新闻摘要"]
-→ 每天 9 点自动触发，搜索新闻并发送摘要
+You: @Xiajiao Butler Every day at 9:00 send me a news digest
+Butler: [manage_schedule: cron="0 9 * * *", task="news digest"]
+→ Runs daily at 9:00 — searches for news and sends a digest.
 ```
 
-## 工具权限配置
+## Tool permissions
 
-每个 Agent 可以独立配置允许使用的工具：
+Each Agent has its own allowlist:
 
 ```json
 {
   "id": "coder",
-  "name": "代码助手",
+  "name": "Code assistant",
   "tools": {
     "allow": ["web_search", "memory_write", "memory_search", "rag_query"]
   }
 }
 ```
 
-::: tip 最佳实践
-- **虾饺管家**：开放所有工具（系统管理需要）
-- **创作类 Agent**（小说家/编辑）：只开 memory，避免搜索干扰创作
-- **技术类 Agent**（代码助手）：开 web_search + rag_query + memory
-- **翻译类 Agent**：开 web_search（查术语）+ memory
+::: tip Best practices
+- **Xiajiao Butler**: allow all tools (system administration)
+- **Creative Agents** (novelist/editor): memory only—avoid search noise
+- **Technical Agents** (code): web_search + rag_query + memory
+- **Translators**: web_search (terms) + memory
 :::
 
-## 与其他平台 Tool Calling 的对比
+## Compared to other platforms
 
-|  | 虾饺 | Dify | Coze |
-|--|------|------|------|
-| 内置工具 | 7 个 | 10+ | 100+ 插件 |
-| 自定义工具 | 通过 MCP 协议扩展 | 代码节点 | 插件开发 |
-| 工具调用可见性 | ✅ 实时显示调用过程 | ✅ | 部分可见 |
-| 跨 Agent 调用 | ✅ `call_agent` | ❌ | ❌ |
-| 权限控制 | ✅ 按 Agent 配置 | ✅ | ✅ |
+| | Xiajiao (虾饺) | Dify | Coze |
+|---|----------------|------|------|
+| Built-in tools | 7 | 10+ | 100+ plugins |
+| Custom tools | Extend via MCP | Code nodes | Plugin dev |
+| Visibility | Live tool trace | Yes | Partial |
+| Cross-Agent | `call_agent` | No | No |
+| Per-Agent ACL | Yes | Yes | Yes |
 
-虾饺的工具数量不如 Coze 多，但胜在**跨 Agent 调用**和**完全透明的调用过程**。
+Xiajiao (虾饺) has fewer plugins than Coze but emphasizes **cross-Agent calls** and **fully visible** tool traces.
 
-## 工具调用的实际输出
+## What it looks like in the UI
 
-以下是虾饺 Web 界面中 Tool Calling 的真实展示效果：
+Real Tool Calling output in the web app:
 
 ```
-你：@代码助手 最新的 Bun 和 Node.js 性能对比数据
+You: @Code assistant Latest Bun vs Node.js benchmarks
 
-代码助手：让我搜索最新的对比数据。
+Code assistant: Searching for the latest comparison.
 
-  🔧 正在调用 web_search...
-  ├── 查询: "Bun vs Node.js performance benchmark 2026"
-  ├── 引擎: Google
-  └── ✅ 找到 8 条结果
+  Calling web_search...
+  ├── query: "Bun vs Node.js performance benchmark 2026"
+  ├── engine: Google
+  └── Found 8 results
 
-根据最新的基准测试数据（2026 年 3 月）：
+From recent benchmarks (March 2026):
 
-| 指标 | Node.js 22 | Bun 1.x |
-|------|-----------|---------|
-| HTTP 请求/秒 | ~45,000 | ~78,000 |
-| 启动时间 | ~50ms | ~8ms |
-| 内存 (Hello World) | ~40MB | ~20MB |
-| npm install 速度 | 1x | ~3x |
+| Metric | Node.js 22 | Bun 1.x |
+|--------|------------|---------|
+| HTTP req/s | ~45,000 | ~78,000 |
+| Cold start | ~50ms | ~8ms |
+| RAM (Hello World) | ~40MB | ~20MB |
+| npm install | 1x | ~3x
 
-注意：实际性能取决于工作负载类型。Node.js 在长时间运行的服务中...
+Note: workload-dependent. For long-running services, Node.js ...
 
-  🧠 正在写入记忆...
-  └── ✅ 已记住: "用户关注 Bun vs Node.js 性能对比"
+  Writing memory...
+  └── Saved: "User cares about Bun vs Node.js performance"
 ```
 
-每个工具调用都在聊天界面实时显示进度，用户可以清晰看到 Agent 的"思考过程"。
+Each tool call appears in real time in the chat UI, so you can clearly see the Agent's thinking process.
 
-## 自定义工具开发
+## Custom tools
 
-想添加自己的工具？只需在 `server/services/tools.js` 中注册：
+Register tools in `server/services/tools.js`:
 
 ```javascript
 my_tool: {
-  description: "查询公司内部系统",
+  description: "Query internal company systems",
   parameters: {
     type: "object",
     properties: {
       system: { type: "string", enum: ["crm", "erp", "jira"] },
-      query: { type: "string", description: "查询内容" }
+      query: { type: "string", description: "Search query" }
     },
     required: ["system", "query"]
   },
@@ -259,15 +259,15 @@ my_tool: {
 }
 ```
 
-然后在 Agent 配置中启用这个工具。LLM 会根据工具的 `description` 和 `parameters` 自动判断何时调用。
+Enable the tool on the Agent; the LLM uses `description` and `parameters` to decide when to call it.
 
-## 相关文档
+## Related docs
 
-- [Agent 持久记忆](/features/agent-memory) — `memory_write` / `memory_search` 的完整机制
-- [RAG 知识库](/features/rag) — `rag_query` 的三阶段检索管线
-- [外部集成](/features/integrations) — 飞书 / 钉钉 / 企微 / Telegram 等渠道
-- [协作流](/features/collaboration-flow) — 不用手动 @mention，让 Agent 自动接力
-- [安全与隐私](/guide/security) — 数据安全与 API Key 保护
-- [平台对比](/guide/comparison) — 虾饺 vs Dify vs Coze vs FastGPT
-- [架构设计](/guide/architecture) — Tool Calling 循环的代码实现
-- [模型配置](/guide/model-config) — 配置支持 Tool Calling 的模型
+- [Agent persistent memory](/features/agent-memory) — `memory_write` / `memory_search`
+- [RAG](/features/rag) — `rag_query` pipeline
+- [Integrations](/features/integrations) — Feishu / DingTalk / WeCom / Telegram
+- [Collaboration flow](/features/collaboration-flow) — automatic handoffs without manual @mention
+- [Security & privacy](/guide/security) — data and API keys
+- [Platform comparison](/guide/comparison) — Xiajiao (虾饺) vs Dify vs Coze vs FastGPT
+- [Architecture](/guide/architecture) — Tool Calling loop in code
+- [Model configuration](/guide/model-config) — models that support tools

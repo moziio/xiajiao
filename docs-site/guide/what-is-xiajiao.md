@@ -1,123 +1,123 @@
 ---
-title: 虾饺是什么 — 虾饺 IM
-description: 虾饺 IM 是一个 AI Agent 团队协作平台，6 个 npm 依赖，npm start 即跑，把 Agent 当同事管理。
+title: What is Xiajiao — Xiajiao IM
+description: "Xiajiao IM is an AI agent team collaboration platform: 6 npm dependencies, run with npm start, manage agents like coworkers."
 ---
 
-# 虾饺是什么
+# What is Xiajiao
 
-虾饺 IM（Xiajiao）是一个**开源的 AI Agent 团队协作平台**。
+**Xiajiao IM (虾饺)** is an **open-source AI agent team collaboration platform**.
 
-用一句话概括：**像管微信群一样管理你的 AI Agent。**
+In one sentence: **manage your AI agents the way you manage a group chat.**
 
-你可以创建群组，拉入多个 Agent（小说家、编辑、翻译官、代码助手……），用 @mention 跟它们对话。Agent 之间也能互相协作、互相接力，就像一个真正的工作团队。
-
-<p align="center">
-  <img src="/images/hero-light-top.png" alt="虾饺 IM 界面" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-</p>
-
-## 30 秒了解虾饺
+You can create groups, add multiple agents (novelist, editor, translator, coding assistant, …), and talk to them with @mentions. Agents can also collaborate and hand off work to each other like a real team.
 
 <p align="center">
-  <img src="/images/demo.gif" alt="虾饺协作流演示" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/hero-light-top.png" alt="Xiajiao IM interface" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-### 真实对话截图
+## Xiajiao in 30 seconds
 
 <p align="center">
-  <img src="/images/demo.png" alt="Agent 对话演示" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/demo.gif" alt="Xiajiao collaboration flow demo" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-> 虾饺管家 Agent 的真实对话：自动调用工具查询系统状态、展示 Channel 连接信息，并以结构化表格呈现。
+### Real conversation screenshots
 
-## 和其他平台有什么不同？
+<p align="center">
+  <img src="/images/demo.png" alt="Agent conversation demo" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+</p>
 
-大多数 AI 平台的定位是 **AI 应用开发平台**——帮你构建面向用户的 AI 应用。
+> Real conversation from the Xiajiao steward agent: automatically calling tools to query system status, show channel connection info, and present it in a structured table.
 
-虾饺的定位是 **AI Agent 团队协作平台**——把 Agent 当同事，不当工具。
+## How is it different from other platforms?
 
-### 设计哲学对比
+Most AI platforms are **AI application development platforms**—they help you build AI apps for end users.
 
-|  | 虾饺 | Dify / FastGPT | Coze |
-|--|------|----------------|------|
-| **核心概念** | Agent 是"同事" | Agent 是"应用" | Agent 是"Bot" |
-| **交互方式** | IM 群聊 | 工作流画布 | Bot 配置界面 |
-| **Agent 关系** | 平等协作，可互相 @mention | 预设 DAG 管线 | 独立运行 |
-| **用户定位** | 给自己用 | 给终端用户用 | 给终端用户用 |
+Xiajiao is an **AI agent team collaboration platform**—agents are coworkers, not disposable tools.
 
-### 技术架构对比
+### Design philosophy
 
-|  | 虾饺 | Dify | FastGPT | Coze |
-|--|------|------|---------|------|
-| **语言** | JavaScript | Python | TypeScript | 闭源 |
-| **npm 依赖** | **6 个** | N/A | 100+ | N/A |
-| **外部依赖** | **0 个** | PostgreSQL + Redis + Sandbox | MongoDB + PG + OneAPI | 云服务 |
-| **启动命令** | `npm start` | `docker compose up` | `docker compose up` | SaaS |
-| **安装方式** | `npm install`（6 个包） | Docker 多服务 | Docker 多服务 | 无需安装 |
-| **数据私有** | ✅ 完全本地 | ✅ 自托管 | ✅ 自托管 | ❌ 云端 |
+|  | Xiajiao | Dify / FastGPT | Coze |
+|--|---------|----------------|------|
+| **Core idea** | Agents are “coworkers” | Agents are “apps” | Agents are “bots” |
+| **Interaction** | IM group chat | Workflow canvas | Bot configuration UI |
+| **Agent relationships** | Peer collaboration, mutual @mentions | Preset DAG pipelines | Independent runs |
+| **Who it is for** | For yourself / personal use | End users | End users |
 
-::: info 不是竞争，是互补
-Dify / FastGPT 适合构建面向客户的 AI 应用。虾饺适合个人/团队日常使用的 AI 协作空间。场景不同，选择不同。
+### Technical architecture
+
+|  | Xiajiao | Dify | FastGPT | Coze |
+|--|---------|------|---------|------|
+| **Language** | JavaScript | Python | TypeScript | Closed source |
+| **npm dependencies** | **6** | N/A | 100+ | N/A |
+| **External services** | **0** | PostgreSQL + Redis + sandbox | MongoDB + PG + OneAPI | Cloud |
+| **Start command** | `npm start` | `docker compose up` | `docker compose up` | SaaS |
+| **Install** | `npm install` (6 packages) | Multi-service Docker | Multi-service Docker | Nothing to install |
+| **Data stays local** | Yes, fully local | Yes, self-hosted | Yes, self-hosted | No, cloud |
+
+::: info Complementary, not competing
+Dify / FastGPT fit customer-facing AI apps. Xiajiao fits a personal or team AI collaboration space for daily use. Different scenarios, different tools.
 :::
 
-## 核心能力
+## Core capabilities
 
-| 能力 | 说明 | 详情 |
-|------|------|------|
-| 🤖 多 Agent 群聊 | 群组 + @mention 路由 + Agent 间对话 | [详情](/features/multi-agent-chat) |
-| 🔧 Tool Calling | 7 个内置工具（搜索、记忆、RAG、跨 Agent 调用等） | [详情](/features/tool-calling) |
-| 🧠 持久记忆 | 三分类记忆（语义 / 情景 / 程序性），embedding 去重 | [详情](/features/agent-memory) |
-| 📚 RAG 知识库 | BM25 + 向量混合检索 + RRF + LLM 重排序 | [详情](/features/rag) |
-| 🔗 协作流 | 协作链 + 可视化面板 + 人工干预 | [详情](/features/collaboration-flow) |
-| 🔌 多模型 | OpenAI / Claude / 通义 / DeepSeek / Ollama 等 | [详情](/guide/model-config) |
+| Capability | Summary | Details |
+|------------|---------|---------|
+| 🤖 Multi-agent group chat | Groups + @mention routing + agent-to-agent chat | [Details](/features/multi-agent-chat) |
+| 🔧 Tool calling | Seven built-in tools (search, memory, RAG, cross-agent calls, …) | [Details](/features/tool-calling) |
+| 🧠 Persistent memory | Three memory types (semantic / episodic / procedural), embedding dedup | [Details](/features/agent-memory) |
+| 📚 RAG knowledge base | BM25 + vector hybrid retrieval + RRF + LLM reranking | [Details](/features/rag) |
+| 🔗 Collaboration flow | Chains + visual panel + human-in-the-loop | [Details](/features/collaboration-flow) |
+| 🔌 Multiple models | OpenAI / Claude / Qwen / DeepSeek / Ollama, … | [Details](/guide/model-config) |
 
-### 文生图（AI 配图）
+### Text-to-image (AI illustrations)
 
-小说家等 Agent 可在群聊中根据文案生成配图；协作链面板与聊天区中的插图同屏展示，直观体现「文生图」能力。
+Agents such as the novelist can generate images from copy in group chat; the collaboration panel and chat show illustrations together so “text-to-image” is easy to see.
 
 <p align="center">
-  <img src="/images/summer-night-ai-art.png" alt="协作链与夏夜星空 AI 插画——星空、萤火、月色与竹席人物" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/summer-night-ai-art.png" alt="Collaboration chain and summer night sky AI art—stars, fireflies, moonlight, and figures on a bamboo mat" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-## 使用场景
+## Use cases
 
-### 场景 1：AI 写作团队
+### Case 1: AI writing team
 
-创建群组，拉入小说家、编辑、翻译官。配好协作链后，你说一句"写一首诗"，三个 Agent 自动接力：
+Create a group with novelist, editor, and translator. After you set up a collaboration chain, say “write a poem” once and three agents run in sequence:
 
-> 小说家创作 → 编辑润色 → 翻译官英译
+> Novelist drafts → editor polishes → translator renders English
 
-全程可视化面板实时显示进度。你可以中途暂停、编辑、重新触发。
+The visual panel shows progress live. You can pause, edit, or re-run mid-flight.
 
-### 场景 2：私人知识助理
+### Case 2: Private knowledge assistant
 
-把技术文档、学习笔记上传到 RAG 知识库。Agent 自动索引，之后问它问题，它基于你的文档回答——不瞎编。
+Upload docs and notes to the RAG knowledge base. Agents index them; later, answers come from your material—not generic hallucination.
 
-适合：技术团队内部知识管理、个人学习笔记检索、产品文档问答。
+Good for internal tech knowledge, personal study notes, and product Q&A.
 
-### 场景 3：多模型对比
+### Case 3: Compare models
 
-给不同 Agent 分配不同模型：代码助手用 Claude（擅长代码），翻译官用 GPT-4o（擅长多语言），日常助理用通义千问（便宜够用）。在群里同时 @它们，对比回答质量。
+Assign different models per agent: coding assistant on Claude (strong at code), translator on GPT-4o (strong at multilingual), daily helper on Qwen (cheap and sufficient). @mention several in one group and compare answers.
 
-### 场景 4：自动化运维
+### Case 4: Ops automation
 
-用虾饺管家配置定时任务：每天早上 9 点搜索新闻并发送摘要，每周一生成周报模板，每月检查系统状态。
+Use the Xiajiao steward with cron: daily 9:00 news digest, Monday weekly report template, monthly health checks.
 
-### 场景 5：代码开发助理
+### Case 5: Coding assistant
 
-代码助手 + RAG 知识库。把项目文档、API 规范上传到知识库，代码助手基于你的项目规范写代码，不是通用的网上抄来的代码。
+Coding assistant + RAG. Upload project docs and API specs so code follows your standards, not random snippets from the web.
 
-### 一对一私聊
+### One-to-one chat
 
-在通讯录中点开某个 Agent，即可与其单独对话，无需创建群组，适合日常问答与代码生成。
+Open an agent from the contact list for a private thread—no group required—for Q&A and code generation.
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/coder-chat.png" alt="代码助手一对一对话" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">代码助手实际对话 — Agent 分析思路后输出可运行代码</p>
+  <img src="/images/coder-chat.png" alt="One-to-one chat with coding assistant" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Real coding assistant thread—agent explains the approach then outputs runnable code</p>
 </div>
 
-## SOUL.md：用 Markdown 定义 Agent 人格
+## SOUL.md: define agent personas in Markdown
 
-每个 Agent 有一个 `SOUL.md` 文件，用 Markdown 写"岗位说明书"：
+Each agent has a `SOUL.md` file—a Markdown “job description”:
 
 ```markdown
 # 翻译官
@@ -134,125 +134,125 @@ Dify / FastGPT 适合构建面向客户的 AI 应用。虾饺适合个人/团队
 - 不要主动 @其他 Agent
 ```
 
-### 为什么用 Markdown？
+### Why Markdown?
 
-| 优势 | 说明 |
-|------|------|
-| **简单** | 用文本编辑器就能修改，不需要学习复杂的 UI |
-| **版本控制** | Git diff 一眼看出改了什么 |
-| **可分享** | 分享一个 `.md` 文件就能克隆一个 Agent 人格 |
-| **可迁移** | 不依赖任何平台格式，纯文本永远可读 |
-| **表达力** | Markdown 支持标题、列表、表格、代码块——足以表达复杂的角色设定 |
+| Benefit | Why it matters |
+|---------|----------------|
+| **Simple** | Edit in any text editor—no complex UI |
+| **Version control** | Git diff shows exactly what changed |
+| **Shareable** | Share one `.md` file to clone a persona |
+| **Portable** | Plain text, no vendor lock-in |
+| **Expressive** | Headings, lists, tables, code blocks—enough for rich role specs |
 
-## 谁适合用？
+## Who is it for?
 
-| 用户群 | 使用方式 |
-|--------|---------|
-| **独立开发者** | 想要一支 AI 团队，但不想折腾 DevOps |
-| **AI 爱好者** | 体验多 Agent 协作，探索 SOUL.md 人格设定 |
-| **小团队** | 零供应商锁定的自托管 AI 工作空间 |
-| **研究者** | 原型验证 Agent 间通信、记忆系统、RAG 管线 |
-| **内容创作者** | AI 写作团队，协作链自动化内容生产 |
-| **学生** | 学习 AI Agent 原理，代码简洁可读 |
+| Audience | How they use it |
+|----------|-----------------|
+| **Indie developers** | Want an AI team without heavy DevOps |
+| **AI enthusiasts** | Explore multi-agent collaboration and SOUL.md personas |
+| **Small teams** | Self-hosted workspace without vendor lock-in |
+| **Researchers** | Prototype agent messaging, memory, and RAG |
+| **Creators** | AI writing teams and automated content pipelines |
+| **Students** | Learn agent concepts with readable code |
 
-## 技术概览
+## Technical overview
 
-| 层 | 技术 | 说明 |
-|----|------|------|
-| 运行时 | Node.js 22+ | 原生 `node:sqlite`，无需外部数据库 |
-| HTTP | `node:http` | 零框架，标准库直接用 |
-| WebSocket | `ws` | 实时消息推送 |
-| 数据库 | SQLite | WAL + FTS5，支持并发读和全文搜索 |
-| 前端 | Vanilla JS + CSS | 零构建，修改即生效 |
-| npm 依赖 | **6 个** | 每个都有不可替代的理由 |
-| 测试 | 53 个单元测试 | `node:test` 标准库测试框架 |
+| Layer | Technology | Notes |
+|-------|------------|-------|
+| Runtime | Node.js 22+ | Native `node:sqlite`, no external DB |
+| HTTP | `node:http` | No framework—stdlib only |
+| WebSocket | `ws` | Real-time push |
+| Database | SQLite | WAL + FTS5, concurrent reads and full-text search |
+| Frontend | Vanilla JS + CSS | No build step — changes take effect immediately |
+| npm deps | **6** | Each one justified |
+| Tests | 53 unit tests | `node:test` standard library test framework |
 
-> **设计哲学**：每个依赖都是负债，不是资产。能用标准库的，绝不引入第三方包。
+> **Design rule**: every dependency is liability, not asset. Prefer the standard library over third-party packages.
 
-## 一条消息背后发生了什么
+## What happens when you send one message?
 
-当你在虾饺中发送 `@代码助手 写一个登录接口`，背后经历了 14 个步骤：
+When you send `@CodingAssistant write a login API` in Xiajiao, roughly 14 steps run:
 
 ```
-1. 消息存入 SQLite
-2. WebSocket 广播给所有在线客户端
-3. 解析 @mention → 目标: 代码助手
-4. 加载代码助手的 SOUL.md
-5. 检索代码助手的持久记忆（"用户偏好 Python，公司用阿里云"）
-6. 注入记忆到 System Prompt
-7. 组装完整上下文发给 LLM API（流式模式）
-8. LLM 决定调用 web_search 工具
-9. 执行搜索 → 结果回注上下文
-10. LLM 继续生成代码
-11. 逐 token 通过 WebSocket 推送到浏览器
-12. 完整回复存入 SQLite
-13. 代码助手主动 memory_write（"用户需要登录接口"）
-14. 如果有协作链 → 触发下一个 Agent
+1. Message stored in SQLite
+2. WebSocket broadcast to online clients
+3. Parse @mention → target: CodingAssistant
+4. Load CodingAssistant SOUL.md
+5. Retrieve persistent memory ("User prefers Python; company uses Alibaba Cloud")
+6. Inject memory into system prompt
+7. Send full context to LLM API (streaming)
+8. LLM chooses to call web_search
+9. Run search → merge results into context
+10. LLM continues generating code
+11. Stream tokens to the browser over WebSocket
+12. Store full reply in SQLite
+13. CodingAssistant calls memory_write ("User needs login API")
+14. If a collaboration chain exists → trigger next agent
 ```
 
-整个过程对用户完全透明——Tool Calling 的每一步都在聊天界面实时显示。
+The entire process is fully transparent to the user—tool-calling steps appear live in the chat UI.
 
-## 不适合什么场景？
+## When not to use Xiajiao
 
-虾饺**不是万能的**，这些场景建议用其他平台：
+Xiajiao is **not universal**. Consider alternatives for:
 
-| 场景 | 推荐 | 原因 |
-|------|------|------|
-| 构建面向客户的 AI 应用 | Dify | 工作流 + API 发布 + 多租户 |
-| 不想自托管 | Coze / ChatGPT Team | SaaS 免运维 |
-| 需要 100+ 插件 | Coze | 丰富的插件生态 |
-| 大规模并发 | 自建微服务 | SQLite 单进程限制 |
+| Need | Suggestion | Why |
+|------|------------|-----|
+| Customer-facing AI apps | Dify | Workflows + API + multi-tenant |
+| No self-hosting | Coze / ChatGPT Team | Managed SaaS |
+| 100+ plugins | Coze | Large plugin ecosystem |
+| Massive concurrency | Custom microservices | SQLite single-process limits |
 
-详细对比见 [平台对比](/guide/comparison)。
+See [platform comparison](/guide/comparison) for detail.
 
-## 6 个依赖，凭什么够用？
+## Six dependencies—why enough?
 
-很多人看到"6 个 npm 依赖"会质疑。以下是每个依赖的必要性分析：
+People question “only six npm packages.” Here is why each one stays:
 
-| 包 | 作用 | 为什么不能去掉 | 替代方案 |
-|---|------|--------------|---------|
-| `ws` | WebSocket 服务端 | Node.js 标准库没有 WebSocket 服务端实现 | 无合适替代 |
-| `formidable` | 文件上传解析 | `multipart/form-data` 的 boundary 分割和流式解析，标准库不提供 | 手写解析器 |
-| `node-cron` | 定时任务调度 | Cron 表达式解析，标准库不支持 | `setInterval`（但无法表达复杂周期） |
-| `pdf-parse` | PDF 文本提取 | RAG 知识库需要从 PDF 提取文字 | 不支持 PDF 上传 |
-| `@larksuiteoapi/node-sdk` | 飞书连接器 | 飞书 WebSocket 长连接协议是私有的 | 无法替代 |
-| `@modelcontextprotocol/sdk` | MCP 协议 | JSON-RPC + 能力协商，手写容易不兼容 | 手写（风险高） |
+| Package | Role | Why not remove | Alternative |
+|---------|------|----------------|-------------|
+| `ws` | WebSocket server | Node has no built-in WS server | None practical |
+| `formidable` | Multipart uploads | Boundary parsing and streaming not in stdlib | Hand-roll parser |
+| `node-cron` | Cron scheduling | No cron expression support in stdlib | `setInterval` (weak for complex schedules) |
+| `pdf-parse` | PDF text | RAG needs PDF text | Drop PDF upload |
+| `@larksuiteoapi/node-sdk` | Feishu connector | Feishu WS protocol is proprietary | None |
+| `@modelcontextprotocol/sdk` | MCP | JSON-RPC + capability negotiation; DIY risks incompatibility | Hand-written (risky) |
 
-**那"正常"项目需要多少依赖？**
+**What does a “normal” project need?**
 
-| 项目 | npm 依赖数 | 说明 |
-|------|-----------|------|
-| 虾饺 | 6 | 标准库优先 |
-| Express hello world | 30+ | 框架本身就带一堆 |
-| Next.js 空项目 | 200+ | React + 构建工具链 |
-| Dify 前端 | 300+ | 完整企业级 |
+| Project | npm dependency count | Notes |
+|---------|----------------------|-------|
+| Xiajiao | 6 | Stdlib first |
+| Express hello world | 30+ | Framework pulls many |
+| Empty Next.js | 200+ | React + toolchain |
+| Dify frontend | 300+ | Full enterprise UI |
 
-不是说依赖多就不好。只是对于虾饺这种"给自己用"的工具，能用标准库就用标准库——少一个依赖就少一个供应链攻击面，少一个升级要跟进的包。
+More dependencies are not “bad”—for a self-use tool, stdlib-first means smaller attack surface and fewer upgrades.
 
-## 名字的含义
+## What the name means
 
-**虾饺**取名自广式点心——小巧精致，内料丰富。薄如蝉翼的外皮包裹着鲜嫩的虾仁。
+**Xiajiao (虾饺)** is named after the Cantonese dim sum—small, refined, rich filling. A thin wrapper around fresh shrimp.
 
-最少的依赖，最全的能力。这就是虾饺的理念。
+Fewest dependencies, broadest capability—that is the idea behind Xiajiao.
 
 ## Roadmap
 
-| 状态 | 特性 |
-|------|------|
-| ✅ 已完成 | 多 Agent 群聊、Tool Calling、持久记忆、RAG、协作流、RBAC |
-| 🚧 进行中 | 工作流引擎、Agent 间协商 |
-| 📋 计划中 | MCP 工具市场、语音输入、移动端适配 |
-| 🤔 探索中 | Agent 自主学习、多租户支持 |
+| Status | Item |
+|--------|------|
+| ✅ Done | Multi-agent chat, tool calling, persistent memory, RAG, collaboration flow, RBAC |
+| 🚧 In progress | Workflow engine, agent negotiation |
+| 📋 Planned | MCP tool marketplace, voice input, mobile layout |
+| 🤔 Exploring | Self-improving agents, multi-tenant |
 
-## 下一步
+## Next steps
 
-| 你想... | 看这里 |
-|---------|--------|
-| 立刻试试 | [快速开始](/guide/quick-start) — 3 步跑起来 |
-| 配置模型 | [模型配置大全](/guide/model-config) — 8 个 Provider 详细教程 |
-| 学 Agent 设计 | [SOUL.md 写作指南](/guide/soul-guide) — 写出好的 Agent 人格 |
-| 复制 Agent 模板 | [SOUL.md 模板库](/guide/soul-templates) — 20 个模板 |
-| 照搬方案 | [实战案例](/guide/recipes) — 12 个 Agent 团队配置 |
-| 了解技术 | [架构设计](/guide/architecture) — 代码结构和数据流 |
-| 对比平台 | [平台对比](/guide/comparison) — vs Dify/Coze/FastGPT |
-| 确认安全 | [安全与隐私](/guide/security) — 数据主权详解 |
+| You want to… | Read this |
+|--------------|-----------|
+| Try it now | [Quick start](/guide/quick-start) — three steps to run |
+| Configure models | [Model configuration](/guide/model-config) — eight providers |
+| Design agents | [SOUL.md guide](/guide/soul-guide) — strong personas |
+| Copy templates | [SOUL.md templates](/guide/soul-templates) — 20 templates |
+| Copy setups | [Recipes](/guide/recipes) — 12 team configs |
+| Understand architecture | [Architecture](/guide/architecture) — structure and data flow |
+| Compare platforms | [Comparison](/guide/comparison) — vs Dify / Coze / FastGPT |
+| Security | [Security & privacy](/guide/security) — data sovereignty |

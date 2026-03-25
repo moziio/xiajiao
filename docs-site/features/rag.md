@@ -1,259 +1,247 @@
 ---
-title: RAG 知识库 — 虾饺 IM
-description: BM25 + 向量混合检索、RRF 融合、LLM 重排序、分层分块——上传文档，Agent 自动变成你的知识专家。
+title: "RAG Knowledge Base — Xiajiao (虾饺) IM"
+description: "BM25 + vector hybrid retrieval, RRF fusion, LLM reranking, hierarchical chunks—upload docs and Agents become domain experts."
 ---
 
-# RAG 知识库
+# RAG knowledge base
 
-虾饺内置生产级 RAG（Retrieval-Augmented Generation）系统。上传文档，Agent 自动索引，提问时通过 [Tool Calling](/features/tool-calling) 中的 `rag_query` 检索——你的文档变成 Agent 的"大脑"。与 [Agent 持久记忆](/features/agent-memory) 搭配：RAG 管文档事实，记忆管用户偏好与历史。
+Xiajiao (虾饺) includes a production-style RAG (Retrieval-Augmented Generation) stack. Upload documents, indexing runs automatically, and questions hit `rag_query` from [Tool Calling](/features/tool-calling)—your docs become the Agent’s grounding layer. Pair with [Agent persistent memory](/features/agent-memory): RAG for document facts; memory for user prefs and history.
 
 <p align="center">
-  <img src="/images/demo.png" alt="RAG 知识库检索" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/demo.png" alt="RAG retrieval" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 <p align="center" style="color: var(--vp-c-text-2);">
-  <em>Agent 从知识库检索信息并以结构化格式呈现。</em>
+  <em>An Agent retrieves from the knowledge base and answers in a structured way.</em>
 </p>
 
-## 为什么需要 RAG？
+## Why RAG?
 
-LLM 的知识有两个局限：
+LLMs are limited by:
 
-1. **截止日期** — 训练数据有截止日期，不知道最新信息
-2. **私有数据** — 不知道你公司的 API 文档、产品手册等
+1. **Knowledge cutoff** — no brand-new facts after training  
+2. **Private data** — no access to your internal API docs or manuals  
 
-RAG 通过"检索+生成"解决这些问题：先从你的文档中找到相关段落，再让 LLM 基于这些段落回答。
+RAG fixes this: retrieve relevant chunks first, then generate grounded answers.
 
-| 没有 RAG | 有 RAG |
-|----------|--------|
-| "我不知道你们的 API 格式" | "根据你的 API 文档，认证使用 Bearer Token..." |
-| 可能编造答案（幻觉） | 基于真实文档回答 |
-| 无法引用来源 | 可以指出信息出自哪个文档 |
+| Without RAG | With RAG |
+|-------------|----------|
+| “I don’t know your API shape” | “Per your API doc, auth uses Bearer Token…” |
+| Higher hallucination risk | Grounded in real docs |
+| No citations | Can point to source docs |
 
-## 检索管线（三阶段）
+## Three-stage retrieval pipeline
 
-虾饺的 RAG 采用三阶段检索管线，层层过滤，确保最终注入 LLM 的内容高度相关：
+Layers of filtering keep only relevant context for the LLM:
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │                                                     │
-│  用户提问                                            │
+│  User question                                      │
 │     ↓                                               │
-│  ┌──── 第一阶段：双路检索 ────┐                       │
-│  │                           │                      │
-│  │  BM25           向量检索   │                      │
-│  │ (关键词匹配)   (语义匹配)  │                       │
-│  │     ↓              ↓      │                      │
-│  │     候选集 A   候选集 B    │                      │
-│  └──────────┬────────────────┘                      │
+│  ┌──── Stage 1: dual retrieval ────┐                │
+│  │                                 │                │
+│  │  BM25           Vector search   │                │
+│  │  (keywords)     (semantics)     │                │
+│  │     ↓              ↓            │                │
+│  │   set A         set B          │                │
+│  └──────────┬─────────────────────┘                │
 │             ↓                                       │
-│  ┌──── 第二阶段：RRF 融合 ────┐                      │
-│  │  合并两路结果               │                     │
-│  │  互惠排名融合排序           │                      │
-│  │  去重                      │                     │
-│  └──────────┬────────────────┘                      │
+│  ┌──── Stage 2: RRF fusion ─────┐                  │
+│  │  Merge lists, dedupe          │                  │
+│  └──────────┬───────────────────┘                  │
 │             ↓                                       │
-│  ┌──── 第三阶段：LLM 重排序 ──┐                      │
-│  │  LLM 对 Top-N 结果评分      │                     │
-│  │  按相关性重新排序            │                     │
-│  │  取 Top-K 注入上下文         │                     │
-│  └──────────┬────────────────┘                      │
+│  ┌──── Stage 3: LLM rerank ─────┐                  │
+│  │  Score Top-N, reorder        │                  │
+│  │  Take Top-K for context       │                  │
+│  └──────────┬───────────────────┘                  │
 │             ↓                                       │
-│  注入 Agent 上下文 → Agent 回答                       │
+│  Inject into Agent → answer                         │
 │                                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
-### 第一阶段：双路检索
+### Stage 1: dual retrieval
 
-同时使用两种互补的检索策略：
-
-**BM25（关键词检索）**
+**BM25 (lexical)**
 
 ```
-查询："API 认证方式"
-→ 精确匹配包含"API"和"认证"的文档片段
-→ 适合：精确术语、代码函数名、特定词汇
+Query: "API authentication"
+→ Matches chunks containing "API" and "auth"
+→ Good for exact terms, symbols, identifiers
 ```
 
-**向量检索（语义检索）**
+**Vector (semantic)**
 
 ```
-查询："怎么鉴权"
-→ embedding 相似度匹配，找到语义相近的"认证"、"授权"、"Token"相关段落
-→ 适合：意图理解、同义词、模糊表述
+Query: "how do we authorize requests"
+→ Embedding similarity to "auth", "token", "Bearer" passages
+→ Good for paraphrases and intent
 ```
 
-::: info 为什么要双路？
-单用 BM25，搜"鉴权"找不到"认证"；单用向量，搜"getUserById"可能匹配到不相关的函数。双路互补，既精确又智能。
+::: info Why both?
+BM25 alone misses synonyms; vectors alone can drift on symbols like `getUserById`. Together you get precision and recall.
 :::
 
-### 第二阶段：RRF 融合
+### Stage 2: RRF fusion
 
-[Reciprocal Rank Fusion](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf) 是一种经过实践验证的融合排序算法：
-
-```
-RRF Score = Σ 1 / (k + rank_i)
-```
-
-其中 `k` 是常数（通常为 60），`rank_i` 是文档在第 i 路检索中的排名。
-
-效果：在两路检索中都排名靠前的文档，融合后排名更高。
-
-### 第三阶段：LLM 重排序
-
-融合排序后，取 Top-N 候选结果，让 LLM 做精细评分：
+[Reciprocal Rank Fusion](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf):
 
 ```
-System: 请评估以下文档片段与查询的相关性，给出 0-10 分。
-Query: "API 认证方式"
-
-文档 1: "所有 API 请求需要在 Header 中携带 Bearer Token..." → 9 分
-文档 2: "API 返回 JSON 格式..." → 3 分
-文档 3: "认证模块使用 JWT，过期时间 24 小时..." → 8 分
+RRF score = Σ 1 / (k + rank_i)
 ```
 
-最终取最高分的 Top-K 结果注入 Agent 上下文。
+`k` is a constant (often 60); `rank_i` is the rank in list *i*.  
+Chunks strong in **both** lists rise to the top after fusion.
 
-## 分层分块策略
+### Stage 3: LLM reranking
 
-文档切片是 RAG 质量的关键。虾饺采用分层分块策略：
+Take Top-N fused candidates; have the LLM score relevance:
 
-### 双层设计
+```
+System: Score each passage 0–10 for relevance to the query.
+Query: "API authentication"
+
+Passage 1: "All API calls must send Bearer Token in Header..." → 9
+Passage 2: "API returns JSON..." → 3
+Passage 3: "Auth module uses JWT, 24h expiry..." → 8
+```
+
+Inject the highest-scoring Top-K into the Agent context.
+
+## Hierarchical chunking
+
+Quality depends on chunking. Xiajiao (虾饺) uses parent/child chunks:
+
+### Two-tier design
 
 ```
 ┌────────────────────────────────────┐
-│  大块 (Parent Chunk, ~800 字)      │
+│  Parent chunk (~800 chars)         │
 │                                    │
 │  ┌──────────┐  ┌──────────┐       │
-│  │ 小块 200字│  │ 小块 200字│  ... │
+│  │ Child    │  │ Child    │  ...  │
+│  │ ~200 ch  │  │ ~200 ch  │       │
 │  └──────────┘  └──────────┘       │
 │                                    │
 └────────────────────────────────────┘
 ```
 
-- **小块（~200 字）**：用于检索，粒度细，命中率高
-- **大块（~800 字）**：用于上下文，信息完整，不断章取义
+- **Child (~200)**: retrieval granularity—tighter focus, better hits  
+- **Parent (~800)**: context for the model—full surrounding text  
 
-**工作流程**：
-1. 检索时搜索小块 → 精确定位
-2. 命中小块后，扩展到对应的大块 → 获得完整上下文
-3. 大块注入 LLM → Agent 理解前因后果
+**Flow**: search children → map to parents → send parents to the LLM.
 
-::: tip 为什么不直接用大块检索？
-大块包含多个主题，embedding 向量是这些主题的"平均"，搜索精度下降。小块单一主题，检索更准确。
+::: tip Why not retrieve on parents only?
+Large parents mix topics; one embedding averages everything and hurts precision. Small children retrieve accurately; parents restore context.
 :::
 
-## 支持的文档格式
+## Supported formats
 
-| 格式 | 说明 | 解析方式 |
-|------|------|---------|
-| **PDF** | 最常用 | pdf-parse 提取文本 |
-| **TXT** | 纯文本 | 直接读取 |
-| **Markdown** | 文档 | 直接读取，保留结构 |
-| 其他纯文本 | .log / .csv 等 | 直接读取 |
+| Format | Notes | Parsing |
+|--------|-------|---------|
+| **PDF** | Common | pdf-parse |
+| **TXT** | Plain text | Direct read |
+| **Markdown** | Docs | Direct read, structure kept |
+| Other text | `.log`, `.csv`, etc. | Direct read |
 
-## 使用方式
+## Usage
 
-### 上传文档
+### Upload
 
-通过 Web 界面上传文档到指定 Agent 的工作区：
+In the web UI, open Agent settings and upload into the knowledge area:
 
-1. 进入 Agent 设置
-2. 在知识库区域上传文件
-3. 系统自动完成：解析 → 分块 → embedding → 索引
+1. Open Agent settings  
+2. Upload in the KB section  
+3. System parses → chunks → embeds → indexes  
 
-### Agent 检索
+### Query
 
-Agent 通过 `rag_query` 工具（见 [Tool Calling](/features/tool-calling)）自动检索：
-
-```
-你：@代码助手 我们的支付接口怎么调用？
-代码助手：[调用 rag_query: "支付接口调用方式"]
-→ 从你上传的 API 文档中检索
-→ 基于检索结果回答
-```
-
-## 与其他 RAG 方案的对比
-
-|  | 虾饺 RAG | Dify RAG | LangChain RAG |
-|--|----------|----------|---------------|
-| 检索方式 | BM25 + 向量 + LLM 重排 | 向量 + 关键词 | 可配置 |
-| 分块策略 | 分层（小块检索+大块上下文） | 固定大小 | 可配置 |
-| 向量存储 | SQLite（零依赖） | Qdrant / Weaviate | FAISS / Pinecone |
-| 部署复杂度 | `npm start` | Docker Compose | 需自行编排 |
-| 外部依赖 | 无 | 需要向量数据库 | 需要向量数据库 |
-
-虾饺的 RAG 可能不如专用系统灵活，但它的优势是**零外部依赖**——所有组件内置在一个 Node.js 进程中，SQLite 做向量存储，不需要额外部署 Qdrant / Milvus / Pinecone。
-
-## 调优建议
-
-### 1. 文档质量很重要
-
-- **结构清晰**：用标题、段落、列表，不要一堆连续文字
-- **信息密度**：去掉废话、重复内容
-- **格式统一**：保持术语一致
-
-### 2. 分块长度
-
-当前使用默认的 200/800 分层策略。如果你的文档每段很长，可以考虑源码层面调整分块参数。
-
-### 3. embedding 模型
-
-默认使用 `text-embedding-3-small`。如果你用通义千问等国产模型，系统会使用对应 Provider 的 embedding 模型。中文文档建议使用中文优化的 embedding 模型。
-
-### 4. 搜索关键词技巧
-
-RAG 的 BM25 路依赖关键词匹配。如果搜索"支付怎么用"没结果，试试文档中的原始术语"payment API"。
-
-### 5. 什么文档效果好 / 不好
-
-| 效果好 | 效果差 |
-|--------|--------|
-| API 文档（结构化、术语清晰） | 扫描版 PDF（OCR 质量差） |
-| 技术规范（段落分明） | 表格密集的 Excel 导出 |
-| 产品手册（问答式） | 纯图片的 PPT 导出 |
-| Markdown 笔记（天然结构化） | 法律合同（长句、嵌套引用） |
-
-## 实际检索效果示例
-
-以下是一个真实的 RAG 检索过程——从用户提问到 Agent 给出答案：
+The Agent uses `rag_query` (see [Tool Calling](/features/tool-calling)):
 
 ```
-用户：@代码助手 我们的订单状态有哪些？
+You: @Code assistant How do we call the payment API?
+Code assistant: [rag_query: "payment API usage"]
+→ pulls from your uploaded API doc
+→ answers from retrieved text
+```
 
-系统内部流程：
-┌─ BM25 路：FTS5 搜索 "订单 状态"
-│  结果 1: "订单状态包括：pending、paid、shipped、completed、cancelled" (score: 8.2)
-│  结果 2: "创建订单接口 POST /api/orders" (score: 3.1)
+## Compared to other RAG stacks
+
+| | Xiajiao (虾饺) RAG | Dify RAG | LangChain RAG |
+|---|-------------------|----------|---------------|
+| Retrieval | BM25 + vector + LLM rerank | Vector + keywords | Configurable |
+| Chunking | Hierarchical | Fixed size | Configurable |
+| Vector store | SQLite (zero extra services) | Qdrant / Weaviate | FAISS / Pinecone |
+| Deploy | `npm start` | Docker Compose | Bring your own |
+| External deps | None for vectors | Vector DB usually required | Often vector DB |
+
+Less flexible than a bespoke stack, but **zero external vector DB**—everything in one Node process with SQLite.
+
+## Tuning tips
+
+### 1. Document quality
+
+- Clear structure: headings, lists, paragraphs—not walls of text  
+- High signal, low fluff  
+- Consistent terminology  
+
+### 2. Chunk sizes
+
+Defaults are 200/800. Very long native paragraphs may need code-level tuning.
+
+### 3. Embedding model
+
+Default `text-embedding-3-small`. With providers like Qwen, the matching provider embedding is used. For Chinese-heavy corpora, a Chinese-optimized embedding model helps.
+
+### 4. Query wording
+
+BM25 is lexical. If “how do I pay” fails, try the doc’s exact term `payment API`.
+
+### 5. What works well / poorly
+
+| Works well | Works poorly |
+|------------|--------------|
+| API docs (structured, crisp terms) | Scanned PDFs (bad OCR) |
+| Specs with clear sections | Dense Excel exports |
+| Q&A style manuals | Image-only slide decks |
+| Markdown notes | Long nested legal prose |
+
+## Example trace
+
+```
+User: @Code assistant What order statuses exist?
+
+Internal:
+├─ BM25 (FTS5): "order status"
+│  hit 1: "Statuses: pending, paid, shipped, completed, cancelled" (8.2)
+│  hit 2: "POST /api/orders" (3.1)
 │
-├─ 向量路：embedding("订单状态有哪些") → 余弦相似度搜索
-│  结果 1: "enum OrderStatus { PENDING, PAID, SHIPPED... }" (sim: 0.89)
-│  结果 2: "订单状态流转：待支付→已支付→已发货→已完成" (sim: 0.85)
+├─ Vector: embed("what order statuses")
+│  hit 1: "enum OrderStatus { PENDING, PAID, ... }" (0.89)
+│  hit 2: "Flow: pending→paid→shipped→completed" (0.85)
 │
-├─ RRF 融合：合并两路结果，取 Top-5
+├─ RRF → Top 5
 │
-└─ LLM 重排：对 5 个候选评分
-   最终注入 Agent 上下文的 3 个 chunk
+└─ LLM rerank → inject top 3 chunks
 
-代码助手回复：
-"根据你的文档，订单状态共有 5 种：
-1. pending（待支付）
-2. paid（已支付）
-3. shipped（已发货）
-4. completed（已完成）
-5. cancelled（已取消）
+Assistant:
+"Per your docs there are five statuses:
+1. pending
+2. paid
+3. shipped
+4. completed
+5. cancelled
 
-状态流转规则：pending → paid → shipped → completed
-任何状态可以直接 → cancelled
+Flow: pending → paid → shipped → completed; any → cancelled.
 
-参考来源：API 文档 v2.3 第 4.2 节"
+Source: API doc v2.3 §4.2"
 ```
 
-## 相关文档
+## Related docs
 
-- [Tool Calling](/features/tool-calling) — `rag_query` 工具详情与权限配置
-- [Agent 持久记忆](/features/agent-memory) — 个性化记忆系统
-- [安全与隐私](/guide/security) — 数据安全与 API Key 保护
-- [协作流](/features/collaboration-flow) — 多 Agent 自动协作
-- [实战案例](/guide/recipes) — 私人知识助理、客户支持等 RAG 实战方案
-- [架构设计](/guide/architecture) — RAG 管线的代码实现详解
+- [Tool Calling](/features/tool-calling) — `rag_query` details and ACLs  
+- [Agent persistent memory](/features/agent-memory) — personalization  
+- [Security & privacy](/guide/security)  
+- [Collaboration flow](/features/collaboration-flow)  
+- [Recipes](/guide/recipes) — private KB assistant, support bots  
+- [Architecture](/guide/architecture) — RAG implementation  

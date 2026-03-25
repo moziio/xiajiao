@@ -1,192 +1,192 @@
 ---
 layout: home
 hero:
-  name: 虾饺 IM
-  text: AI Agent 团队协作平台
-  tagline: 6 个依赖，npm start，像管团队一样管理你的 AI Agent
+  name: Xiajiao IM
+  text: AI Agent Team Collaboration
+  tagline: 6 deps, npm start — manage your AI agents like managing a team
   image:
     src: /images/hero-light-top.png
-    alt: 虾饺 IM — AI Agent 团队群聊协作
+    alt: Xiajiao IM — Multi-Agent Group Chat
   actions:
     - theme: brand
-      text: 快速开始 →
+      text: Quick Start →
       link: /guide/quick-start
     - theme: alt
-      text: 实战案例
+      text: Recipes
       link: /guide/recipes
     - theme: alt
       text: GitHub
       link: https://github.com/moziio/xiajiao
 features:
   - icon: 🤖
-    title: 多 Agent 群聊
-    details: 创建群组、拉入 Agent、@mention 精确路由。Agent 间可对话、接力协作，就像真实团队。
+    title: Multi-Agent Chat
+    details: Create groups, add agents, @mention for precise routing. Agents talk to each other and collaborate like a real team.
     link: /features/multi-agent-chat
-    linkText: 了解更多
+    linkText: Learn more
   - icon: 🔧
     title: Tool Calling
-    details: 7 个内置工具（6 类能力）——网络搜索、知识库检索、记忆读写、跨 Agent 调用、渠道管理、定时任务。
+    details: 7 built-in tools (6 categories) — web search, RAG retrieval, memory read/write, cross-agent calls, channel management, scheduled tasks.
     link: /features/tool-calling
-    linkText: 了解更多
+    linkText: Learn more
   - icon: 🧠
-    title: 持久记忆
-    details: 三分类记忆系统（语义 / 情景 / 程序性），embedding 去重，Agent 越用越懂你。
+    title: Persistent Memory
+    details: Three-category memory (semantic / episodic / procedural), embedding dedup. The more you use an agent, the better it knows you.
     link: /features/agent-memory
-    linkText: 了解更多
+    linkText: Learn more
   - icon: 📚
-    title: RAG 知识库
-    details: BM25 + 向量混合检索 + RRF + LLM 重排序。上传文档，Agent 自动索引自动检索。
+    title: RAG Knowledge Base
+    details: BM25 + vector hybrid retrieval + RRF + LLM re-ranking. Upload docs, agents auto-index and auto-retrieve.
     link: /features/rag
-    linkText: 了解更多
+    linkText: Learn more
   - icon: ⚡
-    title: 极简部署
-    details: 6 个 npm 依赖，零外部服务。不需要 Docker、PostgreSQL、Redis，npm start 即跑。
+    title: Minimal Setup
+    details: 6 npm deps, zero external services. No Docker, PostgreSQL, or Redis needed — just npm start.
     link: /deployment/local
-    linkText: 部署指南
+    linkText: Deploy guide
   - icon: 🔗
-    title: 协作流
-    details: 协作链自动接力 + 可视化面板实时状态 + 人工干预。一句话触发整条 Agent 流水线。
+    title: Collaboration Flow
+    details: Auto-relay collaboration chains + real-time visual panel + human intervention. One message triggers the entire agent pipeline.
     link: /features/collaboration-flow
-    linkText: 了解更多
+    linkText: Learn more
 ---
 
 <!-- Demo Section -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
-  <h2 style="border: none;">💬 像聊天一样驱动 Agent 团队</h2>
-  <p style="color: var(--vp-c-text-2);">和 Agent 用 IM 对话，它会自动调用工具、查询状态、管理渠道——全程可见。</p>
+  <h2 style="border: none;">💬 Drive Your Agent Team Through Chat</h2>
+  <p style="color: var(--vp-c-text-2);">Chat with agents via IM — they auto-invoke tools, query status, manage channels — all visible in real time.</p>
 </div>
 
 <p align="center">
-  <img src="/images/demo.gif" alt="虾饺 IM — 协作流演示" style="max-width: 800px; width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);" />
+  <img src="/images/demo.gif" alt="Xiajiao IM — Collaboration Flow Demo" style="max-width: 800px; width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);" />
 </p>
 
 <!-- Key Metrics -->
 <div style="display: flex; justify-content: center; gap: 3rem; margin: 3rem 0; flex-wrap: wrap;">
   <div style="text-align: center;">
     <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">6</div>
-    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">npm 依赖</div>
+    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">npm deps</div>
   </div>
   <div style="text-align: center;">
     <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">0</div>
-    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">外部服务</div>
+    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">external services</div>
   </div>
   <div style="text-align: center;">
     <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">7</div>
-    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">内置工具</div>
+    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">built-in tools</div>
   </div>
   <div style="text-align: center;">
     <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">53</div>
-    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">单元测试</div>
+    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">unit tests</div>
   </div>
 </div>
 
 <!-- Quick Start Section -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
-  <h2 style="border: none;">🚀 30 秒跑起来</h2>
+  <h2 style="border: none;">🚀 Up and Running in 30 Seconds</h2>
 </div>
 
 <div style="max-width: 600px; margin: 0 auto 1rem; padding: 0 1rem;">
 
 ```bash
 git clone https://github.com/moziio/xiajiao.git
-cd xiajiao && npm install   # 6 个依赖，几秒搞定
-npm start                    # 打开 http://localhost:18800
+cd xiajiao && npm install   # 6 deps, done in seconds
+npm start                    # Open http://localhost:18800
 ```
 
 </div>
 
 <div style="text-align: center; color: var(--vp-c-text-2); margin-bottom: 2rem;">
-  <p>没有 Docker，无需 PostgreSQL / Redis 等外部数据库（内置 SQLite），没有额外环境变量。就这三行。</p>
+  <p>No Docker, no PostgreSQL / Redis (built-in SQLite), no extra env vars. Just these three lines.</p>
 </div>
 
 <!-- Use Cases Section -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
-  <h2 style="border: none;">💡 用起来是什么感觉</h2>
+  <h2 style="border: none;">💡 What It Feels Like</h2>
 </div>
 
 <div style="max-width: 700px; margin: 0 auto 3rem; padding: 0 1rem;">
 
 <div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;">
 
-**🎭 场景 1：AI 写作工作室**
+**🎭 Scenario 1: AI Writing Studio**
 
-群组成员：小说家 + 编辑 + 翻译官 | 协作链：自动接力
-
-```
-你：写一篇关于独立开发者的散文
-→ 小说家创作 800 字中文散文
-→ 编辑自动接力润色
-→ 翻译官自动翻译成英文
-→ 2 分钟，得到中英双语成品
-```
-
-</div>
-
-<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;">
-
-**📖 场景 2：私人知识助理**
-
-Agent 工具：RAG 知识库 + 持久记忆
+Group: Novelist + Editor + Translator | Chain: auto-relay
 
 ```
-你：上传 API 文档到知识库
-你：我们的支付接口怎么调用？
-→ Agent 从你的文档中检索 → 精准回答，不瞎编
+You: Write an essay about indie developers
+→ Novelist writes 800-word Chinese essay
+→ Editor auto-relays to polish
+→ Translator auto-translates to English
+→ 2 min, bilingual masterpiece ready
 ```
 
 </div>
 
 <div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;">
 
-**⚔️ 场景 3：多模型 PK 擂台**
+**📖 Scenario 2: Private Knowledge Assistant**
 
-3 个 Agent，同一个 SOUL.md，不同的模型
+Agent tools: RAG + Persistent Memory
 
 ```
-你：@GPT选手 @Claude选手 @通义选手 解释注意力机制
-→ 三个模型的回答并列显示
-→ 直观对比质量、深度、风格
+You: Upload API docs to knowledge base
+You: How do I call the payment API?
+→ Agent retrieves from YOUR docs → accurate answer, no hallucination
 ```
 
 </div>
 
-<p style="text-align: center;"><a href="/guide/recipes">查看全部 12 个实战案例 →</a></p>
+<div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;">
+
+**⚔️ Scenario 3: Multi-Model Arena**
+
+3 agents, same SOUL.md, different models
+
+```
+You: @GPT @Claude @Qwen Explain attention mechanism
+→ Three models answer side by side
+→ Compare quality, depth, style at a glance
+```
+
+</div>
+
+<p style="text-align: center;"><a href="/guide/recipes">See all 12 recipes →</a></p>
 
 </div>
 
 <!-- Real Screenshots Section -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
-  <h2 style="border: none;">📸 真实界面截图</h2>
-  <p style="color: var(--vp-c-text-2);">以下截图来自虾饺的真实运行环境，非设计稿。</p>
+  <h2 style="border: none;">📸 Real Screenshots</h2>
+  <p style="color: var(--vp-c-text-2);">These are from a live Xiajiao instance, not mockups.</p>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 900px; margin: 0 auto 3rem; padding: 0 1rem;">
   <div>
-    <img src="/images/summer-night-ai-art.png" alt="协作链面板与夏夜星空 AI 配图——文生图填满聊天区" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">协作链 + 夏夜星空 AI 配图（文生图）</p>
+    <img src="/images/summer-night-ai-art.png" alt="Collaboration chain + AI-generated summer night art" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">Collaboration chain + AI art generation</p>
   </div>
   <div>
-    <img src="/images/hero-light-middle.png" alt="群聊 @mention 路由" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">群聊 @mention 精确路由</p>
+    <img src="/images/hero-light-middle.png" alt="Group chat @mention routing" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">Group chat @mention routing</p>
   </div>
   <div>
-    <img src="/images/poetry-translation-light.png" alt="小说家写诗与翻译官接力翻译" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">小说家写诗 + 翻译官接力翻译</p>
+    <img src="/images/poetry-translation-light.png" alt="Poetry writing + translation relay" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">Poetry + auto-translation relay</p>
   </div>
   <div>
-    <img src="/images/hero-light-bottom.png" alt="AI 创作群聊" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">Agent 创作诗歌 + AI 生图</p>
+    <img src="/images/hero-light-bottom.png" alt="AI creative group chat" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">Agent poetry + AI image generation</p>
   </div>
   <div>
-    <img src="/images/news-agent.png" alt="新闻 Agent" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">新闻 Agent 搜索并结构化输出</p>
+    <img src="/images/news-agent.png" alt="News Agent" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+    <p style="text-align: center; font-size: 0.85rem; color: var(--vp-c-text-2);">News Agent — search & structured output</p>
   </div>
 </div>
 
 <!-- Why Xiajiao Technical Highlights -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
-  <h2 style="border: none;">🔬 为什么能这么轻？</h2>
-  <p style="color: var(--vp-c-text-2); max-width: 600px; margin: 0 auto;">别人用框架的地方，虾饺用标准库。别人用外部服务的地方，虾饺用 SQLite。</p>
+  <h2 style="border: none;">🔬 Why So Lightweight?</h2>
+  <p style="color: var(--vp-c-text-2); max-width: 600px; margin: 0 auto;">Where others use frameworks, Xiajiao uses Node.js standard libraries. Where others need external services, Xiajiao uses SQLite.</p>
 </div>
 
 <div style="max-width: 700px; margin: 0 auto 3rem; padding: 0 1rem;">
@@ -194,192 +194,139 @@ Agent 工具：RAG 知识库 + 持久记忆
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
 
 <div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
-  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 Express</div>
-  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:http</code> 裸写 15 个端点。少一个依赖 = 少一个安全风险。</div>
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 No Express</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:http</code> handles 15 endpoints. One less dep = one less security risk.</div>
 </div>
 
 <div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
-  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 PostgreSQL</div>
-  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:sqlite</code> 内置数据库。WAL 并发读写，FTS5 全文搜索。</div>
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 No PostgreSQL</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:sqlite</code> built-in DB. WAL for concurrent reads, FTS5 for full-text search.</div>
 </div>
 
 <div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
-  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 React/Vue</div>
-  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">Vanilla JS 前端。改完代码刷新浏览器，不等 Webpack 编译。</div>
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 No React/Vue</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);">Vanilla JS frontend. Edit code, refresh browser — no Webpack build step.</div>
 </div>
 
 <div style="background: var(--vp-c-bg-soft); border-radius: 12px; padding: 1.2rem;">
-  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 不用 Jest</div>
-  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:test</code> 标准库跑 53 个测试。零测试依赖，零配置文件。</div>
+  <div style="font-weight: 700; margin-bottom: 0.5rem;">🚫 No Jest</div>
+  <div style="font-size: 0.85rem; color: var(--vp-c-text-2);"><code>node:test</code> runs 53 tests. Zero test deps, zero config files.</div>
 </div>
 
 </div>
 
-<p style="text-align: center; margin-top: 1rem;"><a href="/guide/architecture">查看完整架构设计 →</a></p>
+<p style="text-align: center; margin-top: 1rem;"><a href="/guide/architecture">See full architecture →</a></p>
 
 </div>
 
 <!-- Comparison Section -->
 <div style="text-align: center; margin: 2rem 0;">
-  <h2 style="border: none;">🏗️ 和其他平台的区别</h2>
+  <h2 style="border: none;">🏗️ How It Compares</h2>
 </div>
 
 <div style="max-width: 700px; margin: 0 auto 3rem; padding: 0 1rem;">
 
-| 维度 | 虾饺 | Dify / FastGPT |
-|------|------|----------------|
-| 安装 | `npm start` | `docker compose up`（需 PostgreSQL + Redis） |
-| 依赖 | 6 个 npm 包 | 多个包 + 多个外部服务 |
-| Agent 交互 | IM 群聊 @mention | 工作流画布 |
-| Agent 关系 | 平等协作，互相 @mention | 预设 DAG 管线 |
-| 数据存储 | 完全本地 SQLite | 需配置数据库 |
-| 定位 | Agent 是你的同事 | Agent 是你的应用 |
+| Dimension | Xiajiao | Dify / FastGPT |
+|-----------|---------|----------------|
+| Install | `npm start` | `docker compose up` (needs PostgreSQL + Redis) |
+| Deps | 6 npm packages | Multiple packages + external services |
+| Agent UX | IM group chat + @mention | Workflow canvas |
+| Agent Relations | Equal collaboration, mutual @mention | Predefined DAG pipelines |
+| Data Storage | Fully local SQLite | Requires DB config |
+| Philosophy | Agents are your colleagues | Agents are your apps |
 
 </div>
 
 <!-- SOUL.md Section -->
 <div style="text-align: center; margin: 2rem 0;">
-  <h2 style="border: none;">📝 SOUL.md — 用 Markdown 定义 Agent</h2>
+  <h2 style="border: none;">📝 SOUL.md — Define Agents with Markdown</h2>
 </div>
 
 <div style="max-width: 600px; margin: 0 auto 1rem; padding: 0 1rem;">
 
 ```markdown
-# 翻译官
+# Translator
 
-你是一位精通中英双语的翻译专家。
+You are a bilingual translation expert (Chinese ↔ English).
 
-## 工作原则
-- 信、达、雅：忠实原意，表达通顺，语言优美
-- 直接输出译文，不做逐句对照分析
+## Principles
+- Faithfulness, expressiveness, elegance
+- Output translation directly, no word-by-word analysis
 
-## 禁止事项
-- 不翻译代码块中的内容
-- 不要主动 @其他 Agent
+## Restrictions
+- Do not translate content inside code blocks
+- Do not proactively @mention other agents
 ```
 
 </div>
 
 <div style="text-align: center; color: var(--vp-c-text-2); margin-bottom: 1rem;">
-  <p>分享一个 <code>.md</code> 文件就能克隆一个 Agent 人格。Git 版本控制，diff 一目了然。</p>
-  <p><a href="/guide/soul-guide">查看 SOUL.md 写作指南 →</a></p>
+  <p>Share a single <code>.md</code> file to clone an agent's personality. Git version control, diffs at a glance.</p>
+  <p><a href="/guide/soul-guide">SOUL.md writing guide →</a></p>
 </div>
 
 <!-- Model Support Section -->
 <div style="text-align: center; margin: 3rem 0 1rem;">
-  <h2 style="border: none;">🔌 支持所有主流模型</h2>
+  <h2 style="border: none;">🔌 All Major Models Supported</h2>
 </div>
 
 <div style="max-width: 600px; margin: 0 auto 2rem; padding: 0 1rem;">
 
-| Provider | 代表模型 | 特点 |
-|----------|---------|------|
-| OpenAI | GPT-4o / o1 | 最全面 |
-| Anthropic | Claude Sonnet / Opus | 代码之王 |
-| 通义千问 | Qwen Max / Turbo | 中文优化，价格低 |
-| DeepSeek | Chat / Coder / Reasoner | 极致性价比 |
-| Ollama | Llama 3 / Qwen 2 | **完全免费**，本地运行 |
-| OpenRouter | 100+ 模型聚合 | 一个 Key 用所有 |
+| Provider | Models | Highlights |
+|----------|--------|------------|
+| OpenAI | GPT-4o / o1 | Most comprehensive |
+| Anthropic | Claude Sonnet / Opus | Code king |
+| Qwen | Qwen Max / Turbo | Chinese optimized, low cost |
+| DeepSeek | Chat / Coder / Reasoner | Best value |
+| Ollama | Llama 3 / Qwen 2 | **Completely free**, runs locally |
+| OpenRouter | 100+ model aggregator | One key for all |
 
 </div>
 
 <div style="text-align: center; color: var(--vp-c-text-2); margin-bottom: 3rem;">
-  <p>不同 Agent 可以用不同模型 — 代码助手用 Claude，翻译官用 GPT-4o，日常聊天用通义。</p>
-  <p><a href="/guide/model-config">查看完整模型配置教程 →</a></p>
+  <p>Different agents can use different models — Claude for coding, GPT-4o for translation, Qwen for daily chat.</p>
+  <p><a href="/guide/model-config">Full model config guide →</a></p>
 </div>
 
 <!-- FAQ Highlights Section -->
 <div style="text-align: center; margin: 2rem 0;">
-  <h2 style="border: none;">❓ 常见疑问</h2>
+  <h2 style="border: none;">❓ Common Questions</h2>
 </div>
 
 <div style="max-width: 700px; margin: 0 auto 2rem; padding: 0 1rem;">
 
 <details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
-<summary style="font-weight: 600; cursor: pointer;">虾饺和 ChatGPT / Claude 有什么区别？</summary>
-<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">ChatGPT 是"一个 AI 聊天"。虾饺是"一群 AI 协作"——你可以创建多个 Agent，它们各有人格和技能，可以在群组中互相@、自动接力。而且数据完全在你本地。</p>
+<summary style="font-weight: 600; cursor: pointer;">How is Xiajiao different from ChatGPT / Claude?</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">ChatGPT is "one AI chatting". Xiajiao is "a team of AIs collaborating" — you create multiple agents, each with their own personality and skills, they @mention each other in groups and auto-relay. All data stays on your machine.</p>
 </details>
 
 <details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
-<summary style="font-weight: 600; cursor: pointer;">收费吗？</summary>
-<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">虾饺完全免费开源（MIT）。你只需要付 LLM API 的钱——用 Ollama 本地模型连这都省了。</p>
+<summary style="font-weight: 600; cursor: pointer;">Is it free?</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">Xiajiao is fully open source (MIT). You only pay for LLM API calls — use Ollama local models and even that's free.</p>
 </details>
 
 <details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
-<summary style="font-weight: 600; cursor: pointer;">和 Dify 比呢？</summary>
-<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">Dify 是"AI 应用开发平台"——帮你构建面向用户的 AI 产品。虾饺是"Agent 团队协作"——Agent 是你的同事。<a href="/guide/comparison">详细对比 →</a></p>
+<summary style="font-weight: 600; cursor: pointer;">How does it compare to Dify?</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">Dify is an "AI app development platform" — for building AI products for end users. Xiajiao is "agent team collaboration" — agents are your colleagues. <a href="/guide/comparison">Detailed comparison →</a></p>
 </details>
 
 <details style="background: var(--vp-c-bg-soft); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
-<summary style="font-weight: 600; cursor: pointer;">安全吗？数据会被发到哪里？</summary>
-<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">所有数据存在你本地。零遥测。唯一的外部通信是你主动配置的 LLM API。用 Ollama = 完全离线。<a href="/guide/security">安全详解 →</a></p>
+<summary style="font-weight: 600; cursor: pointer;">Is it secure? Where does my data go?</summary>
+<p style="margin-top: 0.5rem; color: var(--vp-c-text-2);">All data stored locally. Zero telemetry. The only external communication is the LLM API you configure. Use Ollama = fully offline. <a href="/guide/security">Security details →</a></p>
 </details>
 
-<p style="text-align: center;"><a href="/guide/faq">查看全部 30+ 常见问题 →</a></p>
+<p style="text-align: center;"><a href="/guide/faq">See 30+ FAQs →</a></p>
 
-</div>
-
-<!-- Documentation Links Section -->
-<div style="text-align: center; margin: 2rem 0;">
-  <h2 style="border: none;">📖 深入了解</h2>
-</div>
-
-<div style="display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; max-width: 900px; margin: 0 auto 3rem; padding: 0 1rem;">
-  <a href="/guide/quick-start" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">🚀</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">快速开始</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">3 步跑起来</div>
-  </a>
-  <a href="/guide/soul-guide" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">📝</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">SOUL.md 指南</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">写出好人格</div>
-  </a>
-  <a href="/guide/soul-templates" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">📋</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">模板库</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">20 可复制模板</div>
-  </a>
-  <a href="/guide/recipes" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">🍳</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">实战案例</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">12 个照搬方案</div>
-  </a>
-  <a href="/guide/comparison" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">⚔️</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">平台对比</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">vs Dify/Coze</div>
-  </a>
-  <a href="/guide/architecture" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">🏗️</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">架构设计</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">技术深度解析</div>
-  </a>
-  <a href="/guide/security" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">🔒</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">安全与隐私</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">数据完全私有</div>
-  </a>
-  <a href="/guide/migration" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">🚚</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">迁移指南</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">从其他平台迁移</div>
-  </a>
-  <a href="/guide/model-config" style="text-align: center; text-decoration: none; color: inherit; padding: 1rem; border-radius: 8px; background: var(--vp-c-bg-soft); min-width: 120px; flex: 1; max-width: 160px; transition: transform 0.2s, box-shadow 0.2s;">
-    <div style="font-size: 1.5rem;">🔌</div>
-    <div style="font-weight: 600; margin-top: 0.5rem;">模型配置</div>
-    <div style="font-size: 0.8rem; color: var(--vp-c-text-2);">8 个 Provider</div>
-  </a>
 </div>
 
 <!-- Footer -->
 <div style="text-align: center; color: var(--vp-c-text-2); margin-bottom: 2rem;">
-  <p><strong>虾饺 (Xiajiao)</strong> — 取名自广式点心：小巧精致，内料丰富。</p>
+  <p><strong>Xiajiao (虾饺)</strong> — named after the Cantonese shrimp dumpling: small, delicate, packed with flavor.</p>
   <p>
-    <a href="/guide/what-is-xiajiao">虾饺是什么</a> ·
-    <a href="/guide/quick-start">快速开始</a> ·
-    <a href="/guide/faq">常见问题</a> ·
-    <a href="/guide/changelog">更新日志</a> ·
+    <a href="/guide/what-is-xiajiao">What is Xiajiao</a> ·
+    <a href="/guide/quick-start">Quick Start</a> ·
+    <a href="/guide/faq">FAQ</a> ·
+    <a href="/guide/changelog">Changelog</a> ·
     <a href="https://github.com/moziio/xiajiao">GitHub</a>
   </p>
 </div>

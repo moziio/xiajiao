@@ -1,269 +1,269 @@
 ---
-title: 快速开始 — 虾饺 IM
-description: 3 步跑起来：git clone → npm install → npm start，30 秒启动你的 AI Agent 团队。
+title: Quick start — Xiajiao IM
+description: "Three steps to run: git clone → npm install → npm start. Launch your AI agent team in about 30 seconds."
 ---
 
-# 快速开始
+# Quick start
 
-只需 3 步，30 秒启动你的 AI Agent 团队。
+Three steps—about 30 seconds—to run your AI agent team.
 
-## 环境要求
+## Requirements
 
-- **Node.js >= 22.0.0**（[下载地址](https://nodejs.org/)）
+- **Node.js >= 22.0.0** ([download](https://nodejs.org/))
 
-::: tip 为什么需要 Node.js 22？
-虾饺使用 Node.js 22 内置的 `node:sqlite` 模块，无需安装任何数据库。这是虾饺零外部依赖的关键。
+::: tip Why Node.js 22?
+Xiajiao uses the built-in `node:sqlite` module in Node.js 22, so you do not install a separate database. That is how it keeps zero external dependencies.
 :::
 
-## 第 1 步：克隆仓库
+## Step 1: Clone the repo
 
 ```bash
 git clone https://github.com/moziio/xiajiao.git
 cd xiajiao
 ```
 
-## 第 2 步：安装依赖
+## Step 2: Install dependencies
 
 ```bash
 npm install
 ```
 
-只有 6 个依赖，5-10 秒搞定。
+Only six packages—usually five to ten seconds.
 
 <details>
-<summary>好奇这 6 个依赖是什么？</summary>
+<summary>What are the six dependencies?</summary>
 
-| 包 | 作用 | 为什么不能去掉 |
-|---|------|--------------|
-| `ws` | WebSocket 服务端 | Node.js 标准库没有 WebSocket 服务端实现 |
-| `formidable` | 文件上传解析 | `multipart/form-data` 的 boundary 分割和流式解析，标准库不提供 |
-| `node-cron` | 定时任务调度 | Cron 表达式解析（`0 9 * * 1` → 每周一 9 点），标准库不支持 |
-| `pdf-parse` | PDF 文本提取 | [RAG 知识库](/features/rag)需要从 PDF 提取文字 |
-| `@larksuiteoapi/node-sdk` | 飞书连接器 | 飞书的 WebSocket 长连接协议是私有的，必须用官方 SDK |
-| `@modelcontextprotocol/sdk` | MCP 协议 | Model Context Protocol 的 JSON-RPC + 能力协商，手写容易不兼容 |
+| Package | Role | Why keep it |
+|---------|------|-------------|
+| `ws` | WebSocket server | Node has no WS server in stdlib |
+| `formidable` | Multipart uploads | Boundary splitting and streaming for `multipart/form-data` not in stdlib |
+| `node-cron` | Cron scheduling | Cron expressions (e.g. `0 9 * * 1` → Monday 9:00) not in stdlib |
+| `pdf-parse` | PDF text | [RAG knowledge base](/features/rag) needs PDF text |
+| `@larksuiteoapi/node-sdk` | Feishu connector | Feishu’s long-lived WebSocket protocol needs the official SDK |
+| `@modelcontextprotocol/sdk` | MCP | JSON-RPC + capability negotiation; DIY is fragile |
 
 </details>
 
-## 第 3 步：启动
+## Step 3: Start
 
 ```bash
 npm start
 ```
 
-看到以下输出说明启动成功：
+Success looks like:
 
 ```
 Server running on http://localhost:18800
 ```
 
-浏览器打开 `http://localhost:18800`，看到登录界面：
+Open `http://localhost:18800` in a browser—you should see the login screen:
 
 <p align="center">
-  <img src="/images/login.png" alt="虾饺登录界面" style="max-width: 400px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/login.png" alt="Xiajiao login screen" style="max-width: 400px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-## 第 4 步：配置 LLM
+## Step 4: Configure the LLM
 
-各厂商的 Base URL、模型名与排错见 [模型配置大全](/guide/model-config)。
+Base URLs, model names, and troubleshooting: [Model configuration](/guide/model-config).
 
-1. 输入默认密码 `admin` 登录
-2. 进入 **设置 → 模型管理**
-3. 添加你的 LLM API Key
+1. Log in with the default password `admin`
+2. Go to **Settings → Model management**
+3. Add your LLM API key
 
-### 支持的模型厂商
+### Supported providers
 
-虾饺支持所有 OpenAI 兼容 API。以下是常用厂商：
+Xiajiao supports any OpenAI-compatible API. Common providers:
 
-| 厂商 | API Base URL | API 类型 | 费用参考 |
-|------|-------------|---------|---------|
-| **OpenAI** | `https://api.openai.com/v1` | `openai-completions` | $5-60/M tokens |
-| **Anthropic** | `https://api.anthropic.com` | `anthropic-messages` | $3-75/M tokens |
-| **通义千问** | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `openai-completions` | ¥0.3-60/M tokens |
-| **DeepSeek** | `https://api.deepseek.com` | `openai-completions` | ¥1-16/M tokens |
-| **Kimi** | `https://api.moonshot.cn/v1` | `openai-completions` | ¥12/M tokens |
-| **GLM（智谱）** | `https://open.bigmodel.cn/api/paas/v4` | `openai-completions` | ¥1-100/M tokens |
-| **Ollama** | `http://localhost:11434/v1` | `openai-completions` | **免费**（本地运行） |
-| **OpenRouter** | `https://openrouter.ai/api/v1` | `openai-completions` | 按模型计费 |
+| Provider | API base URL | API type | Cost (rough) |
+|----------|--------------|----------|----------------|
+| **OpenAI** | `https://api.openai.com/v1` | `openai-completions` | $5–60 / M tokens |
+| **Anthropic** | `https://api.anthropic.com` | `anthropic-messages` | $3–75 / M tokens |
+| **Qwen (DashScope)** | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `openai-completions` | CN¥0.3–60 / M tokens |
+| **DeepSeek** | `https://api.deepseek.com` | `openai-completions` | CN¥1–16 / M tokens |
+| **Kimi (Moonshot)** | `https://api.moonshot.cn/v1` | `openai-completions` | CN¥12 / M tokens |
+| **GLM (Zhipu)** | `https://open.bigmodel.cn/api/paas/v4` | `openai-completions` | CN¥1–100 / M tokens |
+| **Ollama** | `http://localhost:11434/v1` | `openai-completions` | **Free** (local) |
+| **OpenRouter** | `https://openrouter.ai/api/v1` | `openai-completions` | Per model |
 
-::: tip 省钱方案
-- **完全免费**：Ollama 本地运行 Llama 3 / Qwen 2（需要 8GB+ 显存）
-- **极低成本**：DeepSeek / 通义千问，几分钱就能用很久
-- **最佳体验**：Claude Opus / GPT-4o，适合高质量创作和编码
+::: tip Saving money
+- **Free**: Ollama locally (Llama 3, Qwen 2, …—plan for 8GB+ VRAM)
+- **Very cheap**: DeepSeek / Qwen—small spend goes far
+- **Best quality**: Claude Opus / GPT-4o for serious writing and coding
 :::
 
-::: info Ollama 本地运行
-如果你不想付费，可以用 [Ollama](https://ollama.com/) 在本地运行开源模型。安装后：
+::: info Ollama locally
+To avoid API bills, use [Ollama](https://ollama.com/) for open models:
 
 ```bash
-ollama pull llama3.1      # 下载模型
-ollama pull qwen2.5       # 或者通义千问
+ollama pull llama3.1      # download model
+ollama pull qwen2.5       # or Qwen
 ```
 
-然后在虾饺中配置 API Base URL 为 `http://localhost:11434/v1`，无需 API Key。
+In Xiajiao set API base URL to `http://localhost:11434/v1`; API key can be empty.
 :::
 
-### 配置步骤详解
+### Configuration walkthrough
 
-1. **点击"添加配置"**
-2. **填写 Provider 名称**（随便取，比如"通义千问"）
-3. **填写 API Base URL**（参考上表）
-4. **填写 API Key**（从厂商控制台获取）
-5. **选择默认模型**（如 `qwen-turbo`、`gpt-4o`）
-6. **保存**
+1. Click **Add configuration**
+2. **Provider name**—any label (e.g. “Qwen”)
+3. **API base URL**—from the table above
+4. **API key**—from the vendor console
+5. **Default model**—e.g. `qwen-turbo`, `gpt-4o`
+6. **Save**
 
-然后为每个 Agent 指定使用哪个 Provider 和模型：
+Then assign provider + model per agent:
 
 ```
-设置 → Agent → 代码助手 → 模型：选择 "通义千问 / qwen-plus"
+Settings → Agents → Coding assistant → Model: pick "Qwen / qwen-plus"
 ```
 
-::: tip 混合配置
-不同 Agent 可以用不同模型。比如：
-- 代码助手用 Claude（擅长代码）
-- 翻译官用 GPT-4o（擅长多语言）
-- 日常聊天用 Qwen（便宜够用）
+::: tip Mix models
+Different agents can use different models, for example:
+- Coding assistant → Claude
+- Translator → GPT-4o
+- Casual chat → Qwen (cheap)
 :::
 
-## 第 5 步：开始聊天
+## Step 5: Start chatting
 
-配置好模型后，你就可以：
+After models are configured:
 
-### 一对一对话
+### One-to-one
 
-在左侧通讯录中点击任意 Agent，进入一对一对话：
+Click any agent in the left contact list:
 
-| Agent | 适合聊什么 |
+| Agent | Good for |
 |-------|----------|
-| 🤖 虾饺管家 | "帮我设置一个每天 9 点的定时任务" |
-| ✍️ 小说家 | "写一首关于春天的诗" |
-| 📝 编辑 | "帮我润色这段文案" |
-| 🌐 翻译官 | "把这段话翻译成英文" |
-| 💻 代码助手 | "用 Python 写一个爬虫" |
+| 🤖 Xiajiao steward | “Set a daily 9:00 cron job” |
+| ✍️ Novelist | “Write a poem about spring” |
+| 📝 Editor | “Polish this copy” |
+| 🌐 Translator | “Translate this to English” |
+| 💻 Coding assistant | “Write a Python crawler” |
 
-### 群组协作
+### Group collaboration
 
-1. 在通讯录中点击"新建群组"
-2. 拉入多个 Agent
-3. 用 `@Agent名` 和特定 Agent 对话
-
-```
-你：@小说家 写一首关于月光的诗
-小说家：月明清辉照窗台...
-
-你：@翻译官 把这首诗翻译成英文
-翻译官：The moonlight gently graces my windowsill...
-```
-
-### 设置协作链
-
-在群组设置中配置协作链，实现自动接力：
+1. In contacts, click **New group**
+2. Add several agents
+3. Use `@AgentName` to target one agent
 
 ```
-小说家 → 编辑 → 翻译官
+You: @Novelist write a poem about moonlight
+Novelist: [reply in your language...]
+
+You: @Translator translate that poem to English
+Translator: The moonlight gently graces my windowsill...
 ```
 
-之后你只需说一句话，三个 Agent 自动依次完成各自的工作。
+### Collaboration chains
 
-## 验证一切正常
+In group settings, define a chain for automatic handoff:
 
-如果以下几点都满足，说明安装成功：
+```
+Novelist → Editor → Translator
+```
 
-- [x] `http://localhost:18800` 能打开
-- [x] 能用密码登录
-- [x] 设置页面能保存 LLM 配置
-- [x] 和 Agent 对话能收到回复
-- [x] 回复中显示 Tool Calling 调用过程（如果开启了工具）
+One message from you can run all three in order.
 
-## 常见问题
+## Sanity checks
 
-### 端口被占用
+You are good if:
+
+- [x] `http://localhost:18800` loads
+- [x] Password login works
+- [x] Settings save LLM config
+- [x] Agents reply in chat
+- [x] Tool calls appear in the reply (when tools are enabled)
+
+## Common issues
+
+### Port in use
 
 ```
 Error: listen EADDRINUSE :::18800
 ```
 
-换个端口：
+Use another port:
 
 ```bash
 IM_PORT=3000 npm start
 ```
 
-### Node.js 版本不对
+### Wrong Node.js version
 
 ```bash
 node -v
-# 如果低于 v22.0.0，需要升级
+# upgrade if below v22.0.0
 ```
 
-详见 [安装指南](/guide/installation)。
+See [Installation](/guide/installation).
 
-### 怎么修改密码？
+### Change the password?
 
-启动时设置环境变量：
+Set an environment variable at startup:
 
 ```bash
 OWNER_KEY=your-strong-password npm start
 ```
 
-### 支持 HTTPS 吗？
+### HTTPS?
 
-虾饺本身只提供 HTTP。生产环境建议用 Nginx 反向代理加 HTTPS。详见 [云服务器部署](/deployment/cloud)。
+Xiajiao serves HTTP only. For production, put Nginx (or similar) in front with TLS. See [Cloud deployment](/deployment/cloud).
 
-### Agent 没有回复？
+### Agent not replying?
 
-1. 检查 LLM 配置是否正确（API Key / Base URL）
-2. 检查浏览器控制台是否有报错
-3. 检查 Agent 是否分配了模型
+1. Check LLM config (API key / base URL)
+2. Check the browser console for errors
+3. Confirm the agent has a model assigned
 
-## 首次使用推荐路径
+## Recommended first-hour path
 
-安装好之后，按这个顺序体验虾饺的核心功能：
+After installation, follow this order to explore Xiajiao's core features:
 
-### 5 分钟体验（了解基本操作）
+### Five minutes (basics)
 
-1. 点击"代码助手"，发一条消息试试
-2. 看看 Agent 的流式输出效果
-3. 试试发一段代码让它审查
+1. Open **Coding assistant**, send a message
+2. Watch streaming output
+3. Paste code and ask for a review
 
-### 15 分钟探索（体验多 Agent 协作）
+### Fifteen minutes (multi-agent)
 
-4. 创建一个群组，拉入小说家 + 编辑 + 翻译官
-5. 设置协作链：小说家 → 编辑 → 翻译官
-6. 发一条消息，看三个 Agent 自动接力
-7. 观察可视化面板的状态变化
+4. Create a group: novelist + editor + translator
+5. Set chain: novelist → editor → translator
+6. Send one prompt and watch the handoff
+7. Watch the visual panel state
 
-### 30 分钟深入（定制自己的 Agent）
+### Thirty minutes (custom agents)
 
-8. 在通讯录中创建一个新 Agent
-9. 编辑它的 [SOUL.md](/guide/soul-guide)，写入你需要的人格（参考 [模板库](/guide/soul-templates)）
-10. 给它配置合适的工具和模型
-11. 和它聊几轮，根据效果调整 SOUL.md
+8. Create a new agent from contacts
+9. Edit its [SOUL.md](/guide/soul-guide) (see [templates](/guide/soul-templates))
+10. Attach tools and a model
+11. Chat and tune SOUL.md
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/agent-management.png" alt="Agent 管理面板 — 新建 Agent 与列表" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Agent 管理面板 — 在列表中管理多个 Agent，下方即可填写信息创建新 Agent</p>
+  <img src="/images/agent-management.png" alt="Agent management—new agent and list" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Agent management—manage the list; use the form below to create agents</p>
 </div>
 
-### 1 小时高阶（构建 Agent 团队）
+### One hour (team setup)
 
-12. 上传文档到 RAG 知识库
-13. 设置定时任务（每天新闻摘要）
-14. 尝试 [实战案例](/guide/recipes) 中的配置方案
+12. Upload docs to the RAG knowledge base
+13. Add cron jobs (e.g. daily news digest)
+14. Try setups from [Recipes](/guide/recipes)
 
-## 下一步
+## Next steps
 
-| 你想... | 看这里 |
-|---------|--------|
-| 详细安装步骤 | [安装指南](/guide/installation) — Windows / macOS / Linux |
-| 体验群聊 | [多 Agent 群聊](/features/multi-agent-chat) — 创建群组，@mention |
-| 配更多模型 | [模型配置](/guide/model-config) — 8 个 Provider 详细教程 |
-| 用 Docker | [Docker 部署](/deployment/docker) — 容器化部署 |
-| 写 Agent 人格 | [SOUL.md 指南](/guide/soul-guide) — 写出好的人格设定 |
-| 照搬方案 | [实战案例](/guide/recipes) — 12 个 Agent 团队配置 |
-| 遇到问题 | [故障排查](/guide/troubleshooting) — 按症状排查 |
+| You want… | Read this |
+|-----------|-----------|
+| Detailed install | [Installation](/guide/installation) — Windows / macOS / Linux |
+| Group chat | [Multi-agent chat](/features/multi-agent-chat) — groups and @mentions |
+| More models | [Model configuration](/guide/model-config) — eight providers |
+| Docker | [Docker deployment](/deployment/docker) |
+| Personas | [SOUL.md guide](/guide/soul-guide) |
+| Copy setups | [Recipes](/guide/recipes) — 12 team configs |
+| Problems | [Troubleshooting](/guide/troubleshooting) |
 
-## 相关文档
+## Related docs
 
-- [模型配置大全](/guide/model-config) — 各 Provider 的 API 与模型名、排错清单
-- [SOUL.md 编写指南](/guide/soul-guide) — 定义 Agent 角色与专长
-- [实战案例](/guide/recipes) — 12 个可复制的 Agent 团队配置
+- [Model configuration](/guide/model-config) — provider URLs, model IDs, checklists
+- [SOUL.md guide](/guide/soul-guide) — roles and skills
+- [Recipes](/guide/recipes) — twelve copy-paste team configs

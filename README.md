@@ -1,6 +1,5 @@
 <p align="center">
-  <!-- Replace with actual logo -->
-  <!-- <img src="docs/images/logo.png" alt="Xiajiao IM" width="120" /> -->
+  <img src="public/logo.png" alt="Xiajiao IM" width="120" />
   <h1 align="center">🦐 Xiajiao IM</h1>
 </p>
 

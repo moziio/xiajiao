@@ -1,149 +1,149 @@
 ---
-title: 架构设计 — 虾饺 IM
-description: 虾饺 IM 的技术架构详解——极简设计哲学、代码结构、数据流、核心模块。
+title: "Architecture — Xiajiao IM"
+description: "Technical architecture of Xiajiao IM: minimal design, layout, data flow, and core modules."
 ---
 
-# 架构设计
+# Architecture
 
-虾饺的架构设计遵循一个原则：**用最少的代码和依赖，实现完整的功能。**
+Xiajiao follows one rule: **ship full functionality with the least code and the fewest dependencies.**
 
 <p align="center">
-  <img src="/images/hero-light-top.png" alt="虾饺 IM 整体界面" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/hero-light-top.png" alt="Xiajiao IM main UI" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-这不是一个炫技的架构，而是一个实用的架构。功能层面的用户文档见 [Tool Calling](/features/tool-calling)、[Agent 持久记忆](/features/agent-memory)、[RAG 知识库](/features/rag)、[多 Agent 群聊](/features/multi-agent-chat)、[协作流](/features/collaboration-flow)。
+This is a practical architecture, not a showcase. For product behavior see [Tool calling](/features/tool-calling), [Agent memory](/features/agent-memory), [RAG](/features/rag), [Multi-agent chat](/features/multi-agent-chat), and [Collaboration flow](/features/collaboration-flow).
 
-## 设计哲学
+## Design philosophy
 
-### 三条铁律
+### Three rules
 
-1. **能用标准库的，不引入第三方包** — `node:http` 替代 Express，`node:test` 替代 Jest，`node:crypto` 替代 uuid
-2. **能用单进程的，不搞分布式** — 一个 Node.js 进程搞定一切
-3. **能用文件系统的，不搞外部服务** — SQLite 替代 PostgreSQL，文件替代 Redis
+1. **Prefer the standard library** — `node:http` instead of Express, `node:test` instead of Jest, `node:crypto` instead of uuid  
+2. **Prefer one process** — no distributed stack for this workload  
+3. **Prefer the filesystem** — SQLite instead of PostgreSQL, files instead of Redis  
 
-### 为什么这样设计？
+### Why?
 
-| 好处 | 说明 |
-|------|------|
-| **部署简单** | `npm start` 就跑，不需要 Docker Compose 编排多个服务 |
-| **安全风险小** | 6 个依赖，供应链攻击面极小 |
-| **维护成本低** | 不用追踪几百个包的安全更新 |
-| **可理解** | 模块划分清晰，代码结构简洁 |
-| **可移植** | 复制目录就能迁移，不依赖外部状态 |
+| Benefit | Explanation |
+|---------|-------------|
+| **Simple deploy** | `npm start`; no multi-service compose required |
+| **Smaller risk** | Six dependencies, tiny supply-chain surface |
+| **Lower maintenance** | Few packages to track for security |
+| **Understandable** | Clear modules, readable structure |
+| **Portable** | Copy the folder; minimal external state |
 
-## 整体架构
+## System overview
 
 ```
 ┌────────────────────────────────────────────────┐
-│  浏览器客户端 (Vanilla JS + CSS)               │
-│  ├── 消息列表 + Markdown 渲染                   │
-│  ├── 通讯录 (Agent / 群组)                      │
-│  ├── 设置面板                                   │
-│  └── 协作流可视化面板                            │
-└──────────┬──────────────┬──────────────────────┘
+│  Browser client (Vanilla JS + CSS)         │
+│  ├── Message list + Markdown rendering      │
+│  ├── Contacts (agents / groups)             │
+│  ├── Settings                               │
+│  └── Collaboration flow panel               │
+└──────────┬──────────────┬────────────────────┘
            │ HTTP/REST    │ WebSocket
-┌──────────▼──────────────▼──────────────────────┐
-│  Node.js 服务 (单进程)                          │
-│                                                │
-│  ┌────────────┐  ┌────────────┐                │
-│  │ HTTP 路由   │  │ WebSocket  │                │
-│  │ (node:http) │  │ 服务 (ws)  │                │
-│  └──────┬─────┘  └──────┬─────┘                │
-│         │               │                      │
-│  ┌──────▼───────────────▼─────┐                │
-│  │       业务逻辑层             │                │
-│  │                             │                │
-│  │  ┌─────────┐ ┌───────────┐ │                │
-│  │  │ LLM 调用 │ │ Tool 调用  │ │                │
-│  │  │ (多模型)  │ │ (7 个工具) │ │                │
-│  │  └─────────┘ └───────────┘ │                │
-│  │                             │                │
-│  │  ┌─────────┐ ┌───────────┐ │                │
-│  │  │ 记忆系统  │ │ RAG 检索  │ │                │
-│  │  │ (三分类)  │ │ (混合检索) │ │                │
-│  │  └─────────┘ └───────────┘ │                │
-│  │                             │                │
-│  │  ┌─────────┐ ┌───────────┐ │                │
-│  │  │ 协作链   │ │ 定时任务   │ │                │
-│  │  └─────────┘ └───────────┘ │                │
-│  └─────────────┬───────────────┘                │
-│                │                                │
-│  ┌─────────────▼────────────────┐               │
-│  │        数据层                 │               │
-│  │  SQLite (WAL + FTS5)         │               │
-│  │  + 文件系统 (SOUL.md / RAG)   │               │
-│  └──────────────────────────────┘               │
-│                                                │
+┌──────────▼──────────────▼────────────────────┐
+│  Node.js server (single process)             │
+│                                              │
+│  ┌────────────┐  ┌────────────┐              │
+│  │ HTTP routes│  │ WebSocket  │              │
+│  │ (node:http)│  │ (ws)       │              │
+│  └──────┬─────┘  └──────┬─────┘              │
+│         │               │                    │
+│  ┌──────▼───────────────▼─────┐              │
+│  │       Business logic       │              │
+│  │                            │              │
+│  │  ┌─────────┐ ┌───────────┐ │              │
+│  │  │ LLM     │ │ Tools     │ │              │
+│  │  │ (multi) │ │ (7 tools) │ │              │
+│  │  └─────────┘ └───────────┘ │              │
+│  │                            │              │
+│  │  ┌─────────┐ ┌───────────┐ │              │
+│  │  │ Memory  │ │ RAG       │ │              │
+│  │  │ (3 types)│ │ (hybrid)  │ │              │
+│  │  └─────────┘ └───────────┘ │              │
+│  │                            │              │
+│  │  ┌─────────┐ ┌───────────┐ │              │
+│  │  │ Chains  │ │ Schedules │ │              │
+│  │  └─────────┘ └───────────┘ │              │
+│  └─────────────┬──────────────┘              │
+│                │                             │
+│  ┌─────────────▼────────────────┐            │
+│  │        Data layer             │            │
+│  │  SQLite (WAL + FTS5)          │            │
+│  │  + filesystem (SOUL.md / RAG) │            │
+│  └──────────────────────────────┘            │
+│                                              │
 └────────────────────────────────────────────────┘
          │
          ▼
   ┌─────────────┐
-  │ LLM Provider │  OpenAI / Claude / 通义 / Ollama / ...
+  │ LLM provider │  OpenAI / Claude / Qwen / Ollama / …
   └─────────────┘
 ```
 
-## 目录结构
+## Repository layout
 
 ```
 xiajiao/
-├── server/                    # 后端代码
-│   ├── index.js               # 入口 — HTTP + WebSocket 服务启动
-│   ├── storage.js             # 数据层 — SQLite 操作 + Agent 管理
-│   ├── ws.js                  # WebSocket — 实时消息推送
+├── server/
+│   ├── index.js               # Entry — HTTP + WebSocket bootstrap
+│   ├── storage.js             # Data — SQLite + agent files
+│   ├── ws.js                  # WebSocket — live pushes
 │   │
-│   ├── api/                   # REST API 路由
-│   │   ├── messages.js        # 消息 CRUD + 搜索
-│   │   ├── channels.js        # 频道 / 群组管理
-│   │   ├── agents.js          # Agent CRUD
-│   │   ├── settings.js        # 系统设置
-│   │   ├── uploads.js         # 文件上传
+│   ├── api/                   # REST routes
+│   │   ├── messages.js
+│   │   ├── channels.js
+│   │   ├── agents.js
+│   │   ├── settings.js
+│   │   ├── uploads.js
 │   │   └── ...
 │   │
-│   ├── services/              # 核心业务逻辑
-│   │   ├── llm.js             # LLM 调用 — 多 Provider、流式输出、Tool Calling 循环
-│   │   ├── tools.js           # 工具注册 + 调用分发
-│   │   ├── memory.js          # 记忆系统 — 三分类、embedding、去重
-│   │   ├── rag.js             # RAG — 分块、索引、混合检索、重排序
-│   │   ├── collaboration.js   # 协作链 — 编排、状态管理
-│   │   ├── schedule.js        # 定时任务 — Cron 调度
-│   │   └── search-engines.js  # 搜索引擎适配器
+│   ├── services/
+│   │   ├── llm.js             # LLM — providers, stream, tool loop
+│   │   ├── tools.js
+│   │   ├── memory.js
+│   │   ├── rag.js
+│   │   ├── collaboration.js
+│   │   ├── schedule.js
+│   │   └── search-engines.js
 │   │
-│   └── test/                  # 单元测试 (node:test)
+│   └── test/
 │       ├── storage.test.js
 │       ├── llm.test.js
 │       ├── memory.test.js
 │       ├── rag.test.js
 │       └── ...
 │
-├── public/                    # 前端静态文件（零构建）
-│   ├── index.html             # 单页应用入口
-│   ├── app.js                 # 主逻辑 — 路由、渲染、事件
-│   ├── styles.css             # 样式 — 含 Light/Dark 主题
-│   ├── uploads/               # 用户上传文件
-│   └── lib/                   # 前端第三方库（直接引用）
-│       ├── marked.min.js      # Markdown 渲染
-│       └── highlight.min.js   # 代码高亮
+├── public/
+│   ├── index.html
+│   ├── app.js
+│   ├── styles.css
+│   ├── uploads/
+│   └── lib/
+│       ├── marked.min.js
+│       └── highlight.min.js
 │
-├── data/                      # 运行时数据（.gitignore 排除）
-│   ├── im.db                  # 主数据库
-│   ├── agents.json            # Agent 列表
-│   ├── workspace-xxx/         # Agent 独立工作区
-│   │   ├── SOUL.md            # 人格设定
-│   │   ├── memory.db          # 独立记忆库
-│   │   └── rag/               # RAG 文档和索引
-│   └── _soul-templates/       # SOUL.md 模板
+├── data/
+│   ├── im.db
+│   ├── agents.json
+│   ├── workspace-xxx/
+│   │   ├── SOUL.md
+│   │   ├── memory.db
+│   │   └── rag/
+│   └── _soul-templates/
 │
-├── docs-site/                 # VitePress 文档站源码
-├── Dockerfile                 # Docker 构建文件
-├── package.json               # 6 个依赖
-└── README.md                  # 项目文档
+├── docs-site/
+├── Dockerfile
+├── package.json
+└── README.md
 ```
 
-## 核心模块详解
+## Core modules
 
-### HTTP 路由 (`server/index.js`)
+### HTTP routing (`server/index.js`)
 
-不使用任何框架，直接基于 `node:http`：
+Plain `node:http`—no framework:
 
 ```javascript
 const server = http.createServer(async (req, res) => {
@@ -155,36 +155,29 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname.startsWith('/api/channels')) {
     return handleChannels(req, res, url);
   }
-  // ... 更多路由
-  // 静态文件 fallback
+  // …more routes
   return serveStatic(req, res, url);
 });
 ```
 
-为什么不用 Express？因为虾饺的路由很简单——大约 15 个 API 端点。用 `node:http` 加几个 `if/else` 就搞定了，没必要引入一个框架。
+Why not Express? ~15 API endpoints; `if/else` is enough.
 
 ### WebSocket (`server/ws.js`)
 
-使用 `ws` 库（唯一无法替代的依赖——Node.js 内置 HTTP 不含 WebSocket 服务端）：
+Uses `ws` (Node’s built-in HTTP has no server WebSocket):
 
 ```
-客户端 → WebSocket 连接 → 服务端
-  ↓                         ↓
-消息发送  ←──── 广播 ────→  消息推送到所有客户端
-                            Agent 回复推送
-                            Tool Calling 状态推送
-                            协作链进度推送
+Client → WebSocket → server
+  ↓                    ↓
+Send/receive ← broadcast → push messages, agent replies,
+                           tool status, chain progress
 ```
 
-WebSocket 用于：
-- 实时消息推送
-- LLM 流式输出（逐 token 推送）
-- Tool Calling 状态更新
-- 协作链进度通知
+Used for live messages, streamed LLM tokens, tool updates, and collaboration status.
 
-### LLM 调用 (`server/services/llm.js`)
+### LLM (`server/services/llm.js`)
 
-核心是一个 [Tool Calling](/features/tool-calling) 循环：
+Centered on a [tool-calling](/features/tool-calling) loop:
 
 ```
 while (true) {
@@ -195,355 +188,263 @@ while (true) {
       result = await executeTool(toolCall)
       messages.push(toolResult)
     }
-    continue  // 带着工具结果再次调用 LLM
+    continue
   }
 
-  break  // 没有工具调用，返回最终回复
+  break
 }
 ```
 
-支持两种 API 协议：
-- `openai-completions`：OpenAI 及其兼容 API
-- `anthropic-messages`：Claude 专用协议
+Protocols: `openai-completions`, `anthropic-messages`. Streaming via SSE or WebSocket.
 
-流式输出通过 SSE 或 WebSocket 逐 token 推送给客户端。
+### Memory (`server/services/memory.js`)
 
-### 记忆系统 (`server/services/memory.js`)
-
-用户侧说明见 [Agent 持久记忆](/features/agent-memory)。
+See [Agent memory](/features/agent-memory).
 
 ```
-写入流程：
-  text → embedding → 查重（余弦相似度 > 0.85？）
-  ├── 是 → 更新已有记忆
-  └── 否 → 插入新记忆（带类型标签）
+Write:
+  text → embedding → dedupe (cosine > 0.85?)
+  ├── yes → update existing
+  └── no  → insert (typed)
 
-检索流程：
-  query → embedding → 余弦相似度搜索 → Top-K → 注入 System Prompt
+Retrieve:
+  query → embedding → cosine top-K → inject into system prompt
 ```
 
-每个 Agent 有独立的 `memory.db`，存储 embedding 向量和文本。
+Per-agent `memory.db` stores embeddings and text.
 
-### RAG 系统 (`server/services/rag.js`)
+### RAG (`server/services/rag.js`)
 
-用户侧说明见 [RAG 知识库](/features/rag)。
-
-```
-索引流程：
-  文档 → 解析（PDF/TXT/MD）→ 分层分块 → embedding → 存入 SQLite
-
-检索流程：
-  query → BM25 + 向量检索 → RRF 融合 → LLM 重排序 → Top-K
-```
-
-### 数据层 (`server/storage.js`)
-
-所有数据存储在 SQLite 中，使用 WAL 模式支持并发读取：
-
-| 表 | 内容 |
-|---|------|
-| `messages` | 消息（含 FTS5 全文搜索索引） |
-| `channels` | 频道 / 群组 |
-| `settings` | 系统设置（LLM 配置等） |
-
-Agent 相关数据存储在文件系统中（`data/workspace-xxx/`），而非数据库。这样做的好处是：
-- SOUL.md 可以直接用文本编辑器修改
-- 工作区可以整体复制/迁移
-- 结构清晰直观
-
-## 数据流
-
-### 一条消息的完整旅程
+See [RAG](/features/rag).
 
 ```
-1. 用户在浏览器发送消息
-   ↓
+Index:  doc → parse (PDF/TXT/MD) → chunk → embed → SQLite
+Search: query → BM25 + vectors → RRF → rerank → top-K
+```
+
+### Storage (`server/storage.js`)
+
+SQLite with WAL:
+
+| Table | Purpose |
+|-------|---------|
+| `messages` | Messages + FTS5 |
+| `channels` | Channels / groups |
+| `settings` | App + LLM config |
+
+Agent files live under `data/workspace-xxx/` (SOUL.md, memory, RAG) for easy editing and migration.
+
+## Data flow
+
+### One user message
+
+```
+1. Browser sends message
 2. HTTP POST /api/messages
-   ↓
-3. 消息存入 SQLite (messages 表)
-   ↓
-4. WebSocket 广播给所有客户端
-   ↓
-5. 解析 @mention，确定目标 Agent
-   ↓
-6. 加载 Agent 的 SOUL.md → System Prompt
-   ↓
-7. 自动注入记忆（如果开启了 autoInjectMemory）
-   ↓
-8. 构建消息上下文（历史消息 + 记忆 + SOUL.md）
-   ↓
-9. 调用 LLM API（流式）
-   ↓
-10. LLM 返回 → 检查是否有 Tool Calling
-    ├── 有 → 执行工具 → 结果回注 → 回到步骤 9
-    └── 没有 → 继续
-   ↓
-11. 逐 token 通过 WebSocket 推送给客户端
-   ↓
-12. Agent 回复存入 SQLite
-   ↓
-13. 如果有协作链 → 触发下一个 Agent（回到步骤 5）
+3. Persist to SQLite
+4. WebSocket broadcast
+5. Parse @mention → target agent
+6. Load SOUL.md → system prompt
+7. Inject memory if autoInjectMemory
+8. Build context (history + memory + SOUL)
+9. Call LLM (stream)
+10. Tool calls? → execute → back to 9
+11. Stream tokens over WebSocket
+12. Save agent reply
+13. Collaboration chain? → next agent (back to 5)
 ```
 
-### 协作链的数据流
+### Collaboration chain
 
-协作链的产品说明见 [协作流](/features/collaboration-flow)；群聊与 @mention 见 [多 Agent 群聊](/features/multi-agent-chat)。
+See [Collaboration flow](/features/collaboration-flow) and [Multi-agent chat](/features/multi-agent-chat).
 
 ```
-用户消息 → Agent A → [输出] → 注入上下文 → Agent B → [输出] → Agent C → 完成
-           ↑                                ↑                    ↑
-        状态推送(WS)                    状态推送(WS)          状态推送(WS)
-           ↓                                ↓                    ↓
-        前端面板更新                     前端面板更新           前端面板更新
+User → Agent A → output → context → Agent B → output → Agent C → done
+        ↑ WS status    ↑ WS status           ↑ WS status
 ```
 
-## 6 个依赖详解
+## The six dependencies
 
-| 包 | 作用 | 为什么不能去掉 |
-|---|------|--------------|
-| `ws` | WebSocket 服务端 | Node.js 标准库没有 WebSocket 服务端实现 |
-| `formidable` | 文件上传解析 | `multipart/form-data` 的流式解析，标准库不提供 |
-| `node-cron` | 定时任务调度 | Cron 表达式解析，标准库不支持 |
-| `pdf-parse` | PDF 文本提取 | RAG 知识库需要从 PDF 提取文字 |
-| `@larksuiteoapi/node-sdk` | 飞书连接器 | 飞书 WebSocket 长连接协议是私有的 |
-| `@modelcontextprotocol/sdk` | MCP 协议 | JSON-RPC + 能力协商，手写容易不兼容 |
+| Package | Role | Why keep it |
+|---------|------|-------------|
+| `ws` | WebSocket server | No stdlib WS server |
+| `formidable` | Multipart uploads | Streaming parse |
+| `node-cron` | Cron scheduling | No stdlib cron parser |
+| `pdf-parse` | PDF text for RAG | — |
+| `@larksuiteoapi/node-sdk` | Feishu connector | Private long-lived protocol |
+| `@modelcontextprotocol/sdk` | MCP | JSON-RPC + capability negotiation |
 
-其他所有功能都用 Node.js 标准库实现：
+Everything else uses Node built-ins:
 
-| 功能 | 标准库 | 替代的第三方包 |
-|------|--------|--------------|
-| HTTP 服务 | `node:http` | Express / Koa / Fastify |
-| 数据库 | `node:sqlite` | pg / mysql2 |
-| 单元测试 | `node:test` | Jest / Mocha / Vitest |
-| UUID 生成 | `node:crypto` | uuid / nanoid |
-| 路径处理 | `node:path` | — |
-| 文件操作 | `node:fs` | fs-extra |
+| Need | Built-in | Typical third-party |
+|------|----------|---------------------|
+| HTTP | `node:http` | Express / Koa / Fastify |
+| DB | `node:sqlite` | pg / mysql2 |
+| Tests | `node:test` | Jest / Mocha / Vitest |
+| UUID | `node:crypto` | uuid / nanoid |
+| Paths | `node:path` | — |
+| Files | `node:fs` | fs-extra |
 
-## 安全模型
+## Security model
 
-### 认证
+### Authentication
 
-- 简单密码保护（`OWNER_KEY` 环境变量）
-- Session Cookie（`node:crypto` 生成随机 token）
-- 适用于个人 / 信任的小团队
+- Simple password protection (`OWNER_KEY` environment variable)
+- Session cookie (random token via `node:crypto`)
+- Suited to individuals and trusted small teams
 
-### 数据隔离
+### Data isolation
 
-- 每个 Agent 有独立的工作区和记忆库
-- Agent 之间的记忆互不可见
-- 文件上传限制在指定目录
+- Each agent has its own workspace and memory store
+- Memories are not shared across agents
+- Uploads are confined to designated directories
 
-### LLM API Key 安全
+### LLM API key security
 
-- Key 存储在本地 SQLite
-- 只发送给对应的 LLM Provider
-- 不会发送给任何第三方
+- Keys are stored in local SQLite
+- They are only sent to the configured LLM provider
+- They are never sent to any third party
 
-## 性能特征
+## Performance
 
-虾饺是单进程 Node.js + SQLite 架构，启动快、资源占用低。
+Single-process Node + SQLite: fast boot, low overhead. Bottleneck is LLM latency, not Xiajiao. WAL handles chat write patterns comfortably.
 
-瓶颈在 LLM API 调用（网络延迟 + 生成时间），不在虾饺本身。SQLite WAL 模式的写入性能对 Agent 聊天场景绰绰有余。
+## Walkthroughs
 
-## 关键模块走读
-
-### HTTP 路由实现
-
-虾饺不用框架，路由用最朴素的方式实现：
+### HTTP routing (simplified)
 
 ```javascript
-// 简化版路由核心逻辑
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname;
   const method = req.method;
 
-  // 静态文件
   if (method === 'GET' && !path.startsWith('/api/')) {
     return serveStatic(req, res, path);
   }
 
-  // API 路由表
   const routes = {
     'POST /api/login': handleLogin,
     'GET /api/messages': handleGetMessages,
     'POST /api/messages': handleSendMessage,
     'GET /api/agents': handleGetAgents,
     'PUT /api/agents/:id': handleUpdateAgent,
-    // ... ~15 个端点
   };
 
   const handler = matchRoute(routes, method, path);
-  if (handler) {
-    await handler(req, res, params);
-  } else {
-    res.writeHead(404).end();
-  }
+  if (handler) await handler(req, res, params);
+  else res.writeHead(404).end();
 });
 ```
 
-15 个端点不需要 Express，手动匹配足够清晰。
-
-### WebSocket 流式输出
-
-LLM 的流式输出是虾饺的核心体验——逐 token 推送：
+### WebSocket streaming
 
 ```
-用户发消息
-  ↓
-解析 @mention → 确定目标 Agent
-  ↓
-加载 Agent SOUL.md + 检索相关记忆 + 获取最近消息
-  ↓
-组装 messages[] 发给 LLM API（stream: true）
-  ↓
-LLM 返回 SSE 流
-  ↓ 逐 chunk 处理：
-  │
-  ├── 普通文本 chunk → WebSocket 推送 stream_chunk 给前端
-  │
-  ├── tool_call chunk → 
-  │     ├── 推送 tool_call 状态给前端
-  │     ├── 执行工具（web_search / rag_query / memory_write 等）
-  │     ├── 推送 tool_result 给前端
-  │     └── 把工具结果追加到 messages[]，继续调用 LLM
-  │
-  └── finish_reason: stop →
-        ├── 推送 stream_end 给前端
-        ├── 完整消息写入 SQLite
-        └── 如果在协作链中 → 触发下一个 Agent
+User message → @mention → SOUL + memory + recent messages
+→ LLM stream
+→ chunks → WS stream_chunk / tool_call / tool_result → loop until finish
+→ stream_end → persist → maybe next chain step
 ```
 
-关键难点是 Tool Calling 的循环：LLM 可能在一次回复中多次调用工具，每次都需要"调用工具 → 拿结果 → 继续生成"的循环。
-
-### 记忆系统工作流
+### Memory pipeline
 
 ```
-写入记忆：
-  Agent 调用 memory_write(type, content)
-    ↓
-  计算 content 的 embedding 向量
-    ↓
-  搜索已有记忆，计算余弦相似度
-    ↓
-  如果 similarity > 0.85 → 跳过（去重）
-  如果 similarity > 0.7 → 更新已有记忆
-  否则 → 插入新记忆
-    ↓
-  存入 memory.db
+Write (memory_write):
+  embedding(content)
+    → compare to existing (cosine)
+    → similarity > 0.85 → skip (dedupe)
+    → similarity > 0.7  → update existing
+    → else → insert
+    → persist memory.db
 
-检索记忆：
-  新消息到达 → 自动检索相关记忆
-    ↓
-  计算消息的 embedding 向量
-    ↓
-  余弦相似度搜索 top-K 相关记忆
-    ↓
-  按三分类组织（语义/情景/程序性）
-    ↓
-  注入到 System Prompt 中：
-    """
-    [你的相关记忆]
-    语义记忆：用户偏好 Python，公司用阿里云
-    情景记忆：上次讨论了支付接口设计
-    程序性记忆：回复要简洁，代码用 TypeScript
-    """
+Retrieve:
+  new message → embed → top-K by cosine
+    → group as semantic / episodic / procedural
+    → inject into system prompt, e.g.:
+
+    [Relevant memories]
+    Semantic: user prefers Python; company uses Alibaba Cloud
+    Episodic: last time we discussed payment API design
+    Procedural: keep answers short; code in TypeScript when asked
 ```
 
-### RAG 检索流水线
+### RAG pipeline
 
 ```
-用户提问
-  ↓
-同时发起两路检索：
-  ├── BM25 路：SQLite FTS5 全文搜索 → top-20 结果
-  └── 向量路：embedding 余弦相似度搜索 → top-20 结果
-  ↓
-RRF (Reciprocal Rank Fusion) 合并两路结果
-  score = Σ 1/(k + rank_i)  （k=60）
-  ↓
-取 top-10 候选 chunks
-  ↓
-LLM Reranking：用 LLM 对 10 个候选评分
-  prompt: "请评估以下段落与问题的相关性（1-10 分）"
-  ↓
-取 top-5 最相关 chunks
-  ↓
-注入到 Agent 的 prompt 中
+User question
+  → BM25 branch: FTS5 full-text → top 20
+  → vector branch: embedding similarity → top 20
+  → RRF merge: score = Σ 1/(k + rank_i), k = 60
+  → top 10 candidates
+  → LLM reranking: score each chunk vs question (e.g. 1–10)
+  → top 5 chunks → injected into agent prompt
 ```
 
-## 扩展性
+## Extensibility
 
-### 添加新工具
-
-在 `server/services/tools.js` 中注册新工具：
+### New tool (`server/services/tools.js`)
 
 ```javascript
 const tools = {
-  web_search: { /* ... */ },
-  rag_query: { /* ... */ },
   my_custom_tool: {
-    description: "我的自定义工具",
+    description: "My custom tool",
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "查询内容" }
+        query: { type: "string", description: "Query text" }
       }
     },
     handler: async (params) => {
-      return { result: "工具执行结果" };
+      return { result: "done" };
     }
   }
 };
 ```
 
-一个文件，一个对象，就是全部。不需要学框架概念、不需要配置中间件。
+### New API
 
-### 添加新 API
+Add `server/api/*.js` and register in `index.js`.
 
-在 `server/api/` 中添加新文件，然后在 `index.js` 中注册路由。
+### New search engine
 
-### 添加新搜索引擎
+Extend `server/services/search-engines.js`.
 
-在 `server/services/search-engines.js` 中添加新的搜索引擎适配器。已有 6 个引擎适配器可参考。
+### New LLM provider
 
-### 添加新 LLM Provider
+OpenAI-compatible `/v1/chat/completions` → configure in settings; no code change.
 
-只要兼容 OpenAI API 格式（`/v1/chat/completions`），直接在设置中配置即可。不需要改代码。
+### New channel
 
-### 添加新渠道
+Implement `onMessage` / `sendMessage` under `server/services/channels/`.
 
-渠道接入在 `server/services/channels/` 中。实现 `onMessage` 和 `sendMessage` 两个方法即可对接新平台。
+## Compared with other stacks
 
-## 和其他项目对比
+| Aspect | Xiajiao | Dify (rough) | Typical Node app |
+|--------|---------|--------------|------------------|
+| Entry | One `index.js` | Many services | One `app.js` |
+| Routing | Manual | Framework router | Express |
+| Data access | Raw SQL | ORM | ORM |
+| Tests | `node:test` | pytest | Jest |
+| Build | None | Docker/pip | Bundler |
 
-| 维度 | 虾饺 | Dify（参考） | 典型 Node.js 项目 |
-|------|------|-------------|------------------|
-| 启动文件 | 1 个 `index.js` | 多个微服务 | 1 个 `app.js` |
-| 路由 | 手动匹配 | Flask/Django | Express Router |
-| ORM | 裸 SQL | SQLAlchemy | Sequelize/Prisma |
-| 测试 | `node:test` | pytest | Jest |
-| 构建 | 无 | pip + Docker | Webpack + Babel |
-| 学习曲线 | 读 1 天 | 读 1-2 周 | 读 2-3 天 |
+Xiajiao optimizes for **minimal practice**, not maximal ceremony.
 
-虾饺的架构不是"最佳实践"，而是"最小实践"。它证明了用 Node.js 标准库就能构建一个功能完整的 AI 平台。
+## Related docs
 
-## 相关文档
+### Features & usage
 
-### 功能与使用
+- [Tool calling](/features/tool-calling) — tool loop and seven built-in tools
+- [Agent memory](/features/agent-memory) — three memory types and injection
+- [RAG](/features/rag) — retrieval pipeline and document uploads
+- [Multi-agent chat](/features/multi-agent-chat) — groups and routing
+- [Collaboration flow](/features/collaboration-flow) — collaboration chains and the visualization panel
+- [Integrations](/features/integrations) — Feishu, DingTalk, and other channels
 
-- [Tool Calling](/features/tool-calling) — 工具循环与 7 个内置工具
-- [Agent 持久记忆](/features/agent-memory) — 三分类记忆与注入
-- [RAG 知识库](/features/rag) — 检索管线与文档上传
-- [多 Agent 群聊](/features/multi-agent-chat) — 群组与路由
-- [协作流](/features/collaboration-flow) — 协作链与可视化面板
-- [外部集成](/features/integrations) — 飞书 / 钉钉等渠道
+### Development & operations
 
-### 开发与运维
-
-- [API 与协议参考](/guide/api-reference) — HTTP API 和 WebSocket 协议详情
-- [贡献指南](/guide/dev-guide) — 如何参与开发
-- [安全与隐私](/guide/security) — 安全模型详解
-- [故障排查](/guide/troubleshooting) — 常见问题诊断
-- [常见问题](/guide/faq) — 技术问题解答
-- [快速开始](/guide/quick-start) — 先跑起来体验一下
+- [API & protocol reference](/guide/api-reference) — HTTP API and WebSocket details
+- [Developer guide](/guide/dev-guide) — how to contribute
+- [Security](/guide/security) — security model in depth
+- [Troubleshooting](/guide/troubleshooting) — common issues
+- [FAQ](/guide/faq) — technical Q&A
+- [Quick start](/guide/quick-start) — get it running first

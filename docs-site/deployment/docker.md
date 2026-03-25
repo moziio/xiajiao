@@ -1,32 +1,30 @@
 ---
-title: Docker 部署 — 虾饺 IM
-description: 使用 Docker 部署虾饺 IM，包括构建镜像、持久化存储、Docker Compose、健康检查。
+title: "Docker Deployment — Xiajiao (虾饺) IM"
+description: "Deploy Xiajiao (虾饺) IM with Docker—build images, volumes, Docker Compose, and health checks."
 ---
 
-# Docker 部署
+# Docker deployment
 
-虾饺的设计理念是"不需要 Docker"——`npm start` 就能跑。但如果你更喜欢容器化部署，我们提供了完整的 Docker 方案。
+Xiajiao (虾饺) is designed so you **don’t need Docker**—`npm start` is enough. If you prefer containers, this path is fully supported.
 
-## 为什么用 Docker？
+## When to use Docker
 
-| 场景 | 是否推荐 Docker |
+| Scenario | Docker? |
 |------|----------------|
-| 个人使用 / 本地开发 | ❌ 直接 `npm start` 更快 |
-| 团队共享 / 统一环境 | ✅ 容器封装一切 |
-| 和其他服务一起部署 | ✅ Docker Compose |
-| CI/CD 自动部署 | ✅ 镜像构建 + 推送 |
-| 不想安装 Node.js | ✅ 容器自带 |
+| Personal / local dev | ❌ faster with `npm start` |
+| Shared team / reproducible env | ✅ |
+| Co-deploy with other services | ✅ Docker Compose |
+| CI/CD | ✅ build + push |
+| Avoid local Node install | ✅ image includes runtime |
 
-## 快速开始
+## Quick start
 
 ```bash
 git clone https://github.com/moziio/xiajiao.git
 cd xiajiao
 
-# 构建镜像
 docker build -t xiajiao .
 
-# 运行容器
 docker run -d -p 18800:18800 \
   -v xiajiao-data:/app/data \
   -v xiajiao-uploads:/app/public/uploads \
@@ -36,38 +34,38 @@ docker run -d -p 18800:18800 \
   xiajiao
 ```
 
-浏览器打开 `http://localhost:18800`。
+Open `http://localhost:18800`.
 
-## 镜像信息
+## Image facts
 
-| 属性 | 值 |
+| Property | Value |
 |------|------|
-| 基础镜像 | `node:22-alpine` |
-| 构建方式 | `npm ci --production` |
-| 镜像大小 | 较小（基于 Alpine） |
-| 暴露端口 | 18800 |
-| 工作目录 | `/app` |
+| Base | `node:22-alpine` |
+| Build | `npm ci --production` |
+| Size | Small (Alpine) |
+| Port | 18800 |
+| Workdir | `/app` |
 
-::: info 为什么镜像小？
-虾饺只有 6 个 npm 依赖，基于 Alpine 基础镜像。没有 Python、Java 等额外运行时。
+::: info Small image
+Six npm deps + Alpine—no Python/Java runtimes bundled.
 :::
 
-## 持久化存储
+## Persistent volumes
 
-两个 Volume 确保数据不丢失：
+Two volumes matter:
 
-| Volume | 容器路径 | 内容 | 重要性 |
+| Volume | Mount | Contents | Critical |
 |--------|---------|------|--------|
-| `xiajiao-data` | `/app/data` | SQLite 数据库、Agent 工作区、SOUL 模板、记忆库 | **核心数据** |
-| `xiajiao-uploads` | `/app/public/uploads` | 用户上传的文件（图片等） | 用户文件 |
+| `xiajiao-data` | `/app/data` | SQLite, workspaces, SOUL templates, memory | **yes** |
+| `xiajiao-uploads` | `/app/public/uploads` | uploads | user files |
 
-::: danger 必须挂载 Volume
-如果不挂载 Volume，容器删除后所有数据（消息、Agent 配置、记忆）将永久丢失。
+::: danger Mount volumes
+Without volumes, removing the container **deletes** messages, Agents, and memory.
 :::
 
-### 使用 Bind Mount（映射到宿主机目录）
+### Bind mounts (host paths)
 
-如果你想直接在宿主机上访问数据文件（方便备份、编辑 SOUL.md）：
+For direct file access (backup, edit SOUL.md):
 
 ```bash
 mkdir -p /opt/xiajiao-data /opt/xiajiao-uploads
@@ -79,11 +77,11 @@ docker run -d -p 18800:18800 \
   --name xiajiao xiajiao
 ```
 
-这样你可以直接在宿主机编辑 `/opt/xiajiao-data/workspace-xxx/SOUL.md`。
+Edit `/opt/xiajiao-data/workspace-xxx/SOUL.md` on the host.
 
-## Docker Compose（推荐）
+## Docker Compose (recommended)
 
-创建 `docker-compose.yml`：
+`docker-compose.yml`:
 
 ```yaml
 services:
@@ -106,59 +104,49 @@ services:
       start_period: 10s
 ```
 
-创建 `.env` 文件：
+`.env`:
 
 ```bash
 OWNER_KEY=your-strong-password
 ```
 
-启动：
-
 ```bash
 docker compose up -d
 
-# 查看状态
 docker compose ps
-
-# 查看日志
 docker compose logs -f xiajiao
 
-# 停止
 docker compose down
 ```
 
-## 环境变量
+## Environment variables
 
-| 变量 | 说明 | 默认值 |
+| Variable | Purpose | Default |
 |------|------|--------|
-| `IM_PORT` | 服务端口 | `18800` |
-| `OWNER_KEY` | 管理员密码 | `admin` |
-| `LLM_MODE` | LLM 模式 | `direct` |
-| `NODE_ENV` | Node.js 环境 | `production` |
+| `IM_PORT` | Port | `18800` |
+| `OWNER_KEY` | Admin password | `admin` |
+| `LLM_MODE` | LLM mode | `direct` |
+| `NODE_ENV` | Node env | `production` |
 
-## 常用操作
+## Common tasks
 
-### 查看日志
+### Logs
 
 ```bash
-# 实时日志
 docker logs -f xiajiao
-
-# 最近 100 行
 docker logs --tail 100 xiajiao
 ```
 
-### 进入容器
+### Shell in container
 
 ```bash
 docker exec -it xiajiao sh
 
-# 查看数据
 ls /app/data/
 cat /app/data/workspace-xxx/SOUL.md
 ```
 
-### 更新版本
+### Upgrade
 
 ```bash
 cd xiajiao
@@ -173,31 +161,28 @@ docker run -d -p 18800:18800 \
   --name xiajiao xiajiao
 ```
 
-Docker Compose 更新更简单：
+With Compose:
 
 ```bash
 git pull
 docker compose up -d --build
 ```
 
-### 备份数据
+### Backup
 
 ```bash
-# 使用 docker cp
 docker cp xiajiao:/app/data ./backup-data
 docker cp xiajiao:/app/public/uploads ./backup-uploads
 
-# 或者直接备份 Volume
 docker run --rm -v xiajiao-data:/data -v $(pwd):/backup alpine \
   tar czf /backup/xiajiao-data-backup.tar.gz -C /data .
 ```
 
-## 与 Nginx 配合（反向代理 + HTTPS）
+## Nginx reverse proxy + HTTPS
 
-如果你在同一台服务器上用 Docker 跑虾饺，并且想用 Nginx 做反向代理：
+`docker-compose.yml` excerpt (Xiajiao only exposes internally):
 
 ```yaml
-# docker-compose.yml
 services:
   xiajiao:
     build: .
@@ -217,7 +202,7 @@ networks:
     external: true
 ```
 
-Nginx 配置（宿主机上的 Nginx）：
+Host Nginx:
 
 ```nginx
 server {
@@ -234,41 +219,35 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # WebSocket 超时设置
         proxy_read_timeout 86400;
         proxy_send_timeout 86400;
     }
 }
 ```
 
-::: warning WebSocket 支持
-`Upgrade` 和 `Connection` 头是必须的，否则 WebSocket 连接会失败。`proxy_read_timeout` 设置得足够长，避免 WebSocket 长连接被 Nginx 断开。
+::: warning WebSockets
+`Upgrade` and `Connection` are required. Long `proxy_read_timeout` avoids dropping WS.
 :::
 
-## 常见问题
+## FAQ
 
-### 容器启动后无法访问
+### Cannot reach container
 
-1. 检查端口映射：`docker ps` 查看 PORTS 列
-2. 检查防火墙：`sudo ufw allow 18800`
-3. 检查日志：`docker logs xiajiao`
+1. `docker ps` — port mapping  
+2. Firewall: `sudo ufw allow 18800`  
+3. `docker logs xiajiao`  
 
-### 容器重启后数据丢失
+### Data gone after restart
 
-确保挂载了 Volume。运行 `docker inspect xiajiao` 查看 Mounts 部分。
+Confirm mounts: `docker inspect xiajiao` → Mounts.
 
-### 权限问题
-
-如果 Volume 目录的权限不对：
+### Permissions
 
 ```bash
-# 修改宿主机目录权限
 sudo chown -R 1000:1000 /opt/xiajiao-data
 ```
 
-## Docker Compose + Ollama（完全私有方案）
-
-一键部署虾饺 + Ollama，零外部 API 依赖：
+## Docker Compose + Ollama (fully private)
 
 ```yaml
 # docker-compose.ollama.yml
@@ -312,42 +291,38 @@ volumes:
 ```
 
 ```bash
-# 启动
 docker compose -f docker-compose.ollama.yml up -d
 
-# 下载模型
 docker exec ollama ollama pull qwen2.5
 
-# 在虾饺中配置
-# API Base URL: http://ollama:11434/v1
+# In Xiajiao (虾饺) UI:
+# API Base: http://ollama:11434/v1
 # API Key: ollama
-# 模型名: qwen2.5
+# Model: qwen2.5
 ```
 
-::: tip 无 GPU？
-去掉 `deploy.resources` 段，Ollama 会用 CPU 运行（较慢但可用）。
+::: tip No GPU?
+Remove `deploy.resources`; Ollama falls back to CPU (slower).
 :::
 
-## 日志管理
+## Logging
 
-### 结构化日志输出
+### Structured log output
 
 ```bash
-# JSON 格式日志（方便接入 ELK/Loki）
+# JSON logs (ELK / Loki friendly)
 docker logs xiajiao 2>&1 | jq '.'
 
-# 按时间范围查看
 docker logs --since "2026-03-19T00:00:00" xiajiao
 
-# 限制日志文件大小（docker-compose.yml）
+# Limit log file size (see docker-compose.yml below)
 ```
 
-在 `docker-compose.yml` 中限制日志大小防止磁盘爆满：
+Limit log size in Compose:
 
 ```yaml
 services:
   xiajiao:
-    # ... 其他配置 ...
     logging:
       driver: "json-file"
       options:
@@ -355,25 +330,23 @@ services:
         max-file: "3"
 ```
 
-## 生产环境检查清单
-
-部署到生产环境前，确认以下事项：
+## Production checklist
 
 ```
-✅ OWNER_KEY 已修改（不是默认的 admin）
-✅ Volume 已挂载（docker inspect 确认 Mounts）
-✅ restart: unless-stopped 已设置
-✅ 健康检查已配置
-✅ 日志大小限制已设置
-✅ 防火墙只开放必要端口
-✅ 如需公网访问，Nginx 反向代理 + HTTPS
-✅ 定期备份脚本已配置
+✅ OWNER_KEY changed (not admin)
+✅ Volumes mounted (docker inspect)
+✅ restart: unless-stopped
+✅ Healthcheck configured
+✅ Log rotation limits
+✅ Firewall minimal exposure
+✅ Public: Nginx + HTTPS
+✅ Backups scheduled
 ```
 
-## 相关文档
+## Related docs
 
-- [云服务器部署](/deployment/cloud) — 公网访问 + HTTPS + 域名
-- [本地运行](/deployment/local) — 不想用 Docker？直接 npm start
-- [性能调优](/guide/performance) — 生产环境优化
-- [安全与隐私](/guide/security) — 数据安全、API Key 保护、攻击面分析
-- [故障排查](/guide/troubleshooting) — 遇到问题看这里
+- [Cloud deployment](/deployment/cloud) — public URL, HTTPS, DNS
+- [Run locally](/deployment/local) — without Docker
+- [Performance](/guide/performance)
+- [Security & privacy](/guide/security)
+- [Troubleshooting](/guide/troubleshooting)

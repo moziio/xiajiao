@@ -1,21 +1,21 @@
 ---
-title: 开发者指南 — 虾饺 IM
-description: 参与虾饺 IM 开发——代码规范、开发环境、测试、PR 流程。
+title: "Developer guide — Xiajiao IM"
+description: "How to contribute to Xiajiao IM: setup, style, tests, and pull requests."
 ---
 
-# 开发者指南
+# Developer guide
 
-欢迎参与虾饺的开发！虾饺的代码量适中（后端约 ~9500 行，不含前端 UI），结构清晰，适合入门开源贡献。
+Thanks for helping improve Xiajiao. The backend is ~9.5k lines (excluding the largest UI files), organized for approachable contributions.
 
-## 开发环境
+## Environment
 
-### 前置要求
+### Requirements
 
-- Node.js >= 22.0.0
-- Git
-- 一个趁手的编辑器（VS Code / Cursor / Vim）
+- Node.js >= 22.0.0  
+- Git  
+- Editor of your choice (VS Code, Cursor, Vim, …)
 
-### 本地启动
+### Run locally
 
 ```bash
 git clone https://github.com/moziio/xiajiao.git
@@ -24,108 +24,101 @@ npm install
 npm start
 ```
 
-修改代码后，重启 Node.js 进程即可（前端修改刷新浏览器即可，零构建）。
+Restart Node after server changes; refresh the browser for `public/` edits (no bundler).
 
-### 运行测试
+### Tests
 
 ```bash
 npm test
 ```
 
-使用 `node:test` 标准测试框架，53 个单元测试，通常 2-3 秒跑完。
+`node:test` with ~53 unit tests, usually a few seconds.
 
-## 代码规范
+## Code style
 
-### JavaScript 风格
+### JavaScript
 
-- **无框架**：不用 Express / Koa，直接用 `node:http`
-- **无编译**：不用 TypeScript / Babel，原生 ES Module
-- **无构建**：前端直接写 Vanilla JS，不用 Webpack / Vite
-- **const 优先**：能用 `const` 不用 `let`，不用 `var`
-- **async/await**：异步代码用 async/await，不用回调
+- **No HTTP framework** — `node:http` only  
+- **No transpiler** — native ESM  
+- **No frontend bundler** — Vanilla JS in `public/`  
+- **Prefer `const`** over `let`; avoid `var`  
+- **async/await** instead of callback pyramids  
 
-### 注释规范
+### Comments
 
-- 只在非显而易见的地方写注释
-- 不要写"做了什么"（代码已经说了），写"为什么这样做"
-- 函数级别用 JSDoc 注释：
+- Only where intent is non-obvious  
+- Explain *why*, not *what* the next line does  
+- JSDoc on exported helpers:
 
 ```javascript
 /**
- * 在记忆库中搜索相似记忆，用于去重和检索。
- * 使用余弦相似度，阈值 0.85 以上视为重复（`DEDUP_THRESHOLD`）。
- * @param {string} agentId - Agent 标识
- * @param {string} text - 搜索文本
- * @param {number} topK - 返回数量
- * @returns {Array<{content: string, type: string, similarity: number}>}
+ * Search memories for dedupe / retrieval using cosine similarity.
+ * Similarity >= DEDUP_THRESHOLD counts as duplicate.
+ * @param {string} agentId
+ * @param {string} text
+ * @param {number} [topK=10]
+ * @returns {Promise<Array<{content: string, type: string, similarity: number}>>}
  */
 async function searchMemory(agentId, text, topK = 10) {
   // ...
 }
 ```
 
-### 依赖规范
+### Dependencies
 
-**铁律：不引入新依赖，除非满足以下所有条件：**
+**Do not add packages unless all are true:**
 
-1. Node.js 标准库无法实现
-2. 自己实现超过 200 行代码
-3. 该功能是核心功能（不是 nice-to-have）
-4. 该包维护活跃，安全记录良好
+1. Standard library cannot do it  
+2. A faithful implementation would exceed ~200 lines  
+3. The feature is core, not a nice-to-have  
+4. The dependency is maintained and reputable  
 
-提 PR 前如果引入了新依赖，需要在 PR 描述中详细说明理由。
+Call out any new dependency explicitly in the PR description.
 
-## 项目结构
+## Project map
 
 ```
 server/
-├── index.js          # 入口：HTTP 服务 + 路由分发
-├── storage.js        # 数据层：SQLite 操作 + Agent 文件管理
-├── ws.js             # WebSocket：实时消息推送
-├── api/              # REST API 路由处理
-│   ├── messages.js   # 消息 CRUD
-│   ├── channels.js   # 频道管理
-│   ├── agents.js     # Agent 管理
+├── index.js
+├── storage.js
+├── ws.js
+├── api/
+├── services/
+│   ├── llm.js
+│   ├── tools.js
+│   ├── memory.js
+│   ├── rag.js
 │   └── ...
-├── services/         # 核心业务逻辑
-│   ├── llm.js        # LLM 调用（多 Provider + Tool Calling）
-│   ├── tools.js      # 工具注册 + 分发
-│   ├── memory.js     # 记忆系统
-│   ├── rag.js        # RAG 检索
-│   └── ...
-└── test/             # 单元测试
-    └── *.test.js
+└── test/
 ```
 
-### 改代码去哪个文件？
+### Which file to change?
 
-| 想做什么 | 改哪个文件 |
-|---------|-----------|
-| 添加新的 REST API | `server/api/` 下新建文件 + `index.js` 注册路由 |
-| 添加新的工具 | `server/services/tools.js` |
-| 修改 LLM 调用逻辑 | `server/services/llm.js` |
-| 修改记忆/RAG 逻辑 | `server/services/memory.js` / `rag.js` |
-| 修改前端 UI | `public/app.js` + `public/styles.css` |
-| 添加新的搜索引擎 | `server/services/search-engines.js` |
-| 修改数据库 schema | `server/storage.js` |
+| Goal | Location |
+|------|----------|
+| New REST surface | `server/api/` + route registration in `index.js` |
+| New tool | `server/services/tools.js` |
+| LLM pipeline tweaks | `server/services/llm.js` |
+| Memory / RAG | `server/services/memory.js`, `rag.js` |
+| UI | `public/app.js`, `public/styles.css` |
+| Search engines | `server/services/search-engines.js` |
+| Schema migrations | `server/storage.js` |
 
-## 测试
+## Testing
 
-### 运行全部测试
+### All tests
 
 ```bash
 npm test
 ```
 
-### 运行单个测试文件
+### Single file
 
 ```bash
 node --test server/test/memory.test.js
 ```
 
-### 写测试
-
-使用 `node:test` 标准库：
+### Example test
 
 ```javascript
 import { describe, it } from 'node:test';
@@ -141,95 +134,74 @@ describe('Memory', () => {
 });
 ```
 
-### 测试覆盖的模块
+### Coverage (approximate)
 
-| 模块 | 测试数量 | 覆盖内容 |
-|------|---------|---------|
-| storage | ~15 | 数据库 CRUD |
-| memory | ~10 | 记忆写入、搜索、去重 |
-| rag | ~8 | 分块、索引、检索 |
-| llm | ~5 | API 调用、Tool Calling |
-| tools | ~8 | 各工具的执行逻辑 |
-| misc | ~7 | 工具函数、配置解析 |
+| Area | Tests | Focus |
+|------|-------|-------|
+| storage | ~15 | CRUD |
+| memory | ~10 | write/search/dedupe |
+| rag | ~8 | chunk/index/search |
+| llm | ~5 | API + tools |
+| tools | ~8 | handlers |
+| misc | ~7 | helpers/config |
 
-## PR 流程
+## Pull requests
 
-### 1. Fork & Clone
+### 1. Fork & clone
 
 ```bash
-git clone https://github.com/你的用户名/xiajiao.git
+git clone https://github.com/YOUR_USER/xiajiao.git
 cd xiajiao
 git remote add upstream https://github.com/moziio/xiajiao.git
 ```
 
-### 2. 创建分支
+### 2. Branch
 
 ```bash
 git checkout -b feature/my-feature
 ```
 
-分支命名：
-- `feature/xxx` — 新功能
-- `fix/xxx` — Bug 修复
-- `docs/xxx` — 文档更新
-- `refactor/xxx` — 重构
+Naming: `feature/*`, `fix/*`, `docs/*`, `refactor/*`.
 
-### 3. 开发 & 测试
+### 3. Develop & test
 
 ```bash
-# 开发...
-npm test  # 确保测试通过
+npm test
 ```
 
-### 4. 提交
+### 4. Commit
 
 ```bash
 git add .
-git commit -m "feat: add xxx feature"
+git commit -m "feat: describe the change"
 ```
 
-Commit message 格式遵循 [Conventional Commits](https://www.conventionalcommits.org/)：
+Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`).
 
-```
-feat: 新功能
-fix: Bug 修复
-docs: 文档更新
-refactor: 重构（不影响功能）
-test: 测试相关
-chore: 构建/工具相关
-```
-
-### 5. 提交 PR
+### 5. Push & open PR
 
 ```bash
 git push origin feature/my-feature
 ```
 
-在 GitHub 上创建 Pull Request，描述清楚：
-- 这个 PR 做了什么
-- 为什么需要这个改动
-- 如何测试
+Describe motivation, scope, and how you verified the change.
 
-## 适合新手的 Issue
+## Good first issues
 
-如果你是第一次贡献，可以从这些方向入手：
+| Level | Area | Examples |
+|-------|------|----------|
+| Easy | Docs | Fixes, clarifications, translations |
+| Easy | UI | CSS tweaks, responsive fixes |
+| Medium | Search | New engine adapter |
+| Medium | Tests | More cases |
+| Hard | Features | Workflow engine, deeper MCP work |
 
-| 难度 | 方向 | 示例 |
-|------|------|------|
-| ⭐ 简单 | 文档 | 修正错误、补充说明、翻译 |
-| ⭐ 简单 | UI | 修复样式、响应式适配 |
-| ⭐⭐ 中等 | 工具 | 添加新的搜索引擎适配器 |
-| ⭐⭐ 中等 | 测试 | 补充测试用例 |
-| ⭐⭐⭐ 进阶 | 功能 | 工作流引擎、MCP 集成 |
+## Tutorial: add a search engine (Brave)
 
-## 实战：添加一个搜索引擎
-
-以 Brave Search 为例，展示添加一个搜索引擎的完整过程：
-
-### 1. 在 `search-engines.js` 中添加适配器
+### 1. Adapter
 
 ```javascript
-async function bravSearch(query) {
+async function braveSearch(query) {
   const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
     headers: { 'X-Subscription-Token': process.env.BRAVE_API_KEY }
@@ -243,23 +215,22 @@ async function bravSearch(query) {
 }
 ```
 
-### 2. 注册到引擎列表
+### 2. Register
 
 ```javascript
 const engines = {
   google: googleSearch,
   bing: bingSearch,
-  brave: bravSearch,  // ← 新增
-  // ...
+  brave: braveSearch,
 };
 ```
 
-### 3. 写测试
+### 3. Tests
 
 ```javascript
 describe('Brave Search', () => {
   it('should return search results', async () => {
-    const results = await bravSearch('Node.js');
+    const results = await braveSearch('Node.js');
     assert.ok(results.length > 0);
     assert.ok(results[0].title);
     assert.ok(results[0].url);
@@ -267,29 +238,29 @@ describe('Brave Search', () => {
 });
 ```
 
-### 4. 提交 PR
+### 4. PR
 
 ```bash
 git checkout -b feature/brave-search
 git add server/services/search-engines.js server/test/search.test.js
-git commit -m "feat: add Brave Search engine adapter"
+git commit -m "feat: add Brave search adapter"
 git push origin feature/brave-search
 ```
 
-整个过程只改 1 个文件 + 1 个测试文件，~30 行代码。
+Roughly one service file + tests (~30 lines).
 
-## 调试技巧
+## Debugging
 
-### 查看 LLM 请求/响应
+### LLM traffic
 
-在 `server/services/llm.js` 中添加临时日志：
+Temporary logging in `server/services/llm.js`:
 
 ```javascript
-console.log('LLM Request:', JSON.stringify(messages, null, 2));
-console.log('LLM Response chunk:', chunk);
+console.log('LLM request:', JSON.stringify(messages, null, 2));
+console.log('LLM chunk:', chunk);
 ```
 
-### 检查 SQLite 数据
+### SQLite
 
 ```bash
 sqlite3 data/im.db ".tables"
@@ -297,14 +268,14 @@ sqlite3 data/im.db "SELECT * FROM messages ORDER BY created_at DESC LIMIT 5;"
 sqlite3 data/im.db "SELECT * FROM settings;"
 ```
 
-### 检查 Agent 记忆
+### Memory DB
 
 ```bash
 sqlite3 data/workspace-{agentId}/memory.db \
   "SELECT type, content, created_at FROM memories ORDER BY created_at DESC LIMIT 10;"
 ```
 
-### VSCode 调试配置
+### VS Code launch config
 
 ```json
 {
@@ -317,10 +288,10 @@ sqlite3 data/workspace-{agentId}/memory.db \
 }
 ```
 
-## 相关文档
+## Related docs
 
-- [架构设计](/guide/architecture) — 理解代码结构和模块走读
-- [API 与协议参考](/guide/api-reference) — HTTP API 和 WebSocket 协议
-- [性能调优](/guide/performance) — 生产环境配置
-- [常见问题](/guide/faq) — 技术 FAQ
-- [GitHub Issues](https://github.com/moziio/xiajiao/issues) — 找一个 Issue 开始
+- [Architecture](/guide/architecture)
+- [API reference](/guide/api-reference)
+- [Performance](/guide/performance)
+- [FAQ](/guide/faq)
+- [GitHub Issues](https://github.com/moziio/xiajiao/issues)

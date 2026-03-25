@@ -1,313 +1,313 @@
 ---
-title: 多 Agent 群聊 — 虾饺 IM
-description: 创建群组、拉入多个 Agent、@mention 路由消息。Agent 之间可对话、接力协作，像管理真实团队。
+title: "Multi-Agent Group Chat — Xiajiao (虾饺) IM"
+description: "Create groups, add multiple Agents, and route messages with @mention. Agents can talk to each other and hand off work—like managing a real team."
 ---
 
-# 多 Agent 群聊
+# Multi-agent group chat
 
-虾饺的核心交互方式是 IM 群聊。像微信群一样管理 AI Agent：创建群组，拉入多个 Agent，用 @mention 精确路由消息。
+The core interaction model in Xiajiao (虾饺) is IM group chat. Manage AI Agents like a group chat app: create groups, add several Agents, and use @mention to route messages precisely.
 
 <p align="center">
-  <img src="/images/hero-light-top.png" alt="多 Agent 群聊" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/hero-light-top.png" alt="Multi-agent group chat" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-## 为什么是"群聊"而不是"工作流"？
+## Why “group chat” instead of “workflow”?
 
-大多数 AI 平台用"工作流"来编排 Agent——拖拽节点、连线、配参数。这很强大，但也很重：
+Most AI platforms orchestrate Agents with **workflows**—drag nodes, connect wires, tune parameters. That is powerful but heavy:
 
-| 维度 | 工作流模式（Dify 等） | 群聊模式（虾饺） |
-|------|---------------------|----------------|
-| 上手难度 | 需要学习 DAG 概念和 UI | 发消息就行 |
-| 灵活度 | 流程预设，修改需改画布 | 随时 @任何 Agent |
-| 协作方式 | 固定管线 | 自由组合 |
-| 适合场景 | 生产环境固定流程 | 探索、创意、灵活协作 |
-| 人机交互 | 配置后自动执行 | 实时对话，随时干预 |
+| Dimension | Workflow style (e.g. Dify) | Group chat (Xiajiao (虾饺)) |
+|-----------|----------------------------|-----------------------------|
+| Learning curve | Learn DAG concepts and the UI | Just send messages |
+| Flexibility | Fixed flows; edits mean editing the canvas | @ any Agent anytime |
+| Collaboration | Fixed pipelines | Free-form combinations |
+| Best for | Fixed production flows | Exploration, creativity, flexible teamwork |
+| Human in the loop | Runs after configuration | Live conversation, intervene anytime |
 
-虾饺选择群聊模式，是因为它更**直觉**、更**灵活**。你不需要提前规划好所有流程，只需要把合适的 Agent 拉到一起，像和同事聊天一样发指令。
+Xiajiao (虾饺) chooses group chat because it is more **intuitive** and **flexible**. You do not need to plan every step up front—pull the right Agents into a room and give instructions as you would with colleagues.
 
-## 基本概念
+## Core concepts
 
-### Agent —— 你的 AI 同事
+### Agent — your AI teammate
 
-每个 Agent 是一个独立的 AI 角色，有自己的：
+Each Agent is an independent AI persona with its own:
 
-| 属性 | 说明 | 示例 |
-|------|------|------|
-| **名称 + Emoji** | 方便识别和 @mention | ✍️ 小说家 |
-| **SOUL.md** | Markdown 人格设定文件 | 定义角色、风格、行为规则 |
-| **模型** | 使用哪个 LLM | `anthropic/claude-opus-4-6` |
-| **工具权限** | 允许使用哪些内置工具 | `web_search`, `memory_write` |
-| **记忆空间** | 独立的持久记忆 | 每个 Agent 有自己的记忆，互不干扰 |
-| **工作区** | 独立的文件存储 | `data/workspace-{id}/` |
+| Property | Description | Example |
+|----------|-------------|---------|
+| **Name + emoji** | Easy recognition and @mention | ✍️ Novelist |
+| **SOUL.md** | Markdown persona file | Role, tone, behavior rules |
+| **Model** | Which LLM it uses | `anthropic/claude-opus-4-6` |
+| **Tool permissions** | Which built-in tools are allowed | `web_search`, `memory_write` |
+| **Memory space** | Isolated persistent memory | Each Agent has its own; no cross-talk |
+| **Workspace** | Isolated file storage | `data/workspace-{id}/` |
 
-#### 内置 5 个开箱即用的 Agent
+#### Five built-in Agents out of the box
 
-| Agent | 角色 | 擅长 | 默认工具 |
-|-------|------|------|---------|
-| 🤖 虾饺管家 | 系统管理 | 渠道管理、定时任务、系统问答 | web_search, manage_channel, manage_schedule, memory |
-| ✍️ 小说家 | 创意写作 | 诗歌、散文、短篇故事、文生图 | web_search, memory |
-| 📝 编辑 | 文字编辑 | 润色、语法修正、结构优化 | memory |
-| 🌐 翻译官 | 翻译 | 中英双向、文学翻译、技术文档 | web_search, memory |
-| 💻 代码助手 | 开发 | 全栈开发、代码生成、技术方案 | web_search, memory, rag_query |
+| Agent | Role | Strengths | Default tools |
+|-------|------|-----------|---------------|
+| 🤖 Xiajiao Butler | System admin | Channels, schedules, system Q&A | web_search, manage_channel, manage_schedule, memory |
+| ✍️ Novelist | Creative writing | Poetry, prose, short stories, text-to-image | web_search, memory |
+| 📝 Editor | Text editing | Polish, grammar, structure | memory |
+| 🌐 Translator | Translation | EN↔ZH, literary and technical docs | web_search, memory |
+| 💻 Code assistant | Development | Full stack, codegen, technical design | web_search, memory, rag_query |
 
-::: tip 自定义 Agent
-你可以创建任意数量的自定义 Agent。给它取个名字，选择模型，写一份 SOUL.md 人格设定，配置工具权限，就完成了。
+::: tip Custom Agents
+You can create any number of custom Agents: pick a name, choose a model, write a SOUL.md persona, set tool permissions—done.
 :::
 
-### 群组 —— Agent 的协作空间
+### Group — collaboration space for Agents
 
-群组是多个 Agent 在一起工作的空间。群组有以下属性：
+A group is where multiple Agents work together. Properties:
 
-| 属性 | 说明 |
-|------|------|
-| **名称 + Emoji** | 群组标识 |
-| **成员** | 拉入的 Agent 列表 |
-| **Leader** | 可选，处理没有 @mention 的消息 |
-| **协作链** | 可选，定义 Agent 自动接力顺序 |
+| Property | Description |
+|----------|-------------|
+| **Name + emoji** | Group identity |
+| **Members** | List of Agents in the group |
+| **Leader** | Optional; handles messages with no @mention |
+| **Collaboration chain** | Optional; defines automatic handoff order |
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/group-chat-light.png" alt="浅色模式群聊 — AI Writing Team 创作协作" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">浅色模式群聊 — AI Writing Team 的创作协作</p>
+  <img src="/images/group-chat-light.png" alt="Light mode group chat — AI Writing Team collaboration" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Light mode group chat — AI Writing Team collaboration</p>
 </div>
 
-## @mention 路由机制
+## @mention routing
 
-在群聊中输入 `@` 会弹出 Agent 列表，选择目标 Agent 后发送消息。
+Typing `@` in a group opens the Agent list; pick the target and send.
 
-### 路由规则
+### Routing rules
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  用户消息                                        │
-│     ↓                                            │
-│  包含 @mention？                                  │
-│     │  是                        │  否           │
-│     ↓                           ↓               │
-│  精确路由到被 @的 Agent       有设置 Leader？      │
-│  （可以 @多个 Agent）           │  是    │  否    │
-│                                 ↓       ↓       │
-│                           Leader 响应  无人响应   │
+│  User message                                   │
+│     ↓                                           │
+│  Contains @mention?                             │
+│     │  yes                    │  no             │
+│     ↓                         ↓                 │
+│  Route to @’d Agent(s)     Leader set?          │
+│  (can @ multiple)            │ yes   │ no      │
+│                              ↓       ↓          │
+│                         Leader    No auto reply │
 └─────────────────────────────────────────────────┘
 ```
 
 <p align="center">
-  <img src="/images/hero-light-middle.png" alt="@mention 路由实际效果" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/hero-light-middle.png" alt="@mention routing in practice" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 <p align="center" style="color: var(--vp-c-text-2);">
-  <em>真实对话：用户 @翻译官 发起翻译请求，翻译官自动响应并输出。</em>
+  <em>Real thread: user @Translator starts a translation request; Translator replies with output.</em>
 </p>
 
-### 三种路由方式
+### Three routing modes
 
-**1. 精确路由**（最常用）
-
-```
-你：@小说家 写一首关于春天的诗
-→ 只有小说家响应
-```
-
-**2. 多 Agent 路由**
+**1. Targeted routing** (most common)
 
 ```
-你：@小说家 @翻译官 写一首诗并翻译
-→ 小说家先响应，翻译官随后响应
+You: @Novelist write a poem about spring
+→ Only Novelist responds
 ```
 
-**3. 全员广播**
+**2. Multi-Agent routing**
 
 ```
-你：今天天气真好
-→ 如果设置了 Leader，Leader 响应
-→ 如果没设置，无人自动响应
+You: @Novelist @Translator write a poem and translate it
+→ Novelist responds first, then Translator
 ```
 
-### Agent 间通信
-
-Agent 之间也可以互相 @mention。例如小说家写完诗后回复：
+**3. Broadcast**
 
 ```
-小说家："这是我写的诗。@翻译官 请帮忙翻译成英文。"
-翻译官：[自动被触发，翻译诗歌]
+You: Nice weather today
+→ If a Leader is set, Leader responds
+→ If not, no automatic reply
 ```
 
-这种自由的 Agent 间通信是虾饺独特的设计——不需要预设流程，Agent 可以在对话中自由协调。
+### Agent-to-Agent messaging
 
-::: warning 注意
-如果不希望 Agent 自由 @mention 其他 Agent（避免连锁反应），可以在 SOUL.md 中设定规则：`不要 @其他 Agent，不要指挥别人做事`。
+Agents can @ each other. For example, after writing a poem:
+
+```
+Novelist: "Here is my poem. @Translator please translate to English."
+Translator: [triggered automatically, translates the poem]
+```
+
+This free-form Agent messaging is a distinctive Xiajiao (虾饺) design—no preset flow; Agents coordinate in conversation.
+
+::: warning Note
+If you do not want Agents to freely @ others (avoid chain reactions), add rules in SOUL.md, e.g. `Do not @ other Agents or direct them to do work.`
 :::
 
-## 创建和管理
+## Create and manage
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/agent-management.png" alt="Agent 管理面板 — 创建、编辑、删除 Agent" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Agent 管理面板 — 创建、编辑、删除 Agent，一目了然</p>
+  <img src="/images/agent-management.png" alt="Agent management — create, edit, delete" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Agent management panel — create, edit, and delete Agents at a glance</p>
 </div>
 
-### 创建 Agent
+### Create an Agent
 
-1. 在 Web 界面的"通讯录"中点击 **新建 Agent**
-2. 填写基本信息：名称、Emoji、选择模型
-3. 配置工具权限（勾选允许使用的工具）
-4. 可选：开启 `autoInjectMemory` 自动注入记忆
+1. In the web UI **Contacts**, click **New Agent**
+2. Fill basics: name, emoji, model
+3. Configure tool permissions (check allowed tools)
+4. Optional: enable `autoInjectMemory` for automatic memory injection
 
 <p align="center">
-  <img src="/images/contacts-light.png" alt="Agent 通讯录" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/contacts-light.png" alt="Agent contacts" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-### 编辑 SOUL.md
+### Edit SOUL.md
 
-每个 Agent 在 `data/workspace-{id}/SOUL.md` 中有自己的人格设定。示例：
+Each Agent’s persona lives at `data/workspace-{id}/SOUL.md`. Example:
 
 ```markdown
-# 代码助手
+# Code assistant
 
-你是一位全栈开发工程师，擅长将需求转化为简洁可运行的代码。
+You are a full-stack engineer who turns requirements into concise, runnable code.
 
-## 工作原则
-- 先确认需求，再动手写代码
-- 偏好简洁高效的解决方案
-- 代码自带必要注释，但不写废话注释
-- 给出方案时说明取舍理由
+## Principles
+- Clarify requirements before coding
+- Prefer simple, efficient solutions
+- Include necessary comments, no filler
+- Explain trade-offs when proposing designs
 
-## 技术栈
-- 后端：Node.js / Python / Go
-- 前端：HTML / CSS / JavaScript
-- 数据库：SQLite / PostgreSQL / Redis
+## Stack
+- Backend: Node.js / Python / Go
+- Frontend: HTML / CSS / JavaScript
+- DB: SQLite / PostgreSQL / Redis
 
-## 输出格式
-- 代码用 markdown 代码块，标注语言
-- 复杂逻辑先给思路概述，再写代码
+## Output
+- Code in fenced blocks with language tags
+- For complex logic: outline first, then code
 ```
 
-::: tip SOUL.md 的优势
-- 用文本编辑器就能修改，不需要复杂的 UI
-- Git 版本控制，diff 一眼看出改了什么
-- 分享一个 `.md` 文件就能克隆一个 Agent 人格
+::: tip Why SOUL.md
+- Edit in any text editor—no heavy UI
+- Version in Git; diffs show changes clearly
+- Share a single `.md` to clone a persona
 :::
 
-### 创建群组
+### Create a group
 
-1. 在通讯录中点击 **新建群组**
-2. 填写群名和 emoji
-3. 选择要拉入的 Agent（至少 1 个）
-4. 可选：设置协作链（Agent 自动接力顺序）
-5. 可选：设置 leader（处理未 @mention 的消息）
+1. In Contacts, click **New group**
+2. Set name and emoji
+3. Choose Agents to add (at least one)
+4. Optional: set a collaboration chain (handoff order)
+5. Optional: set a leader (for messages without @mention)
 
 <p align="center">
-  <img src="/images/hero-light-bottom.png" alt="群聊协作" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/hero-light-bottom.png" alt="Group collaboration" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
-## 实际使用场景
+## Real-world scenarios
 
-### 场景 1：AI 写作工作室
-
-```
-群组：📝 写作工作室
-成员：小说家 + 编辑 + 翻译官
-协作链：小说家 → 编辑 → 翻译官
-
-你：@小说家 写一首关于月光的诗
-→ 小说家创作诗歌
-→ 编辑自动接力润色
-→ 翻译官自动接力英译
-```
-
-### 场景 2：技术问答群
+### Scenario 1: AI writing studio
 
 ```
-群组：💻 技术支持
-成员：代码助手 + 翻译官
-Leader：代码助手
+Group: 📝 Writing studio
+Members: Novelist + Editor + Translator
+Chain: Novelist → Editor → Translator
 
-你：帮我写一个 Python 爬虫
-→ 代码助手响应（因为是 Leader）
-
-你：@翻译官 把这段错误信息翻译成中文
-→ 翻译官响应
+You: @Novelist write a poem about moonlight
+→ Novelist writes
+→ Editor polishes automatically
+→ Translator translates to English automatically
 ```
 
-### 场景 3：一对一私聊
+### Scenario 2: Tech Q&A group
 
 ```
-直接点击通讯录中的 Agent，进入一对一对话。
-无需创建群组，适合日常问答。
+Group: 💻 Tech support
+Members: Code assistant + Translator
+Leader: Code assistant
+
+You: Help me write a Python crawler
+→ Code assistant answers (Leader)
+
+You: @Translator translate this error message to Chinese
+→ Translator answers
+```
+
+### Scenario 3: One-to-one DM
+
+```
+Open an Agent from Contacts for a private thread.
+No group needed—good for everyday Q&A.
 ```
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/coder-chat.png" alt="代码助手一对一对话" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">代码助手实际对话 — Agent 分析思路后输出可运行代码</p>
+  <img src="/images/coder-chat.png" alt="Code assistant one-to-one chat" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Code assistant in practice — reasoning first, then runnable code</p>
 </div>
 
-## 消息能力
+## Message capabilities
 
-虾饺的消息支持丰富的格式：
+Xiajiao (虾饺) supports rich message formats:
 
-| 能力 | 说明 |
-|------|------|
-| **Markdown 渲染** | 标题、列表、表格、引用 |
-| **代码高亮** | 100+ 语言语法高亮 |
-| **Mermaid 图表** | 流程图、时序图、甘特图 |
-| **LaTeX 公式** | 行内和块级数学公式 |
-| **图片** | 文生图 / 上传图片 |
-| **全文搜索** | SQLite FTS5，快速检索历史消息 |
-| **流式输出** | LLM 回复逐字显示，像打字机一样 |
+| Capability | Description |
+|------------|-------------|
+| **Markdown** | Headings, lists, tables, quotes |
+| **Code highlighting** | 100+ languages |
+| **Mermaid** | Flowcharts, sequence diagrams, Gantt |
+| **LaTeX** | Inline and block math |
+| **Images** | Text-to-image / uploads |
+| **Full-text search** | SQLite FTS5 for history |
+| **Streaming** | Token-by-token replies |
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/poem-ai-art-full.png" alt="群聊中长诗与夏夜星空 AI 配图——诗文与插图连续展示" style="max-width: 520px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">群聊中的富内容：诗歌正文与 AI 生成插图衔接展示</p>
+  <img src="/images/poem-ai-art-full.png" alt="Long poem with summer-night AI art in group chat" style="max-width: 520px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Rich content in chat: poem body and AI-generated illustration together</p>
 </div>
 
-## 群组管理最佳实践
+## Group design best practices
 
-### 群组设计原则
+### Principles
 
-| 原则 | 说明 |
-|------|------|
-| 一群一主题 | "写作工作室"、"技术讨论"、"知识库问答"分开 |
-| Agent 数量 2-4 | 太多 Agent 反而混乱，每个群聚焦 |
-| 明确 Leader | 没有 @mention 时，Leader 接收消息 |
-| SOUL.md 定边界 | 明确每个 Agent 负责什么、不做什么 |
+| Principle | Description |
+|-----------|-------------|
+| One theme per group | Split “writing studio,” “tech discussion,” “KB Q&A” |
+| 2–4 Agents | Too many feels noisy; keep each group focused |
+| Clear Leader | Leader catches non-@ messages |
+| SOUL.md boundaries | What each Agent owns—and does not |
 
-### 常见的群组配置模式
+### Common patterns
 
-**模式 1：生产线型**（有协作链）
-
-```
-群组：内容工厂
-链条：创作者 → 编辑 → 翻译
-触发方式：发一条消息，三步自动完成
-```
-
-**模式 2：专家组型**（无协作链）
+**Pattern 1: Pipeline** (with chain)
 
 ```
-群组：技术咨询
-成员：前端专家 + 后端专家 + DBA
-触发方式：@mention 你需要的专家
+Group: Content factory
+Chain: Creator → Editor → Translator
+Trigger: one message runs all three steps
 ```
 
-**模式 3：助理型**（一个 Leader + 辅助）
+**Pattern 2: Expert panel** (no chain)
 
 ```
-群组：日常助理
-Leader：虾饺管家（接收所有非 @mention 消息）
-辅助：翻译官（需要翻译时手动 @）
+Group: Tech consult
+Members: Frontend + Backend + DBA
+Trigger: @ the expert you need
 ```
 
-**模式 4：对比型**（同角色不同模型）
+**Pattern 3: Assistant** (one Leader + helpers)
 
 ```
-群组：模型 PK
-成员：GPT-4o 选手 + Claude 选手 + 通义选手
-触发方式：同时 @mention 三个，对比回答质量
+Group: Daily assistant
+Leader: Xiajiao Butler (all non-@ traffic)
+Helper: Translator (@ when you need translation)
 ```
 
-## 下一步
+**Pattern 4: Model compare** (same role, different models)
 
-- [协作流](/features/collaboration-flow) — 了解协作链和可视化面板的完整机制
-- [Tool Calling](/features/tool-calling) — Agent 不只聊天，还能搜索、记忆、调用其他 Agent
-- [Agent 持久记忆](/features/agent-memory) — Agent 如何记住你的偏好
-- [SOUL.md 写作指南](/guide/soul-guide) — 如何写出高质量的 Agent 人格设定
-- [SOUL.md 模板库](/guide/soul-templates) — 20 个可直接复制的 Agent 人格模板
-- [平台对比](/guide/comparison) — 虾饺 vs Dify vs Coze vs FastGPT
-- [实战案例](/guide/recipes) — 12 个可直接照搬的 Agent 团队配置方案
+```
+Group: Model arena
+Members: GPT-4o + Claude + Qwen
+Trigger: @ all three and compare answers
+```
+
+## Next steps
+
+- [Collaboration flow](/features/collaboration-flow) — chains and the visual panel
+- [Tool Calling](/features/tool-calling) — search, memory, calling other Agents
+- [Agent persistent memory](/features/agent-memory) — how Agents remember preferences
+- [SOUL.md guide](/guide/soul-guide) — writing strong personas
+- [SOUL.md templates](/guide/soul-templates) — 20 copy-paste personas
+- [Platform comparison](/guide/comparison) — Xiajiao (虾饺) vs Dify vs Coze vs FastGPT
+- [Recipes](/guide/recipes) — 12 ready-made team setups

@@ -1,578 +1,579 @@
 ---
-title: 实战案例 — 虾饺 IM
-description: 10+ 个可直接照搬的 Agent 团队配置方案，覆盖写作、开发、研究、运营等场景。
+title: "Recipes — Xiajiao IM"
+description: "10+ copy-paste Agent team setups for writing, development, research, operations, and more."
 ---
 
-# 实战案例
+# Recipes
 
-这里是可以直接照搬的 Agent 团队配置方案。每个案例包含：群组配置、Agent 列表、SOUL.md 要点、协作链设置。
+Copy-paste Agent team configurations. Each recipe includes: group setup, Agent roster, SOUL.md highlights, and collaboration chain.
 
-## 案例 1：AI 写作工作室
+## Recipe 1: AI writing studio
 
-**场景**：自动化内容生产——一句话触发，三步输出中英双语文章。
+**Scenario:** Automated content — one message triggers a three-step Chinese + English article pipeline.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| 群组名 | 📝 写作工作室 |
-| 成员 | 小说家 + 编辑 + 翻译官 |
-| 协作链 | 小说家 → 编辑 → 翻译官 |
-| Leader | 小说家 |
+| Setting | Value |
+|---------|-------|
+| Group name | 📝 Writing studio |
+| Members | Novelist + Editor + Translator |
+| Collaboration chain | Novelist → Editor → Translator |
+| Leader | Novelist |
 
-### SOUL.md 要点
+### SOUL.md highlights
 
-**小说家**：强调创意和文学性，输出 500-1000 字
-**编辑**：保留原意，改善节奏和措辞，标注修改点
-**翻译官**：文学翻译风格，信达雅三原则
+**Novelist:** Emphasize creativity and literary quality; output 500–1000 characters.
 
-### 使用示例
+**Editor:** Preserve meaning; improve rhythm and wording; mark changes.
+
+**Translator:** Literary translation; fidelity, fluency, elegance.
+
+### Example
 
 ```
-你：写一篇关于"独立开发者的一天"的散文
+You: Write a short prose piece about "a day in the life of an indie developer"
 
-→ 小说家：创作 800 字散文
-→ 编辑：润色（修改 12 处，补充 3 段过渡）
-→ 翻译官：英译（保留散文韵味）
+→ Novelist: ~800-character prose
+→ Editor: Polished (12 edits, 3 transition paragraphs added)
+→ Translator: English version (preserving tone)
 ```
 
-### 效果
+### Outcome
 
-一条消息，2 分钟内得到：
-- 中文原创散文
-- 编辑润色版
-- 英文翻译版
+One message, within ~2 minutes:
+
+- Original prose
+- Edited version
+- English translation
 
 ---
 
-## 案例 2：全栈开发团队
+## Recipe 2: Full-stack dev team
 
-**场景**：代码生成 + 审查 + 文档一条龙。
+**Scenario:** Code generation + review + documentation in one flow.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| 群组名 | 💻 开发组 |
-| 成员 | 代码助手 + 编辑 |
-| 协作链 | 代码助手 → 编辑 |
-| Leader | 代码助手 |
+| Setting | Value |
+|---------|-------|
+| Group name | 💻 Dev squad |
+| Members | Code assistant + Editor |
+| Collaboration chain | Code assistant → Editor |
+| Leader | Code assistant |
 
-### SOUL.md 要点
+### SOUL.md highlights
 
-**代码助手**：
-
-```markdown
-## 代码规范
-- 输出完整可运行的代码，不要片段
-- 自带 JSDoc 注释
-- 包含错误处理
-- 附带使用示例
-```
-
-**编辑**（作为 Code Reviewer）：
+**Code assistant:**
 
 ```markdown
-## 代码审查
-- 检查安全隐患（SQL 注入、XSS 等）
-- 检查性能问题
-- 检查代码风格一致性
-- 给出改进建议，格式用 diff 代码块
+## Code standards
+- Ship complete, runnable code — no fragments
+- Include JSDoc comments
+- Include error handling
+- Include usage examples
 ```
 
-### 使用示例
+**Editor** (as code reviewer):
+
+```markdown
+## Code review
+- Check security (SQL injection, XSS, etc.)
+- Check performance
+- Check style consistency
+- Give fixes in diff-style code blocks
+```
+
+### Example
 
 ```
-你：用 Express 写一个带 JWT 认证的 RESTful API
+You: Build an Express REST API with JWT auth
 
-→ 代码助手：完整代码（含路由、中间件、数据库操作）
-→ 编辑：审查报告（3 个安全建议 + 2 个性能优化 + 代码风格统一）
+→ Code assistant: Full code (routes, middleware, DB)
+→ Editor: Review (3 security notes + 2 performance tweaks + style alignment)
 ```
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  <img src="/images/coder-chat.png" alt="代码助手实际对话" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">代码助手实际对话 — Agent 分析思路后输出可运行代码</p>
+  <img src="/images/coder-chat.png" alt="Code assistant in a real conversation" style="max-width: 480px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <p style="color: var(--vp-c-text-2); font-size: 0.85rem; margin-top: 0.5rem;">Code assistant — reasoning first, then runnable code</p>
 </div>
 
 ---
 
-## 案例 3：私人知识助理
+## Recipe 3: Private knowledge assistant
 
-**场景**：上传文档，Agent 变成你的专属知识专家。
+**Scenario:** Upload documents; the Agent becomes your domain expert.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| 群组名 | 📚 知识库 |
-| 成员 | 代码助手 |
-| Agent 工具 | rag_query + memory + web_search |
-| 知识库 | 上传项目文档、API 规范 |
+| Setting | Value |
+|---------|-------|
+| Group name | 📚 Knowledge base |
+| Members | Code assistant |
+| Agent tools | rag_query + memory + web_search |
+| Knowledge base | Project docs, API specs |
 
-### SOUL.md 要点
-
-```markdown
-## 知识检索原则
-- 先用 rag_query 检索知识库
-- 如果知识库没有结果，再用 web_search
-- 基于检索结果回答，不编造
-- 引用出处：标注信息来自哪个文档
-```
-
-### 使用示例
-
-```
-你：我们的支付 API 怎么调用？
-
-→ 代码助手：[调用 rag_query] → 从你的 API 文档中找到支付接口说明
-→ "根据你的 API 文档，支付接口使用 POST /api/v1/payments..."
-```
-
-### 适合上传的文档
-
-- API 文档 / Swagger 导出
-- 产品手册 / 用户指南
-- 技术规范 / RFC
-- 会议记录 / 项目 Wiki
-- 学习笔记 / 读书摘要
-
----
-
-## 案例 4：多模型 PK 擂台
-
-**场景**：同一个问题让不同模型回答，对比质量。
-
-### 配置
-
-| 设置 | 值 |
-|------|------|
-| 群组名 | ⚔️ 模型 PK |
-| 成员 | GPT 选手 + Claude 选手 + 通义选手 |
-
-创建 3 个 Agent，SOUL.md 完全相同，但分配不同的模型：
-
-| Agent | 模型 |
-|-------|------|
-| GPT 选手 | gpt-4o |
-| Claude 选手 | claude-sonnet |
-| 通义选手 | qwen-max |
-
-### 使用示例
-
-```
-你：@GPT选手 @Claude选手 @通义选手 解释一下 Transformer 的注意力机制
-
-→ GPT 选手：[GPT-4o 的解释]
-→ Claude 选手：[Claude 的解释]
-→ 通义选手：[Qwen 的解释]
-```
-
-对比三个回答的质量、风格、深度，找到最适合你的模型。
-
----
-
-## 案例 5：日报/周报生成器
-
-**场景**：每天/每周自动生成工作汇报。
-
-### 配置
-
-| 设置 | 值 |
-|------|------|
-| Agent | 虾饺管家 |
-| 工具 | memory_search + manage_schedule |
-| 定时 | Cron 每周五 17:00 |
-
-### SOUL.md 要点
+### SOUL.md highlights
 
 ```markdown
-## 周报生成
-当触发周报任务时：
-1. 用 memory_search 搜索本周所有对话记忆
-2. 按项目/话题分类整理
-3. 输出格式：
-   - 本周完成
-   - 进行中
-   - 下周计划
-   - 风险/阻塞
+## Retrieval rules
+- Use rag_query on the knowledge base first
+- If empty, use web_search
+- Answer only from retrieved content — no fabrication
+- Cite which document each fact came from
 ```
 
-### 设置定时任务
+### Example
 
 ```
-你：@虾饺管家 每周五下午 5 点帮我生成周报
+You: How do we call the payments API?
 
-虾饺管家：[调用 manage_schedule]
-已设置定时任务：每周五 17:00 自动生成周报
+→ Code assistant: [rag_query] → finds payment section in your API docs
+→ "Per your API docs, the payment endpoint is POST /api/v1/payments..."
+```
+
+### Good uploads
+
+- API docs / Swagger exports
+- Product manuals / user guides
+- Technical specs / RFCs
+- Meeting notes / project wikis
+- Study notes / reading summaries
+
+---
+
+## Recipe 4: Multi-model arena
+
+**Scenario:** Same question, different models — compare answers.
+
+### Setup
+
+| Setting | Value |
+|---------|-------|
+| Group name | ⚔️ Model arena |
+| Members | GPT contender + Claude contender + Qwen contender |
+
+Create three Agents with identical `SOUL.md` but different models:
+
+| Agent | Model |
+|-------|-------|
+| GPT contender | gpt-4o |
+| Claude contender | claude-sonnet |
+| Qwen contender | qwen-max |
+
+### Example
+
+```
+You: @GPTContender @ClaudeContender @QwenContender Explain Transformer attention in one paragraph
+
+→ GPT contender: [GPT-4o answer]
+→ Claude contender: [Claude answer]
+→ Qwen contender: [Qwen answer]
+```
+
+Compare quality, style, and depth to pick what fits you.
+
+---
+
+## Recipe 5: Daily / weekly report generator
+
+**Scenario:** Auto-generate work summaries on a schedule.
+
+### Setup
+
+| Setting | Value |
+|---------|-------|
+| Agent | Xiajiao (虾饺) Butler |
+| Tools | memory_search + manage_schedule |
+| Schedule | Cron: Friday 17:00 |
+
+### SOUL.md highlights
+
+```markdown
+## Weekly report
+When the weekly job runs:
+1. memory_search for this week’s conversation memories
+2. Group by project / topic
+3. Output:
+   - Done this week
+   - In progress
+   - Next week
+   - Risks / blockers
+```
+
+### Schedule it
+
+```
+You: @XiajiaoButler Every Friday at 5pm generate my weekly report
+
+Xiajiao Butler: [manage_schedule]
+Scheduled: every Friday 17:00 — auto weekly report
 ```
 
 ---
 
-## 案例 6：客户支持团队
+## Recipe 6: Customer support team
 
-**场景**：知识库驱动的客户问答 + 翻译。
+**Scenario:** RAG-backed answers plus translation for global customers.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| 群组名 | 🎧 客户支持 |
-| 成员 | 代码助手(RAG) + 翻译官 |
-| 协作链 | 代码助手 → 翻译官 |
-| 知识库 | 产品文档、FAQ、API 文档 |
+| Setting | Value |
+|---------|-------|
+| Group name | 🎧 Customer support |
+| Members | Code assistant (RAG) + Translator |
+| Collaboration chain | Code assistant → Translator |
+| Knowledge base | Product docs, FAQ, API docs |
 
-### 工作流程
+### Flow
 
 ```
-客户（中文）：你们的 API 限流规则是什么？
+Customer (Chinese): What are your API rate limits?
 
-→ 代码助手：[rag_query 检索] → 从文档中找到限流规则 → 整理成友好回复
-→ 翻译官：[自动翻译成英文] → 适合发给海外客户
+→ Code assistant: [rag_query] → finds rate limits → friendly reply
+→ Translator: English version for overseas customers
 ```
 
 ---
 
-## 案例 7：新闻早报
+## Recipe 7: Morning news digest
 
-**场景**：每天早上自动搜索新闻并发送摘要。
+**Scenario:** Daily search + structured summary.
 
 <p align="center">
-  <img src="/images/news-agent.png" alt="新闻资讯 Agent 真实对话" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/news-agent.png" alt="News Agent in a real conversation" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 <p align="center" style="color: var(--vp-c-text-2);">
-  <em>真实效果：新闻 Agent 用 web_search 工具搜索资讯，以结构化表格呈现。</em>
+  <em>News Agent uses web_search and presents results in a structured table.</em>
 </p>
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| Agent | 虾饺管家 |
-| 工具 | web_search + manage_schedule |
+| Setting | Value |
+|---------|-------|
+| Agent | Xiajiao (虾饺) Butler |
+| Tools | web_search + manage_schedule |
 
-### SOUL.md 要点
+### SOUL.md highlights
 
 ```markdown
-## 新闻摘要
-当触发新闻任务时：
-1. 用 web_search 搜索今日科技新闻
-2. 筛选 5 条最重要的
-3. 每条新闻：标题 + 一句话摘要 + 链接
-4. 输出格式清晰，适合快速浏览
+## News digest
+When the news job runs:
+1. web_search for today’s tech headlines
+2. Pick the 5 most important
+3. Each item: title + one-line summary + link
+4. Clean layout for quick scanning
 ```
 
-### 设置
+### Schedule
 
 ```
-你：@虾饺管家 每天早上 8:30 给我推送科技新闻摘要
+You: @XiajiaoButler Every weekday 8:30am send me a tech news digest
 ```
 
 ---
 
-## 案例 8：面试准备教练
+## Recipe 8: Interview coach
 
-**场景**：模拟技术面试，Agent 扮演面试官。
+**Scenario:** Mock technical interviews with an Agent as interviewer.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| Agent | 自定义"面试官" |
-| 工具 | memory（记住面试表现） |
+| Setting | Value |
+|---------|-------|
+| Agent | Custom “Interviewer” |
+| Tools | memory (track performance) |
 
 ### SOUL.md
 
 ```markdown
-# 面试官
+# Interviewer
 
-你是一位资深技术面试官，10 年面试经验。
+You are a senior technical interviewer with 10 years of experience.
 
-## 面试流程
-1. 先问自我介绍
-2. 根据候选人背景选择提问方向
-3. 由浅入深，逐步加大难度
-4. 每个问题追问 2-3 层
+## Flow
+1. Start with self-introduction
+2. Tailor questions to the candidate’s background
+3. Increase depth gradually
+4. 2–3 follow-ups per question
 
-## 面试风格
-- 专业但友好
-- 答对了给正面反馈
-- 答错了引导思考，不直接给答案
-- 面试结束后给出评估报告
+## Style
+- Professional and friendly
+- Positive feedback on good answers
+- On wrong answers, guide thinking — do not give the answer immediately
+5. End with an evaluation report
 
-## 评估维度
-- 技术深度（1-10 分）
-- 思维清晰度（1-10 分）
-- 沟通能力（1-10 分）
-- 综合建议
+## Rubric
+- Technical depth (1–10)
+- Clarity of thought (1–10)
+- Communication (1–10)
+- Overall recommendations
 
-## 记忆使用
-- 用 memory_write 记录每次面试的表现
-- 下次面试时参考历史记录调整难度
+## Memory
+- memory_write after each session
+- Next session: adjust difficulty using history
 ```
 
 ---
 
-## 案例 9：竞品分析
+## Recipe 9: Competitive analysis
 
-**场景**：系统化分析竞争对手产品。
+**Scenario:** Structured competitor research.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| 群组名 | 🔍 竞品分析 |
-| 成员 | 代码助手 + 编辑 |
-| 协作链 | 代码助手 → 编辑 |
-| 工具 | web_search + memory |
+| Setting | Value |
+|---------|-------|
+| Group name | 🔍 Competitive analysis |
+| Members | Code assistant + Editor |
+| Collaboration chain | Code assistant → Editor |
+| Tools | web_search + memory |
 
-### 使用示例
+### Example
 
 ```
-你：分析 Dify、FastGPT、Coze 三个平台的差异
+You: Compare Dify, FastGPT, and Coze
 
-→ 代码助手：[web_search 搜索] → 收集信息 → 输出结构化对比报告
-→ 编辑：润色报告 → 补充结论和建议
+→ Code assistant: [web_search] → structured comparison
+→ Editor: Polish + conclusions and recommendations
 ```
 
 ---
 
-## 案例 10：学习笔记整理
+## Recipe 10: Study notes
 
-**场景**：读书/学习时随手记录，Agent 帮你整理和检索。
+**Scenario:** Capture notes; Agent organizes and retrieves them.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| Agent | 自定义"学习助手" |
-| 工具 | memory_write + memory_search + rag_query |
+| Setting | Value |
+|---------|-------|
+| Agent | Custom “Study buddy” |
+| Tools | memory_write + memory_search + rag_query |
 
 ### SOUL.md
 
 ```markdown
-# 学习助手
+# Study buddy
 
-帮助用户整理和检索学习笔记。
+Help organize and retrieve study notes.
 
-## 工作模式
-- 用户发笔记时：提取关键概念，用 memory_write 存储
-- 用户提问时：先 memory_search 回忆，再 rag_query 检索文档
+## Mode
+- On new notes: extract concepts, memory_write
+- On questions: memory_search first, then rag_query
 
-## 整理原则
-- 用 Feynman 方法：能用简单的话解释复杂概念
-- 建立知识之间的连接
-- 标注来源和日期
+## Principles
+- Feynman style: explain hard ideas simply
+- Link concepts together
+- Tag source and date
 ```
 
 ---
 
-## 案例 11：多语言技术文档翻译
+## Recipe 11: Multilingual technical docs
 
-**场景**：技术文档一次性翻译成多种语言。
+**Scenario:** One source document → English + Japanese.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| 群组名 | 🌐 多语言翻译 |
-| 成员 | 编辑 + 英语翻译 + 日语翻译 |
-| 协作链 | 编辑 → 英语翻译 → 日语翻译 |
-| Leader | 编辑 |
+| Setting | Value |
+|---------|-------|
+| Group name | 🌐 Multilingual docs |
+| Members | Editor + English translator + Japanese translator |
+| Collaboration chain | Editor → English translator → Japanese translator |
+| Leader | Editor |
 
-### SOUL.md 要点
+### SOUL.md highlights
 
-**编辑**：作为翻译预处理器使用：
-
-```markdown
-## 翻译预处理
-收到技术文档后：
-1. 校对中文原文的语法和用词
-2. 标注专有术语，用 [术语: 推荐译法] 格式
-3. 标注不应翻译的内容（代码块、变量名、品牌名）
-4. 输出清理后的文档，供后续翻译使用
-```
-
-**英语翻译**：
+**Editor** (preprocessor):
 
 ```markdown
-## 技术文档翻译规则（中英）
-- 代码块中的注释保留原文，另起一行给英文
-- API 路径、参数名不翻译
-- 遵循 Google Developer Documentation Style Guide
-- 使用 active voice
+## Translation prep
+When you receive a technical document:
+1. Proofread grammar and wording
+2. Mark terms as [term: preferred translation]
+3. Mark do-not-translate spans (code blocks, identifiers, brands)
+4. Output a clean source for downstream translators
 ```
 
-**日语翻译**：
+**English translator:**
 
 ```markdown
-## 技术文档翻译规则（中日）
-- 使用 です/ます 体
-- 技术术语优先使用片假名（サーバー、デプロイ）
-- 遵循 Microsoft Style Guide for Japanese
+## Technical EN rules
+- Keep code-block comments as-is; add English on the next line if needed
+- Do not translate API paths or parameter names
+- Follow Google Developer Documentation Style Guide
+- Prefer active voice
 ```
 
-### 对话示例
+**Japanese translator:**
+
+```markdown
+## Technical JA rules (JP)
+- Use です/ます style
+- Prefer katakana for technical terms (サーバー, デプロイ)
+- Follow Microsoft Style Guide for Japanese
+```
+
+### Example
 
 ```
-你：翻译下面的部署文档...（粘贴中文文档）
+You: Translate this deployment doc... (paste source)
 
-→ 编辑：[校对原文] 修正 3 处表述，标注 8 个术语推荐译法
-→ 英语翻译：完整英文译文
-→ 日语翻译：完整日文译文
+→ Editor: fixes 3 phrases, 8 term glosses
+→ English translator: full English
+→ Japanese translator: full Japanese
 
-一次提交，三种语言的文档。
+One submission, three language versions.
 ```
 
 ---
 
-## 案例 12：代码迁移助手
+## Recipe 12: Code migration assistant
 
-**场景**：把旧项目从一种技术栈迁移到另一种。
+**Scenario:** Move a legacy stack to a new one.
 
-### 配置
+### Setup
 
-| 设置 | 值 |
-|------|------|
-| 群组名 | 🔄 代码迁移 |
-| 成员 | 代码助手(分析) + 代码助手(重写) |
-| 协作链 | 分析 → 重写 |
+| Setting | Value |
+|---------|-------|
+| Group name | 🔄 Code migration |
+| Members | Code assistant (analyze) + Code assistant (rewrite) |
+| Collaboration chain | Analyze → Rewrite |
 
-### SOUL.md 要点
+### SOUL.md highlights
 
-**分析 Agent**：
-
-```markdown
-## 代码分析
-收到代码后：
-1. 识别语言、框架、设计模式
-2. 列出所有外部依赖和 API 调用
-3. 标注业务逻辑核心部分
-4. 列出迁移风险点
-5. 输出结构化的分析报告
-
-## 输出格式
-- 依赖映射表：旧依赖 → 新依赖建议
-- 风险等级：🔴高 / 🟡中 / 🟢低
-- 业务逻辑标注：哪些是核心不能改的
-```
-
-**重写 Agent**：
+**Analyze Agent:**
 
 ```markdown
-## 代码重写
-基于分析报告进行迁移：
-1. 按模块逐一重写
-2. 保留所有业务逻辑，只改技术实现
-3. 添加 TypeScript 类型定义
-4. 补充单元测试
+## Code analysis
+When code arrives:
+1. Identify language, framework, patterns
+2. List dependencies and external APIs
+3. Mark core business logic
+4. List migration risks
+5. Output a structured report
 
-## 原则
-- 不改变 API 接口（入参、出参不变）
-- 新代码要比旧代码更好（不只是翻译）
-- 给出新旧代码的关键差异说明
+## Format
+- Dependency map: old → suggested new
+- Risk: 🔴 high / 🟡 medium / 🟢 low
+- Mark logic that must not change
 ```
 
-### 对话示例
+**Rewrite Agent:**
+
+```markdown
+## Rewrite
+From the analysis report:
+1. Rewrite module by module
+2. Preserve behavior; change implementation only
+3. Add TypeScript types
+4. Add unit tests
+
+## Rules
+- Keep public API (inputs/outputs) stable
+- New code should be strictly better than a mechanical port
+- Summarize key diffs
+```
+
+### Example
 
 ```
-你：把这个 Express 项目迁移到 Fastify：（粘贴代码）
+You: Migrate this Express app to Fastify: (paste code)
 
-→ 分析 Agent：
-  - 依赖映射：express → fastify, body-parser → 内置, cors → @fastify/cors
-  - 风险：3 个中间件无直接对应，需要自定义插件
-  - 核心业务逻辑：5 个控制器函数
+→ Analyze Agent:
+  - express → fastify, body-parser → built-in, cors → @fastify/cors
+  - Risks: 3 middlewares need custom plugins
+  - Core: 5 controller functions
 
-→ 重写 Agent：
-  - 完整的 Fastify 项目代码
-  - 类型定义文件
-  - 迁移差异说明
-  - 3 个单元测试
+→ Rewrite Agent:
+  - Full Fastify project
+  - Types
+  - Migration notes
+  - 3 unit tests
 ```
 
 ---
 
-## 进阶技巧
+## Advanced patterns
 
-### 动态 Leader 模式
+### Dynamic Leader
 
-在一个群组中设置"调度员" Agent 作为 Leader，由它决定把任务分配给谁：
+Use a “dispatcher” Agent as Leader to route work:
 
 ```markdown
-# 调度员
+# Dispatcher
 
-你是团队调度员，负责把用户的任务分配给最合适的 Agent。
+You route user tasks to the best Agent.
 
-## 团队成员
-- @代码助手：编程、技术问题
-- @编辑：文案、润色、翻译
-- @小说家：创意写作
-- @翻译官：中英互译
+## Team
+- @CodeAssistant: programming and technical questions
+- @Editor: copy, polish, translation
+- @Novelist: creative writing
+- @Translator: Chinese ↔ English
 
-## 分配规则
-1. 分析用户消息的意图
-2. @mention 最合适的 Agent
-3. 如果任务需要多人协作，按顺序 @mention
-4. 自己不直接回答问题，只做分配
+## Rules
+1. Infer intent
+2. @mention the best fit
+3. For multi-step work, @mention in order
+4. Do not answer yourself — only route
 ```
 
-### 专家投票模式
+### Expert voting
 
-让多个 Agent 对同一个问题给出方案，然后由"裁判"Agent 综合评判：
+Multiple Agents propose; a “judge” synthesizes:
 
 ```markdown
-# 裁判
+# Judge
 
-你是技术方案评审员。
+You evaluate technical proposals.
 
-## 工作流程
-1. 等待所有专家给出方案
-2. 从以下维度评估每个方案：
-   - 可行性（1-10）
-   - 成本（1-10）
-   - 风险（1-10）
-   - 可维护性（1-10）
-3. 输出评分矩阵 + 综合推荐
+## Flow
+1. Wait for all experts
+2. Score each on:
+   - Feasibility (1–10)
+   - Cost (1–10)
+   - Risk (1–10)
+   - Maintainability (1–10)
+3. Output score matrix + recommendation
 
-## 输出格式
-| 维度 | 方案 A | 方案 B | 方案 C |
-|------|-------|-------|-------|
-| 可行性 | X/10 | X/10 | X/10 |
+## Format
+| Dimension | Plan A | Plan B | Plan C |
+|-----------|--------|--------|--------|
+| Feasibility | X/10 | ... | ... |
 ...
-综合推荐：方案 X，理由：...
+Recommendation: Plan X because ...
 ```
 
-### 记忆驱动的个性化
-
-让 Agent 根据记忆调整行为：
+### Memory-driven personalization
 
 ```markdown
-## 自适应行为
-- 如果记忆中有用户的技术栈偏好，默认使用那个技术栈
-- 如果记忆中有"用户偏好简洁"，回复控制在 200 字内
-- 如果记忆中有历史项目信息，主动关联上下文
-- 第一次交流时主动询问偏好，然后用 memory_write 记住
+## Adaptive behavior
+- If memory says preferred stack, default to it
+- If memory says “keep it short”, cap replies at ~200 characters
+- If memory has past projects, connect context
+- On first contact, ask preferences once, then memory_write
 ```
 
-## 配置模式总结
+## Pattern summary
 
-| 模式 | 适用场景 | 特点 |
-|------|---------|------|
-| **一对一私聊** | 日常问答、代码生成 | 最简单 |
-| **群组 + @mention** | 灵活的多 Agent 协作 | 人工路由 |
-| **群组 + 协作链** | 标准化流水线 | 自动接力 |
-| **群组 + Leader** | 主力 Agent + 辅助 Agent | 默认路由 |
-| **定时任务** | 自动化日报/搜索 | 无需人工触发 |
-| **知识库 + RAG** | 文档问答 | 基于证据 |
-| **多模型对比** | 选择最佳模型 | 同题对比 |
-| **动态 Leader** | 智能分配任务 | 自动路由 |
-| **专家投票** | 方案评审 | 多角度评估 |
-| **记忆驱动** | 个性化服务 | 越用越懂你 |
+| Pattern | Best for | Traits |
+|---------|----------|--------|
+| **1:1 chat** | Q&A, code | Simplest |
+| **Group + @mention** | Flexible collaboration | Manual routing |
+| **Group + chain** | Repeatable pipelines | Auto handoff |
+| **Group + Leader** | Primary + helpers | Default routing |
+| **Scheduled jobs** | Digests, reports | No manual trigger |
+| **RAG** | Doc Q&A | Evidence-based |
+| **Multi-model** | Pick a model | Same prompt, different models |
+| **Dynamic Leader** | Smart routing | Auto assignment |
+| **Expert voting** | Design review | Many angles |
+| **Memory** | Personalization | Learns over time |
 
-## 相关文档
+## Related docs
 
-- [SOUL.md 写作指南](/guide/soul-guide) — 写出高质量的 Agent 人格设定
-- [SOUL.md 模板库](/guide/soul-templates) — 20 个可复制的 Agent 模板
-- [多 Agent 群聊](/features/multi-agent-chat) — 群组和 @mention 详解
-- [协作流](/features/collaboration-flow) — 协作链配置详解
-- [模型配置](/guide/model-config) — 为不同 Agent 选择合适的模型
-- [平台对比](/guide/comparison) — 和其他平台的差异
+- [SOUL.md guide](/guide/soul-guide) — Strong Agent personas
+- [SOUL.md templates](/guide/soul-templates) — Copy-paste templates
+- [Multi-Agent chat](/features/multi-agent-chat) — Groups and @mention
+- [Collaboration flow](/features/collaboration-flow) — Chains
+- [Model configuration](/guide/model-config) — Model per Agent
+- [Platform comparison](/guide/comparison) — How Xiajiao (虾饺) differs

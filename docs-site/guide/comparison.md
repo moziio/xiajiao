@@ -1,197 +1,197 @@
 ---
-title: 平台对比 — 虾饺 IM
-description: 虾饺 IM 与 Dify、Coze、FastGPT、ChatGPT Team 的详细对比——定位、架构、功能、部署。
+title: "Platform comparison — Xiajiao IM"
+description: "Detailed comparison of Xiajiao IM with Dify, Coze, FastGPT, and ChatGPT Team: positioning, architecture, features, and deployment."
 ---
 
-# 平台对比
+# Platform comparison
 
-虾饺和其他 AI 平台不是同一个品类。这里做一个尽量客观的对比，帮你判断哪个适合你。
+Xiajiao (虾饺) and other AI platforms are not the same category. Here is a balanced comparison to help you choose.
 
-## 一句话定位
+## One-line positioning
 
-| 平台 | 一句话定位 |
-|------|-----------|
-| **虾饺** | AI Agent 团队协作平台——Agent 是你的同事 |
-| **Dify** | AI 应用开发平台——帮你构建面向用户的 AI 应用 |
-| **Coze** | Bot 构建平台——构建和发布 AI Bot |
-| **FastGPT** | AI 知识库问答系统——文档驱动的 AI 应用 |
-| **ChatGPT Team** | AI 对话工具——团队版 ChatGPT |
+| Platform | One-line positioning |
+|----------|----------------------|
+| **Xiajiao (虾饺)** | AI Agent team collaboration platform — Agents are your colleagues |
+| **Dify** | AI application platform — Build user-facing AI apps |
+| **Coze** | Bot builder — Build and publish AI bots |
+| **FastGPT** | AI knowledge-base Q&A — Document-driven AI apps |
+| **ChatGPT Team** | AI chat — Team edition of ChatGPT |
 
-## 什么时候选虾饺？
+## When to choose Xiajiao (虾饺)?
 
-✅ **选虾饺**，当你：
+✅ **Choose Xiajiao (虾饺)** when you:
 
-- 想要一支 AI 团队给自己用，不是给客户用
-- 讨厌 Docker Compose 和 PostgreSQL
-- 希望 `npm start` 就跑
-- 需要 Agent 之间能互相协作
-- 在意数据完全私有
-- 想用最少的依赖做最多的事
-- 是 Node.js 开发者，想 fork 后二次开发
+- Want an AI team for yourself, not for end customers
+- Dislike Docker Compose and PostgreSQL
+- Want `npm start` and you are running
+- Need Agents to collaborate with each other
+- Care about fully private data
+- Want maximum capability with minimal dependencies
+- Are a Node.js developer and may fork for customization
 
-❌ **不选虾饺**，当你：
+❌ **Do not choose Xiajiao (虾饺)** when you:
 
-- 需要构建面向终端用户的 AI 应用
-- 需要可视化工作流画布（拖拽式）
-- 需要 100+ 插件生态
-- 需要企业级多租户和 SSO
-- 需要移动端 App（暂未支持）
+- Need to build user-facing AI applications
+- Need a visual workflow canvas (drag-and-drop)
+- Need a 100+ plugin ecosystem
+- Need enterprise multi-tenancy and SSO
+- Need a mobile app (not supported yet)
 
-## 详细对比
+## Detailed comparison
 
-### 部署与架构
+### Deployment and architecture
 
-|  | 虾饺 | Dify | Coze | FastGPT |
-|--|------|------|------|---------|
-| **启动命令** | `npm start` | `docker compose up` | N/A（SaaS） | `docker compose up` |
-| **外部依赖** | **0 个** | PostgreSQL + Redis + Sandbox | — | MongoDB + PostgreSQL + OneAPI |
-| **npm/pip 依赖** | **6 个** | 200+ Python | — | 100+ |
-| **安装方式** | `npm install`（6 个包） | Docker 多服务 | 无需安装 | Docker 多服务 |
-| **语言** | JavaScript | Python | 闭源 | TypeScript |
-| **数据库** | SQLite（内置） | PostgreSQL | 云端 | MongoDB + PostgreSQL |
-| **前端** | Vanilla JS（零构建） | React | — | Next.js |
-| **资源需求** | 低（单进程） | 较高（多服务） | — | 较高（多服务） |
+|  | Xiajiao (虾饺) | Dify | Coze | FastGPT |
+|--|----------------|------|------|---------|
+| **Start command** | `npm start` | `docker compose up` | N/A (SaaS) | `docker compose up` |
+| **External dependencies** | **0** | PostgreSQL + Redis + Sandbox | — | MongoDB + PostgreSQL + OneAPI |
+| **npm/pip dependencies** | **6** | 200+ Python | — | 100+ |
+| **Install** | `npm install` (6 packages) | Multi-service Docker | No install | Multi-service Docker |
+| **Language** | JavaScript | Python | Closed source | TypeScript |
+| **Database** | SQLite (built-in) | PostgreSQL | Cloud | MongoDB + PostgreSQL |
+| **Frontend** | Vanilla JS (zero build) | React | — | Next.js |
+| **Resource needs** | Low (single process) | Higher (multi-service) | — | Higher (multi-service) |
 
-### 核心功能
+### Core features
 
-|  | 虾饺 | Dify | Coze | FastGPT |
-|--|------|------|------|---------|
-| **多 Agent 群聊** | ✅ IM 式 @mention | ❌ | ❌ | ❌ |
-| **Agent 间协作** | ✅ 协作链 + call_agent | 工作流编排 | Bot 间调用 | ❌ |
-| **@mention 路由** | ✅ | ❌ | ❌ | ❌ |
-| **可视化面板** | ✅ 协作链状态 | ✅ 工作流画布 | ✅ | ✅ |
-| **持久记忆** | ✅ 三分类 | ❌ | 变量 | ❌ |
-| **RAG 知识库** | ✅ BM25+向量+LLM重排 | ✅ | ✅ | ✅ |
-| **Tool Calling** | ✅ 7 个内置 | ✅ 自定义 | ✅ 100+ 插件 | ✅ |
-| **工作流画布** | ❌（用协作链代替） | ✅ 拖拽式 | ✅ | ✅ |
-| **SOUL.md 人格** | ✅ Markdown 文件 | System Prompt | 人设配置 | System Prompt |
-| **多模型** | ✅ 任何 OpenAI 兼容 | ✅ | 有限 | ✅ via OneAPI |
-| **定时任务** | ✅ Cron | 需外部触发 | ✅ | 需外部触发 |
-| **渠道接入** | ✅ 飞书/钉钉/企微/Telegram | ❌ | ✅ | ✅ |
+|  | Xiajiao (虾饺) | Dify | Coze | FastGPT |
+|--|----------------|------|------|---------|
+| **Multi-Agent group chat** | ✅ IM-style @mention | ❌ | ❌ | ❌ |
+| **Agent-to-Agent collaboration** | ✅ Collaboration chain + call_agent | Workflow orchestration | Bot-to-bot calls | ❌ |
+| **@mention routing** | ✅ | ❌ | ❌ | ❌ |
+| **Visual panel** | ✅ Collaboration-chain status | ✅ Workflow canvas | ✅ | ✅ |
+| **Persistent memory** | ✅ Three memory types | ❌ | Variables | ❌ |
+| **RAG knowledge base** | ✅ BM25 + vectors + LLM rerank | ✅ | ✅ | ✅ |
+| **Tool calling** | ✅ 7 built-in tools | ✅ Custom | ✅ 100+ plugins | ✅ |
+| **Workflow canvas** | ❌ (collaboration chain instead) | ✅ Drag-and-drop | ✅ | ✅ |
+| **SOUL.md persona** | ✅ Markdown file | System prompt | Persona config | System prompt |
+| **Multiple models** | ✅ Any OpenAI-compatible API | ✅ | Limited | ✅ via OneAPI |
+| **Scheduled tasks** | ✅ Cron | External trigger needed | ✅ | External trigger needed |
+| **Channel integrations** | ✅ Feishu / DingTalk / WeCom / Telegram | ❌ | ✅ | ✅ |
 
-### 数据与安全
+### Data and security
 
-|  | 虾饺 | Dify | Coze | FastGPT |
-|--|------|------|------|---------|
-| **数据位置** | 你的机器 | 你的机器（自托管） | 字节跳动服务器 | 你的机器 |
-| **完全离线** | ✅（配合 Ollama） | ❌ 需要外部服务 | ❌ | ❌ |
-| **开源** | ✅ MIT | ✅ Apache 2.0 | ❌ | ✅ Apache 2.0 |
-| **代码量** | ~20000 行（含前后端） | ~50000 行 | N/A | ~30000 行 |
-| **可审计性** | ✅ 结构清晰 | ⚠️ 需要团队 | ❌ | ⚠️ 需要团队 |
+|  | Xiajiao (虾饺) | Dify | Coze | FastGPT |
+|--|----------------|------|------|---------|
+| **Data location** | Your machine | Your machine (self-hosted) | Vendor cloud | Your machine |
+| **Fully offline** | ✅ (with Ollama) | ❌ needs external services | ❌ | ❌ |
+| **Open source** | ✅ MIT | ✅ Apache 2.0 | ❌ | ✅ Apache 2.0 |
+| **Code size** | ~20k lines (frontend + backend) | ~50k lines | N/A | ~30k lines |
+| **Auditability** | ✅ Clear structure | ⚠️ Team effort | ❌ | ⚠️ Team effort |
 
-### 开发者体验
+### Developer experience
 
-|  | 虾饺 | Dify | Coze | FastGPT |
-|--|------|------|------|---------|
-| **上手时间** | 5 分钟 | 30 分钟 | 10 分钟 | 30 分钟 |
-| **Fork 后二次开发** | 容易（JS，6 依赖） | 中等（Python，复杂架构） | 不可能 | 中等（TS，复杂架构） |
-| **添加自定义工具** | 改 1 个文件 | API + 配置 | 插件开发 | API + 配置 |
-| **自定义 Agent** | 编辑 .md 文件 | Web UI | Web UI | Web UI |
-| **测试** | 53 个单元测试 | ✅ | N/A | ✅ |
+|  | Xiajiao (虾饺) | Dify | Coze | FastGPT |
+|--|----------------|------|------|---------|
+| **Time to first success** | 5 minutes | 30 minutes | 10 minutes | 30 minutes |
+| **Fork and customize** | Easy (JS, 6 deps) | Medium (Python, complex) | Not possible | Medium (TS, complex) |
+| **Add custom tools** | Edit one file | API + config | Plugin development | API + config |
+| **Customize Agents** | Edit `.md` files | Web UI | Web UI | Web UI |
+| **Tests** | 53 unit tests | ✅ | N/A | ✅ |
 
-## 场景推荐
+## Scenario recommendations
 
-### "我想给自己用一支 AI 团队"
+### “I want an AI team for myself”
 
-**推荐：虾饺**
+**Recommendation: Xiajiao (虾饺)**
 
-理由：IM 式交互最直觉，Agent 之间可以互相协作，`npm start` 即用。
+Reason: IM-style interaction is intuitive; Agents can collaborate; `npm start` and go.
 
-### "我想构建一个面向客户的 AI 应用"
+### “I want to build a customer-facing AI app”
 
-**推荐：Dify**
+**Recommendation: Dify**
 
-理由：完善的工作流编排、API 发布、多租户支持。虾饺不是为这个场景设计的。
+Reason: Strong workflow, API publishing, multi-tenancy. Xiajiao (虾饺) is not designed for this.
 
-### "我想快速做一个知识库问答 Bot"
+### “I want a quick knowledge-base Q&A bot”
 
-**推荐：FastGPT 或 Dify**
+**Recommendation: FastGPT or Dify**
 
-理由：它们的 RAG + 工作流 + 发布流程更成熟。虾饺的 RAG 更偏向个人使用。
+Reason: Mature RAG + workflow + publishing. Xiajiao (虾饺) RAG is oriented more toward personal use.
 
-### "我不想自托管"
+### “I do not want to self-host”
 
-**推荐：Coze 或 ChatGPT Team**
+**Recommendation: Coze or ChatGPT Team**
 
-理由：SaaS 免运维。虾饺和 Dify/FastGPT 都需要自己管服务器。
+Reason: SaaS, no ops. Xiajiao (虾饺), Dify, and FastGPT imply running your own server.
 
-### "我想完全离线、完全私有"
+### “I want fully offline and fully private”
 
-**推荐：虾饺 + Ollama**
+**Recommendation: Xiajiao (虾饺) + Ollama**
 
-理由：虾饺 + Ollama 可以完全离线运行，零外部连接。其他平台即使自托管，也依赖 PostgreSQL/Redis 等外部服务。
+Reason: Xiajiao (虾饺) + Ollama can run with zero external connections. Other stacks still depend on PostgreSQL, Redis, etc.
 
-### "我是 Node.js 开发者，想学习/贡献"
+### “I am a Node.js developer and want to learn or contribute”
 
-**推荐：虾饺**
+**Recommendation: Xiajiao (虾饺)**
 
-理由：6 个依赖，代码结构清晰，模块划分明确。
+Reason: Six dependencies, clear structure, clear modules.
 
-## 成本对比
+## Cost comparison
 
-### 部署成本
+### Deployment cost
 
-| 平台 | 最低硬件要求 | 说明 |
-|------|-----------|------|
-| 虾饺 | 较低（单进程 + SQLite） | 无外部服务，资源占用小 |
-| Dify | 较高（需 PostgreSQL + Redis） | 多服务协同 |
-| FastGPT | 较高（需 MongoDB + PostgreSQL） | 多服务协同 |
-| Coze | N/A | SaaS，无服务器成本 |
+| Platform | Minimum hardware | Notes |
+|----------|------------------|-------|
+| Xiajiao (虾饺) | Modest (single process + SQLite) | No external services, small footprint |
+| Dify | Higher (PostgreSQL + Redis) | Multi-service |
+| FastGPT | Higher (MongoDB + PostgreSQL) | Multi-service |
+| Coze | N/A | SaaS, no server cost |
 
-虾饺的学习曲线平缓，因为核心交互方式就是"在 IM 里聊天"——你已经会用微信，就会用虾饺。
+The learning curve for Xiajiao (虾饺) is gentle because the core interaction is “chat in IM” — if you can use a messenger, you can use Xiajiao (虾饺).
 
-## 公平地说
+## In fairness
 
-虾饺**没有**的：
+What Xiajiao (虾饺) does **not** have:
 
-- 拖拽式工作流画布
-- 100+ 插件生态
-- 企业级多租户和 SSO
-- 完善的 API 发布流程
-- 移动端 App
-- 大规模并发支持（单进程 SQLite）
+- Drag-and-drop workflow canvas
+- 100+ plugin ecosystem
+- Enterprise multi-tenancy and SSO
+- Full API publishing workflow
+- Mobile app
+- Massive concurrency (single-process SQLite)
 
-这些功能在 Roadmap 中，但不是虾饺的核心方向。虾饺的核心是：**用最少的依赖，提供 IM 式的多 Agent 团队协作体验。**
+Some of these are on the roadmap but are not the core direction. The core of Xiajiao (虾饺) is: **minimal dependencies, IM-style multi-Agent team collaboration.**
 
-## 迁移到虾饺
+## Migrating to Xiajiao (虾饺)
 
-### 从 ChatGPT 迁移
+### From ChatGPT
 
-1. 安装虾饺（3 行命令）
-2. 在模型配置中添加 OpenAI API Key
-3. 创建自定义 Agent，把常用的 Custom Instructions 写入 SOUL.md
-4. 享受多 Agent 协作 + 持久记忆
+1. Install Xiajiao (虾饺) (three commands)
+2. Add your OpenAI API key in model settings
+3. Create custom Agents and move your Custom Instructions into `SOUL.md`
+4. Enjoy multi-Agent collaboration and persistent memory
 
-### 从 Dify 迁移
+### From Dify
 
-1. 导出 Dify 中的 System Prompt → 转为 SOUL.md
-2. 导出知识库文档 → 上传到虾饺 RAG
-3. 工作流 → 转为虾饺的协作链（线性流程）或手动 @mention
+1. Export System Prompts from Dify → convert to `SOUL.md`
+2. Export knowledge-base documents → upload to Xiajiao (虾饺) RAG
+3. Workflows → Xiajiao (虾饺) collaboration chains (linear) or manual @mention
 
-### 配合使用
+### Using together
 
-虾饺和其他平台不冲突，可以配合使用：
+Xiajiao (虾饺) does not conflict with other platforms:
 
-- **虾饺** 做日常 AI 团队协作（给自己用）
-- **Dify** 做面向客户的 AI 应用（给用户用）
-- **Coze** 做社交平台上的 Bot（给公众用）
+- **Xiajiao (虾饺)** for day-to-day AI teamwork (for you)
+- **Dify** for customer-facing AI apps
+- **Coze** for bots on social platforms
 
-## 选择决策树
+## Decision tree
 
 ```
-你需要 AI 功能吗？
-├── 给用户/客户用 → Dify / FastGPT（面向终端用户的 AI 应用）
-└── 给自己/团队内部用
-    ├── 需要拖拽式工作流画布？ → Dify
-    ├── 需要极简部署 + 多 Agent 协作？ → 虾饺
-    ├── 需要社交平台 Bot？ → Coze
-    └── 需要完全离线？ → 虾饺 + Ollama
+Do you need AI capabilities?
+├── For users/customers → Dify / FastGPT (end-user AI apps)
+└── For yourself / internal team
+    ├── Need drag-and-drop workflow canvas? → Dify
+    ├── Need minimal deploy + multi-Agent collaboration? → Xiajiao (虾饺)
+    ├── Need social-platform bots? → Coze
+    └── Need fully offline? → Xiajiao (虾饺) + Ollama
 ```
 
-## 相关文档
+## Related docs
 
-- [快速开始](/guide/quick-start) — 试试看虾饺
-- [安全与隐私](/guide/security) — 数据安全详解
-- [架构设计](/guide/architecture) — 技术实现
-- [实战案例](/guide/recipes) — 具体使用场景
-- [术语表](/guide/glossary) — 不懂的术语看这里
+- [Quick start](/guide/quick-start) — Try Xiajiao (虾饺)
+- [Security and privacy](/guide/security) — Data safety details
+- [Architecture](/guide/architecture) — Implementation
+- [Recipes](/guide/recipes) — Concrete scenarios
+- [Glossary](/guide/glossary) — Terminology

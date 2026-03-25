@@ -1,51 +1,51 @@
 ---
-title: 安装指南 — 虾饺 IM
-description: 在 Windows、macOS、Linux 上安装虾饺 IM 的详细步骤，包括 Node.js 环境配置和故障排除。
+title: Installation — Xiajiao IM
+description: "Install Xiajiao IM on Windows, macOS, and Linux: Node.js setup, run steps, and troubleshooting."
 ---
 
-# 安装指南
+# Installation
 
-虾饺支持所有主流操作系统。唯一的前置要求是 **Node.js >= 22.0.0**。
+Xiajiao runs on mainstream desktop OSes. The only prerequisite is **Node.js >= 22.0.0**.
 
 <p align="center">
-  <img src="/images/login.png" alt="安装完成后的登录界面" style="max-width: 400px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+  <img src="/images/login.png" alt="Login screen after install" style="max-width: 400px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </p>
 
 ## Windows
 
-### 1. 安装 Node.js
+### 1. Install Node.js
 
-**方式 A：官网下载（推荐新手）**
+**Option A: Official installer (easiest)**
 
-前往 [nodejs.org](https://nodejs.org/) 下载 LTS 版本（>= 22），运行安装程序，一路 Next。
+Download the LTS build (>= 22) from [nodejs.org](https://nodejs.org/), run the installer, use defaults.
 
-安装时确认勾选 "Add to PATH"（默认已勾选）。
+Ensure **Add to PATH** stays checked.
 
-**方式 B：winget（一行命令）**
+**Option B: winget**
 
 ```powershell
 winget install OpenJS.NodeJS.LTS
 ```
 
-**方式 C：nvm-windows（多版本管理）**
+**Option C: nvm-windows (multiple versions)**
 
-从 [nvm-windows](https://github.com/coreybutler/nvm-windows/releases) 下载安装 nvm，然后：
+Install from [nvm-windows releases](https://github.com/coreybutler/nvm-windows/releases), then:
 
 ```powershell
 nvm install 22
 nvm use 22
 ```
 
-### 2. 验证安装
+### 2. Verify
 
 ```powershell
-node -v   # 应显示 v22.x.x 或更高
-npm -v    # 应显示 10.x.x 或更高
+node -v   # expect v22.x.x or newer
+npm -v    # expect 10.x.x or newer
 ```
 
-### 3. 安装虾饺
+### 3. Install Xiajiao
 
-**使用 Git**：
+**With Git:**
 
 ```powershell
 git clone https://github.com/moziio/xiajiao.git
@@ -54,46 +54,45 @@ npm install
 npm start
 ```
 
-**没有 Git？** 直接下载 ZIP：
+**No Git?** Download ZIP:
 
-1. 打开 [GitHub 仓库](https://github.com/moziio/xiajiao)
-2. 点击绿色 "Code" 按钮 → "Download ZIP"
-3. 解压到任意目录
-4. 在解压目录中打开终端，执行 `npm install && npm start`
+1. Open the [GitHub repo](https://github.com/moziio/xiajiao)
+2. Green **Code** → **Download ZIP**
+3. Extract anywhere
+4. In that folder, run `npm install && npm start`
 
-::: tip Windows 防火墙
-首次启动时，Windows 可能弹出防火墙提示，选择"允许访问"即可。这是因为 Node.js 需要监听网络端口。
+::: tip Windows Firewall
+The first run may prompt for firewall access—allow it so Node can listen on a port.
 :::
 
 
 ## macOS
 
-### 1. 安装 Node.js
+### 1. Install Node.js
 
-**方式 A：Homebrew（推荐）**
+**Option A: Homebrew (recommended)**
 
 ```bash
-# 如果没装 Homebrew
+# install Homebrew if needed
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 安装 Node.js
 brew install node@22
 ```
 
-**方式 B：nvm（多版本管理）**
+**Option B: nvm**
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
-source ~/.zshrc   # 或 source ~/.bashrc
+source ~/.zshrc   # or source ~/.bashrc
 nvm install 22
 nvm use 22
 ```
 
-**方式 C：官网下载**
+**Option C: Official installer**
 
-前往 [nodejs.org](https://nodejs.org/) 下载 macOS 安装包（.pkg），双击安装。
+Download the macOS `.pkg` from [nodejs.org](https://nodejs.org/).
 
-### 2. 安装虾饺
+### 2. Install Xiajiao
 
 ```bash
 git clone https://github.com/moziio/xiajiao.git
@@ -106,14 +105,11 @@ npm start
 ### Ubuntu / Debian
 
 ```bash
-# 安装 Node.js 22
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# 验证
 node -v
 
-# 安装虾饺
 git clone https://github.com/moziio/xiajiao.git
 cd xiajiao && npm install
 npm start
@@ -140,7 +136,7 @@ cd xiajiao && npm install
 npm start
 ```
 
-### 使用 nvm（通用方法，适用于所有 Linux 发行版）
+### nvm (any distro)
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
@@ -155,7 +151,7 @@ npm start
 
 ## Docker
 
-如果你更喜欢容器化部署：
+For containerized deploy:
 
 ```bash
 git clone https://github.com/moziio/xiajiao.git
@@ -167,17 +163,17 @@ docker run -d -p 18800:18800 \
   --name xiajiao xiajiao
 ```
 
-详见 [Docker 部署](/deployment/docker)。
+Details: [Docker deployment](/deployment/docker).
 
-## 环境变量
+## Environment variables
 
-| 变量 | 说明 | 默认值 | 何时修改 |
-|------|------|--------|---------|
-| `IM_PORT` | 服务端口 | `18800` | 端口冲突时 |
-| `OWNER_KEY` | 管理员密码 | `admin` | **生产环境必须修改** |
-| `LLM_MODE` | LLM 模式 | `direct` | 一般不需要修改 |
+| Variable | Purpose | Default | When to change |
+|----------|---------|---------|----------------|
+| `IM_PORT` | HTTP port | `18800` | Port conflict |
+| `OWNER_KEY` | Admin password | `admin` | **Always in production** |
+| `LLM_MODE` | LLM mode | `direct` | Rarely |
 
-各平台设置方式：
+Per platform:
 
 ::: code-group
 ```bash [Linux / macOS]
@@ -197,160 +193,155 @@ node server/index.js
 ```
 :::
 
-## 数据存储
+## Data on disk
 
-虾饺的所有数据存储在项目目录下，不需要外部数据库：
+Everything lives under the project folder—no external database:
 
 ```
 xiajiao/
 ├── data/
-│   ├── im.db              # 主数据库（消息、频道、用户）
-│   ├── agents.json         # Agent 列表配置
-│   ├── workspace-xxx/      # Agent 独立工作区
-│   │   ├── SOUL.md         # Agent 人格设定
-│   │   ├── memory.db       # Agent 独立记忆库
-│   │   └── rag/            # Agent 知识库文件
-│   └── _soul-templates/    # SOUL.md 模板
-└── public/uploads/         # 用户上传文件
+│   ├── im.db              # messages, channels, users
+│   ├── agents.json        # agent list
+│   ├── workspace-xxx/     # per-agent workspace
+│   │   ├── SOUL.md
+│   │   ├── memory.db
+│   │   └── rag/
+│   └── _soul-templates/
+└── public/uploads/        # uploads
 ```
 
-备份只需复制 `data/` 和 `public/uploads/` 两个目录。
+Back up `data/` and `public/uploads/`.
 
-## 验证安装
+## Verify install
 
-启动后，浏览器打开 `http://localhost:18800`：
+After `npm start`, open `http://localhost:18800`:
 
-1. ✅ 看到登录页 → 安装成功
-2. ✅ 输入默认密码 `admin` 登录
-3. ✅ 进入 **设置 → 模型管理** 添加 API Key
-4. ✅ 回到首页，和 Agent 聊天
-5. ✅ 发送消息后收到 AI 回复 → 全部正常
+1. Login page appears
+2. Log in with default `admin`
+3. **Settings → Model management** — add an API key
+4. Return home and chat with an agent
+5. You get AI replies
 
-## 故障排除
+## Troubleshooting
 
-### `npm install` 失败
+### `npm install` fails
 
-**症状**：`gyp ERR!` 或编译相关错误
+**Symptom**: `gyp ERR!` or native compile errors
 
-**原因**：某些 npm 包的原生模块编译失败
+**Cause**: native addon build failed
 
-**解决**：
+**Fix:**
 
 ```bash
 # Linux
 sudo apt install python3 make g++
 
-# macOS（安装 Xcode 命令行工具）
+# macOS (Xcode CLI tools)
 xcode-select --install
 
 # Windows
 npm install --global windows-build-tools
 ```
 
-### `npm start` 报语法错误
+### `npm start` syntax error
 
-**症状**：`SyntaxError: Unexpected token`
+**Symptom**: `SyntaxError: Unexpected token`
 
-**原因**：Node.js 版本太低
+**Cause**: Node too old
 
-**解决**：升级到 Node.js 22+
+**Fix**: upgrade to Node.js 22+
 
 ```bash
-node -v  # 检查版本
+node -v
 ```
 
-### 端口被占用
+### Port in use
 
-**症状**：`Error: listen EADDRINUSE :::18800`
+**Symptom**: `Error: listen EADDRINUSE :::18800`
 
-**解决**：换个端口
+**Fix:**
 
 ```bash
 IM_PORT=3000 npm start
 ```
 
-### 无法从外网访问
+### Not reachable from outside
 
-**原因**：防火墙没开放端口
+**Cause**: firewall
 
 ```bash
-# Linux
+# Linux example
 sudo ufw allow 18800
-
-# 云服务器还需要在控制台的安全组中开放端口
 ```
 
-### 公司网络需要代理
+On cloud VMs, open the port in the security group too.
+
+### Corporate proxy
 
 ```bash
-# 设置 npm 代理
 npm config set proxy http://proxy.company.com:8080
 npm config set https-proxy http://proxy.company.com:8080
 
-# 设置 Git 代理
 git config --global http.proxy http://proxy.company.com:8080
 
-# 安装完成后可以取消
+# after install, optional cleanup
 npm config delete proxy
 npm config delete https-proxy
 ```
 
-### WSL2 中安装
-
-Windows 用户可以在 WSL2 中运行虾饺：
+### WSL2
 
 ```bash
-# 确认 WSL2 版本
 wsl --version
 
-# 在 WSL2 中安装 Node.js 22
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
 source ~/.bashrc
 nvm install 22
 
-# 正常安装
 git clone https://github.com/moziio/xiajiao.git
 cd xiajiao && npm install && npm start
 ```
 
-从 Windows 浏览器访问 `http://localhost:18800` 即可。WSL2 自动做了端口转发。
+From Windows, use `http://localhost:18800` (WSL2 forwards ports).
 
-### 离线环境安装
+### Offline install
 
-在无网络的机器上部署：
+On a machine with network:
 
 ```bash
-# 在有网络的机器上准备离线包
 git clone https://github.com/moziio/xiajiao.git
 cd xiajiao && npm install
 tar czf xiajiao-offline.tar.gz .
+```
 
-# 传到目标机器后
+On the target:
+
+```bash
 tar xzf xiajiao-offline.tar.gz
 npm start
 ```
 
 ::: warning
-目标机器仍需安装 Node.js 22+。可以提前下载 Node.js 二进制包一起打包。
+The target still needs Node.js 22+. Bundle a Node binary if the machine is fully offline.
 :::
 
-## 安装后自检清单
+## Post-install checklist
 
 ```
-✅ node -v → v22.x 或更高
-✅ npm start → 无报错
-✅ 浏览器打开 http://localhost:18800 → 看到登录页
-✅ 用默认密码 admin 登录成功
-✅ 设置 → 模型管理 → 添加至少一个 LLM Provider
-✅ 创建 Agent → 发消息 → 收到 AI 回复
-✅ data/ 目录已创建且包含 im.db
+✅ node -v → v22.x or newer
+✅ npm start → no errors
+✅ Browser http://localhost:18800 → login page
+✅ Login with admin works
+✅ Settings → Model management → at least one provider
+✅ Create or use agent → message → AI reply
+✅ data/ exists with im.db
 ```
 
-## 相关文档
+## Related docs
 
-- [快速开始](/guide/quick-start) — 配置模型，开始聊天
-- [模型配置](/guide/model-config) — 详细的 LLM Provider 配置教程
-- [本地部署](/deployment/local) — 后台运行、开机自启、数据备份
-- [Docker 部署](/deployment/docker) — 容器化部署
-- [多 Agent 群聊](/features/multi-agent-chat) — 创建群组，体验协作
-- [故障排查](/guide/troubleshooting) — 更多问题解决方案
+- [Quick start](/guide/quick-start) — models and first chat
+- [Model configuration](/guide/model-config) — provider setup
+- [Local deployment](/deployment/local) — daemon, autostart, backup
+- [Docker deployment](/deployment/docker)
+- [Multi-agent chat](/features/multi-agent-chat)
+- [Troubleshooting](/guide/troubleshooting)
