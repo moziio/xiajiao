@@ -1,6 +1,7 @@
 node_modules
 data
 !data/_soul-templates
+!data/channel-presets
 *.db
 *.db-wal
 *.db-shm
