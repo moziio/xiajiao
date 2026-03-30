@@ -1,5 +1,16 @@
 # Changelog — 虾饺 (Xiajiao)
 
+## v1.1.0 (2026-03-24)
+
+### 新功能
+- **HTTP 自定义工具** — 零代码配置 HTTP API 为 Agent 工具。设置 → 工具页面可视化添加，支持 GET/POST/PUT/PATCH/DELETE、模板变量 `{{param}}`、自定义 Headers、响应路径提取
+- **JS 工具自动扫描** — `server/services/tools/` 内置工具及 `data/custom-tools/` 用户目录下的 `.js` 文件自动注册，无需手动修改 `index.js`
+- **Docker 部署** — 提供 Dockerfile + `.dockerignore`，`docker build && docker run` 一键部署
+
+### 改进
+- 工具注册架构重构：`toolRegistry.autoRegisterTools()` 替代手动逐个 require + registerTool
+- 设置页工具面板新增 HTTP 工具管理区域，置于搜索/RAG/文生图配置之前
+
 ## v1.0.0 (2026-03-18) — 首次开源发布
 
 ### 核心能力

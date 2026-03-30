@@ -402,6 +402,62 @@ async function handle(req, res, urlPath) {
     return jsonRes(res, 200, { ok: true });
   }
 
+  // ── HTTP Tools ──
+  if (urlPath === '/api/settings/http-tools' && req.method === 'GET') {
+    if (!guardOwner(req, res)) return;
+    const engine = require('../services/http-tool-engine');
+    return jsonRes(res, 200, { tools: engine.list() });
+  }
+  if (urlPath === '/api/settings/http-tools' && req.method === 'POST') {
+    if (!guardOwner(req, res)) return;
+    const body = await readBody(req);
+    const engine = require('../services/http-tool-engine');
+    try {
+      const entry = engine.create(body);
+      return jsonRes(res, 200, { ok: true, tool: entry });
+    } catch (e) { return jsonRes(res, 400, { error: e.message }); }
+  }
+  const htMatch = urlPath.match(/^\/api\/settings\/http-tools\/([^/]+)$/);
+  if (htMatch && req.method === 'GET') {
+    if (!guardOwner(req, res)) return;
+    const engine = require('../services/http-tool-engine');
+    const tool = engine.getById(decodeURIComponent(htMatch[1]));
+    if (!tool) return jsonRes(res, 404, { error: 'not found' });
+    return jsonRes(res, 200, { tool });
+  }
+  if (htMatch && req.method === 'PUT') {
+    if (!guardOwner(req, res)) return;
+    const body = await readBody(req);
+    const engine = require('../services/http-tool-engine');
+    try {
+      const updated = engine.update(decodeURIComponent(htMatch[1]), body);
+      return jsonRes(res, 200, { ok: true, tool: updated });
+    } catch (e) { return jsonRes(res, 400, { error: e.message }); }
+  }
+  if (htMatch && req.method === 'DELETE') {
+    if (!guardOwner(req, res)) return;
+    const engine = require('../services/http-tool-engine');
+    engine.remove(decodeURIComponent(htMatch[1]));
+    return jsonRes(res, 200, { ok: true });
+  }
+  const htTestMatch = urlPath.match(/^\/api\/settings\/http-tools\/([^/]+)\/test$/);
+  if (htTestMatch && req.method === 'POST') {
+    if (!guardOwner(req, res)) return;
+    const body = await readBody(req);
+    const engine = require('../services/http-tool-engine');
+    const tool = engine.getById(decodeURIComponent(htTestMatch[1]));
+    if (!tool) return jsonRes(res, 404, { error: 'not found' });
+    const toolRegistry = require('../services/tool-registry');
+    const handler = toolRegistry.getHandler(tool.name);
+    if (!handler) return jsonRes(res, 404, { error: 'tool not registered' });
+    try {
+      const result = await handler(body.args || {});
+      return jsonRes(res, 200, { ok: true, result });
+    } catch (e) {
+      return jsonRes(res, 200, { ok: false, error: e.message });
+    }
+  }
+
   // ── Gateway ──
   if (urlPath === '/api/settings/gateway/reconnect' && req.method === 'POST') {
     if (!guardOwner(req, res)) return;

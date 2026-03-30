@@ -49,22 +49,11 @@ llm.setEmitCommunityEvent(gw.emitCommunityEvent);
 toolEvents.setBroadcast(gw.broadcast);
 collabFlow.setBroadcast(gw.broadcast);
 
-// M1.5 — 注册内置工具
-const ragQueryTool = require('./services/tools/rag-query');
-const webSearchTool = require('./services/tools/web-search');
-const memoryWriteTool = require('./services/tools/memory-write');
-const memorySearchTool = require('./services/tools/memory-search');
-const callAgentTool = require('./services/tools/call-agent');
-toolRegistry.registerTool('rag_query', ragQueryTool);
-toolRegistry.registerTool('web_search', webSearchTool);
-toolRegistry.registerTool('memory_write', memoryWriteTool);
-toolRegistry.registerTool('memory_search', memorySearchTool);
-toolRegistry.registerTool('call_agent', callAgentTool);
-const manageChannelTool = require('./services/tools/manage-channel');
-toolRegistry.registerTool('manage_channel', manageChannelTool);
-const manageScheduleTool = require('./services/tools/manage-schedule');
-toolRegistry.registerTool('manage_schedule', manageScheduleTool);
-log.info(`tool registry: ${toolRegistry.getAllToolNames().join(', ')}`);
+// M1.5 — 自动扫描注册工具（内置 + 用户自定义）
+const toolCount = toolRegistry.autoRegisterTools();
+const httpToolEngine = require('./services/http-tool-engine');
+const httpToolCount = httpToolEngine.init();
+log.info(`tool registry (${toolCount} scanned + ${httpToolCount} http): ${toolRegistry.getAllToolNames().join(', ')}`);
 
 // M8 — 初始化 MCP Server 连接
 (async () => {

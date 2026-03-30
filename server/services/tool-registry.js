@@ -93,8 +93,37 @@ function _getSchema(name) {
   return entry.schema?.function || null;
 }
 
+function autoRegisterTools() {
+  const path = require('path');
+  const fs = require('fs');
+  const dirs = [
+    path.join(__dirname, 'tools'),
+    path.join(__dirname, '..', '..', 'data', 'custom-tools'),
+  ];
+  let count = 0;
+  for (const dir of dirs) {
+    let files;
+    try { files = fs.readdirSync(dir); } catch { continue; }
+    for (const file of files) {
+      if (!file.endsWith('.js') || file.startsWith('_')) continue;
+      const toolName = file.replace(/\.js$/, '').replace(/-/g, '_');
+      if (_tools.has(toolName)) continue;
+      try {
+        const mod = require(path.join(dir, file));
+        if (mod && mod.schema && typeof mod.handler === 'function') {
+          registerTool(toolName, mod);
+          count++;
+        }
+      } catch (e) {
+        log.warn(`skip tool ${file}: ${e.message}`);
+      }
+    }
+  }
+  return count;
+}
+
 module.exports = {
-  registerTool, unregisterTool,
+  registerTool, unregisterTool, autoRegisterTools,
   getToolsForAgent, getHandler, getMeta, getAllToolNames,
   toOpenAITools, toAnthropicTools, toGoogleTools,
   _getSchema,

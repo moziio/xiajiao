@@ -852,12 +852,18 @@ let _wsCfg = {};
 
 async function renderSettingsTools(ct) {
   ct.innerHTML =
-    '<div class="settings-section"><div class="settings-section-title">🔍 ' + t('settings.webSearchTitle') + '</div>' +
+    '<div class="settings-section"><div class="settings-section-title">🌐 HTTP 自定义工具</div>' +
+    '<div class="settings-section-desc">零代码配置 HTTP API，让 Agent 调用任意外部接口。配置后自动注册为工具，无需写代码。</div>' +
+    '<div id="stHttpToolsList"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div>' +
+    '<button class="settings-btn settings-btn-outline" onclick="_htToggleAdd()" style="margin-top:10px">+ 添加 HTTP 工具</button>' +
+    '<div id="htAddFormWrap" class="hidden" style="margin-top:14px"></div></div>' +
+    '<div class="settings-section" style="margin-top:20px"><div class="settings-section-title">🔍 ' + t('settings.webSearchTitle') + '</div>' +
     '<div class="settings-section-desc">' + t('settings.webSearchDesc') + '</div>' +
     '<div id="stWebSearchContent"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div></div>' +
     '<div class="settings-section" style="margin-top:20px"><div class="settings-section-title">' + t('settings.ragTitle') + '</div>' +
     '<div class="settings-section-desc">' + t('settings.ragDesc') + '</div>' +
     '<div id="stRagContent"><div style="color:var(--text3);padding:12px">' + t('common.loading') + '</div></div></div>';
+  _htLoadList();
   await loadSettingsProviders();
   await loadCapabilityRouting();
   _loadWebSearchSettings();
@@ -1063,4 +1069,217 @@ async function testRagEmbedding() {
     result.innerHTML = '<span style="color:var(--red)">' + t('settings.ragTestFail') + ': ' + escH(e.message) + '</span>';
   }
   btn.disabled = false; btn.textContent = t('settings.ragTestBtn');
+}
+
+/* ── HTTP 自定义工具管理 ── */
+
+let _httpTools = [];
+let _htEditingId = null;
+
+async function _htLoadList() {
+  var el = document.getElementById('stHttpToolsList');
+  if (!el) return;
+  try {
+    var r = await (await authFetch('/api/settings/http-tools')).json();
+    _httpTools = r.tools || [];
+    _htRenderList(el);
+  } catch (e) { el.innerHTML = '<div style="color:var(--text3)">加载失败</div>'; }
+}
+
+function _htRenderList(el) {
+  if (!_httpTools.length) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);border:1px dashed var(--border);border-radius:10px">' +
+      '<div style="font-size:24px;margin-bottom:6px">🌐</div>' +
+      '<div>尚未配置 HTTP 工具</div>' +
+      '<div style="font-size:12px;margin-top:4px">添加后，Agent 可通过 Tool Calling 调用外部 API</div></div>';
+    return;
+  }
+  var h = '<div style="display:flex;flex-direction:column;gap:8px">';
+  for (var i = 0; i < _httpTools.length; i++) {
+    var tool = _httpTools[i];
+    var method = (tool.method || 'GET').toUpperCase();
+    var methodColor = method === 'GET' ? 'var(--green)' : method === 'POST' ? 'var(--cyan)' : method === 'PUT' ? '#e67e22' : method === 'DELETE' ? 'var(--red)' : 'var(--text2)';
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">';
+    h += '<span style="font-size:11px;font-weight:700;color:' + methodColor + ';font-family:monospace;min-width:44px">' + method + '</span>';
+    h += '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;color:var(--text1)">' + esc(tool.name) + '</div>';
+    h += '<div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(tool.description || tool.url || '') + '</div></div>';
+    h += '<button class="settings-btn settings-btn-outline" style="padding:4px 10px;font-size:12px" onclick="_htEdit(\'' + escJs(tool.id) + '\')">编辑</button>';
+    h += '<button class="settings-btn" style="padding:4px 10px;font-size:12px;color:var(--red)" onclick="_htDelete(\'' + escJs(tool.id) + '\')">删除</button>';
+    h += '</div>';
+  }
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+function _htToggleAdd() {
+  var wrap = document.getElementById('htAddFormWrap');
+  if (!wrap) return;
+  _htEditingId = null;
+  if (wrap.classList.contains('hidden')) {
+    wrap.classList.remove('hidden');
+    wrap.innerHTML = _htRenderForm(null);
+  } else {
+    wrap.classList.add('hidden');
+    wrap.innerHTML = '';
+  }
+}
+
+async function _htEdit(id) {
+  try {
+    var r = await (await authFetch('/api/settings/http-tools/' + encodeURIComponent(id))).json();
+    _htEditingId = id;
+    var wrap = document.getElementById('htAddFormWrap');
+    if (!wrap) return;
+    wrap.classList.remove('hidden');
+    wrap.innerHTML = _htRenderForm(r.tool);
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) { showToastMsg('加载失败', 'error'); }
+}
+
+function _htRenderForm(tool) {
+  var isEdit = !!tool;
+  var title = isEdit ? '编辑 HTTP 工具' : '添加 HTTP 工具';
+  var h = '<div style="border:1px solid var(--border);border-radius:10px;padding:16px;background:var(--bg3)">';
+  h += '<div style="font-weight:600;font-size:14px;margin-bottom:12px">' + title + '</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  h += '<div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">工具名称</label>' +
+    '<input class="settings-input" id="htName" value="' + escH(tool ? tool.name : '') + '" placeholder="get_weather" style="width:100%;box-sizing:border-box;font-family:monospace"' + (isEdit ? ' disabled' : '') + '></div>';
+  h += '<div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">HTTP 方法</label>' +
+    '<select class="settings-select" id="htMethod" style="width:100%">' +
+    ['GET','POST','PUT','PATCH','DELETE'].map(function(m) { return '<option value="' + m + '"' + (tool && tool.method === m ? ' selected' : '') + '>' + m + '</option>'; }).join('') +
+    '</select></div>';
+  h += '</div>';
+  h += '<div style="margin-top:10px"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">描述（Agent 会看到这段文字来决定是否调用）</label>' +
+    '<input class="settings-input" id="htDesc" value="' + escH(tool ? tool.description : '') + '" placeholder="查询天气信息" style="width:100%;box-sizing:border-box"></div>';
+  h += '<div style="margin-top:10px"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">URL（支持 {{param}} 模板变量）</label>' +
+    '<input class="settings-input" id="htUrl" value="' + escH(tool ? tool.url : '') + '" placeholder="https://api.example.com/v1/data?city={{city}}" style="width:100%;box-sizing:border-box;font-family:monospace"></div>';
+  h += '<div style="margin-top:10px"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Headers（JSON，可选）</label>' +
+    '<input class="settings-input" id="htHeaders" value="' + escH(tool && tool.headers && Object.keys(tool.headers).length ? JSON.stringify(tool.headers) : '') + '" placeholder=\'{"Authorization":"Bearer {{token}}"}\' style="width:100%;box-sizing:border-box;font-family:monospace"></div>';
+  h += '<div style="margin-top:10px"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Body 模板（仅 POST/PUT/PATCH，支持 {{param}} 变量）</label>' +
+    '<textarea class="settings-input" id="htBody" rows="3" placeholder=\'{"query":"{{keyword}}","limit":10}\' style="width:100%;box-sizing:border-box;font-family:monospace;resize:vertical">' + esc(tool ? tool.bodyTemplate || '' : '') + '</textarea></div>';
+  h += '<div style="margin-top:10px"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">响应提取路径（可选，如 data.items）</label>' +
+    '<input class="settings-input" id="htExtract" value="' + escH(tool ? tool.responseExtract || '' : '') + '" placeholder="data.result" style="width:200px;font-family:monospace"></div>';
+  h += '<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">';
+  h += '<div style="font-weight:600;font-size:13px;margin-bottom:8px">参数定义（Agent 调用时传入）</div>';
+  h += '<div id="htParams">';
+  var params = [];
+  if (tool && tool.parameters && tool.parameters.properties) {
+    var required = tool.parameters.required || [];
+    for (var pk in tool.parameters.properties) {
+      params.push({ key: pk, type: tool.parameters.properties[pk].type || 'string', desc: tool.parameters.properties[pk].description || '', required: required.indexOf(pk) >= 0 });
+    }
+  }
+  h += _htRenderParams(params);
+  h += '</div>';
+  h += '<button class="settings-btn settings-btn-outline" onclick="_htAddParam()" style="margin-top:6px;font-size:12px;padding:4px 10px">+ 添加参数</button>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">';
+  h += '<button class="settings-btn settings-btn-primary" onclick="_htSave()">' + (isEdit ? '保存' : '创建') + '</button>';
+  h += '<button class="settings-btn settings-btn-outline" onclick="_htToggleAdd()">取消</button>';
+  h += '</div></div>';
+  return h;
+}
+
+var _htParamRows = [];
+
+function _htRenderParams(params) {
+  _htParamRows = params && params.length ? params.slice() : [];
+  return _htBuildParamRows();
+}
+
+function _htBuildParamRows() {
+  if (!_htParamRows.length) return '<div style="color:var(--text3);font-size:12px;padding:6px 0">无参数（点击下方添加）</div>';
+  var h = '<div style="display:flex;flex-direction:column;gap:6px">';
+  for (var i = 0; i < _htParamRows.length; i++) {
+    var p = _htParamRows[i];
+    h += '<div style="display:flex;gap:6px;align-items:center">';
+    h += '<input class="settings-input htpk" value="' + escH(p.key) + '" placeholder="key" style="width:100px;font-family:monospace;font-size:12px">';
+    h += '<select class="settings-select htpt" style="width:80px;font-size:12px"><option value="string"' + (p.type === 'string' ? ' selected' : '') + '>string</option><option value="number"' + (p.type === 'number' ? ' selected' : '') + '>number</option><option value="boolean"' + (p.type === 'boolean' ? ' selected' : '') + '>boolean</option></select>';
+    h += '<input class="settings-input htpd" value="' + escH(p.desc) + '" placeholder="描述" style="flex:1;font-size:12px">';
+    h += '<label style="font-size:11px;white-space:nowrap;color:var(--text3);display:flex;align-items:center;gap:3px"><input type="checkbox" class="htpr"' + (p.required ? ' checked' : '') + '>必填</label>';
+    h += '<button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px" onclick="_htRemoveParam(' + i + ')">×</button>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function _htCollectParams() {
+  var keys = document.querySelectorAll('.htpk');
+  var types = document.querySelectorAll('.htpt');
+  var descs = document.querySelectorAll('.htpd');
+  var reqs = document.querySelectorAll('.htpr');
+  _htParamRows = [];
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i].value.trim();
+    if (!k) continue;
+    _htParamRows.push({ key: k, type: types[i] ? types[i].value : 'string', desc: descs[i] ? descs[i].value : '', required: reqs[i] ? reqs[i].checked : false });
+  }
+}
+
+function _htAddParam() {
+  _htCollectParams();
+  _htParamRows.push({ key: '', type: 'string', desc: '', required: false });
+  var el = document.getElementById('htParams');
+  if (el) el.innerHTML = _htBuildParamRows();
+}
+
+function _htRemoveParam(idx) {
+  _htCollectParams();
+  _htParamRows.splice(idx, 1);
+  var el = document.getElementById('htParams');
+  if (el) el.innerHTML = _htBuildParamRows();
+}
+
+async function _htSave() {
+  _htCollectParams();
+  var name = (document.getElementById('htName')?.value || '').trim();
+  var method = document.getElementById('htMethod')?.value || 'GET';
+  var desc = (document.getElementById('htDesc')?.value || '').trim();
+  var url = (document.getElementById('htUrl')?.value || '').trim();
+  var headersStr = (document.getElementById('htHeaders')?.value || '').trim();
+  var bodyTpl = (document.getElementById('htBody')?.value || '').trim();
+  var extract = (document.getElementById('htExtract')?.value || '').trim();
+  if (!name) { showToastMsg('请输入工具名称', 'error'); return; }
+  if (!url) { showToastMsg('请输入 URL', 'error'); return; }
+  var headers = {};
+  if (headersStr) {
+    try { headers = JSON.parse(headersStr); } catch { showToastMsg('Headers JSON 格式错误', 'error'); return; }
+  }
+  var properties = {};
+  var required = [];
+  for (var i = 0; i < _htParamRows.length; i++) {
+    var p = _htParamRows[i];
+    if (!p.key) continue;
+    properties[p.key] = { type: p.type, description: p.desc };
+    if (p.required) required.push(p.key);
+  }
+  var parameters = { type: 'object', properties: properties };
+  if (required.length) parameters.required = required;
+  var body = { name: name, method: method, description: desc, url: url, headers: headers, bodyTemplate: bodyTpl, responseExtract: extract, parameters: parameters };
+  try {
+    var resp;
+    if (_htEditingId) {
+      resp = await authFetch('/api/settings/http-tools/' + encodeURIComponent(_htEditingId), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    } else {
+      resp = await authFetch('/api/settings/http-tools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    }
+    var rj = await resp.json();
+    if (!resp.ok || rj.error) { showToastMsg(rj.error || '保存失败', 'error'); return; }
+    showToastMsg(_htEditingId ? '已更新' : '已创建');
+    _htEditingId = null;
+    var wrap = document.getElementById('htAddFormWrap');
+    if (wrap) { wrap.classList.add('hidden'); wrap.innerHTML = ''; }
+    await _htLoadList();
+  } catch (e) { showToastMsg(e.message || '保存失败', 'error'); }
+}
+
+async function _htDelete(id) {
+  if (!await appConfirm('确定删除这个 HTTP 工具？已注册的工具将被移除。')) return;
+  try {
+    var resp = await authFetch('/api/settings/http-tools/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (!resp.ok) { showToastMsg('删除失败', 'error'); return; }
+    showToastMsg('已删除');
+    await _htLoadList();
+  } catch { showToastMsg('删除失败', 'error'); }
 }
