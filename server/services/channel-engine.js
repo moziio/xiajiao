@@ -174,13 +174,21 @@ function getOrCreateSession(channelId, externalUserId, externalName) {
   const db = getDB();
   let session = db.prepare('SELECT * FROM channel_sessions WHERE channel_id=? AND external_user_id=?')
     .get(channelId, externalUserId);
-  if (session) {
-    db.prepare('UPDATE channel_sessions SET last_active=? WHERE id=?').run(Date.now(), session.id);
-    return _parseSession(session);
-  }
   const ch = getChannel(channelId);
   if (!ch) return null;
   const agentId = ch.config.imAgentId || ch.config.agentId || store.localAgents[0]?.id || 'main';
+  if (session) {
+    const updates = ['last_active=?'];
+    const values = [Date.now()];
+    if (session.agent_id !== agentId) {
+      updates.push('agent_id=?');
+      values.push(agentId);
+      session.agent_id = agentId;
+    }
+    values.push(session.id);
+    db.prepare(`UPDATE channel_sessions SET ${updates.join(',')} WHERE id=?`).run(...values);
+    return _parseSession(session);
+  }
   const imChannel = `ext-${channelId}-${externalUserId}`;
   const id = 'cs-' + Date.now().toString(36) + '-' + crypto.randomBytes(3).toString('hex');
   db.prepare(`INSERT INTO channel_sessions (id, channel_id, external_user_id, external_name, agent_id, im_channel, last_active, metadata)

@@ -130,6 +130,7 @@ async function _chDelete(id) {
     await authFetch('/api/channels/' + id, { method: 'DELETE' });
     showToastMsg('已删除');
     await _chLoadAll();
+    if (typeof loadExtChannelMap === 'function') loadExtChannelMap();
   } catch (e) { showToastMsg('删除失败: ' + e.message, 'error'); }
 }
 
@@ -306,6 +307,7 @@ async function _chCreateFromPreset(presetId) {
       document.getElementById('chAddPanel')?.classList.add('hidden');
       document.getElementById('chAddBtn').textContent = '+ 添加 Channel';
       await _chLoadAll();
+      if (typeof loadExtChannelMap === 'function') loadExtChannelMap();
     } else {
       showToastMsg(r.error || '创建失败', 'error');
     }
@@ -362,6 +364,7 @@ async function _chCreateCustom() {
       document.getElementById('chAddPanel')?.classList.add('hidden');
       document.getElementById('chAddBtn').textContent = '+ 添加 Channel';
       await _chLoadAll();
+      if (typeof loadExtChannelMap === 'function') loadExtChannelMap();
     } else {
       showToastMsg(r.error || '创建失败', 'error');
     }
@@ -445,5 +448,6 @@ async function _chSaveEdit(id) {
     });
     showToastMsg('已保存');
     await _chLoadAll();
+    if (typeof loadExtChannelMap === 'function') loadExtChannelMap();
   } catch (e) { showToastMsg('保存失败: ' + e.message, 'error'); }
 }
