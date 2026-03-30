@@ -25,7 +25,7 @@ features:
     linkText: Learn more
   - icon: 🔧
     title: Tool Calling
-    details: 7 built-in tools (6 categories) — web search, RAG retrieval, memory read/write, cross-agent calls, channel management, scheduled tasks.
+    details: 7 built-in tools + extensible custom tools — HTTP tools (zero-code), JS auto-register, and MCP bridged. Web search, RAG, memory, cross-agent calls, channels, schedules, and any REST API.
     link: /features/tool-calling
     linkText: Learn more
   - icon: 🧠
@@ -71,8 +71,8 @@ features:
     <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">external services</div>
   </div>
   <div style="text-align: center;">
-    <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">7</div>
-    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">built-in tools</div>
+    <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">7+</div>
+    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">built-in + custom tools</div>
   </div>
   <div style="text-align: center;">
     <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">53</div>

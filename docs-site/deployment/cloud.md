@@ -304,7 +304,7 @@ Rare—restore from backup:
 
 ```bash
 pm2 stop xiajiao
-cp /backups/xiajiao/latest/data/im.db /opt/xiajiao/data/im.db
+cp /backups/xiajiao/latest/data/xiajiao.db /opt/xiajiao/data/xiajiao.db
 pm2 start xiajiao
 ```
 
@@ -325,7 +325,7 @@ pm2 start xiajiao
 │ Xiajiao (虾饺) IM │  Node (PM2)
 │  (18800)    │
 ├─────────────┤
-│  SQLite     │  data/im.db
+│  SQLite     │  data/xiajiao.db
 │  Files      │  data/workspace-*
 └─────────────┘
 ```

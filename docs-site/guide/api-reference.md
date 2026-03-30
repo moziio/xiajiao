@@ -318,7 +318,7 @@ ws.onopen = () => {
 
 ## Database schema
 
-Main DB: `data/im.db` (SQLite).
+Main DB: `data/xiajiao.db` (SQLite).
 
 ### Core tables
 

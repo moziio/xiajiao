@@ -174,7 +174,7 @@ All state lives under `data/` and `public/uploads/`:
 ```
 xiajiao/
 ├── data/
-│   ├── im.db              # Messages, channels, Agent config
+│   ├── xiajiao.db              # Messages, channels, Agent config
 │   ├── agents.json
 │   ├── workspace-xxx/
 │   │   ├── SOUL.md
@@ -218,7 +218,7 @@ Requires Node.js 22+. Check `node -v`.
 
 ### SQLITE_BUSY
 
-Another process is locking `data/im.db`.
+Another process is locking `data/xiajiao.db`.
 
 ### Windows `npm install` fails
 

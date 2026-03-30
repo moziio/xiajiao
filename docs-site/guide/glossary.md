@@ -93,6 +93,14 @@ A shared channel for people and agents—members, leader, optional collaboration
 
 → [Multi-agent chat](/features/multi-agent-chat)
 
+## H
+
+### HTTP custom tool
+
+A zero-code way to expose any REST API as an Agent tool. Configure URL, method, headers, body template with `{{param}}` placeholders, and response extraction in **Settings → HTTP Tools**. Definitions stored in `data/http-tools.json`.
+
+→ [Tool calling — Custom tools](/features/tool-calling#custom-tools)
+
 ## I
 
 ### IM
@@ -117,7 +125,9 @@ Large language model (GPT-4o, Claude, Qwen, …). Xiajiao calls provider APIs on
 
 ### MCP
 
-Model Context Protocol—standardized tool/schema negotiation. Xiajiao’s tool layer aligns with MCP ideas.
+Model Context Protocol — standardized tool/schema negotiation. Xiajiao acts as an MCP client: connect external MCP servers (stdio or HTTP) in Settings, and their tools auto-register as mcp:{serverId}:{toolName}.
+
+→ [Tool calling — Custom tools](/features/tool-calling#custom-tools)
 
 ### memory_write / memory_search
 
@@ -198,9 +208,15 @@ What the LLM sees as instructions—assembled from SOUL.md, memory, and RAG cont
 
 ### Tool calling
 
-LLM-invoked functions. Built-ins include `web_search`, `rag_query`, `memory_write`, `memory_search`, `call_agent`, `manage_channel`, `manage_schedule`.
+LLM-invoked functions. Seven built-in tools (`web_search`, `rag_query`, `memory_write`, `memory_search`, `call_agent`, `manage_channel`, `manage_schedule`) plus extensible custom tools via HTTP tools, JS auto-register, and MCP.
 
 → [Tool calling](/features/tool-calling)
+
+### Tool registry
+
+Centralized module (`server/services/tool-registry.js`) that manages global tool registration, per-agent allow/deny lists, and LLM schema conversion. Auto-scans `server/services/tools/` and `data/custom-tools/` directories on startup.
+
+→ [Architecture](/guide/architecture)
 
 ## V
 
@@ -215,7 +231,7 @@ No React/Vue—plain browser JavaScript. Edit and refresh; no bundler required.
 SQLite write-ahead logging—concurrent reads/writes and higher write throughput.
 
 ```bash
-sqlite3 data/im.db "PRAGMA journal_mode;"  # expect wal
+sqlite3 data/xiajiao.db "PRAGMA journal_mode;"  # expect wal
 ```
 
 → [Performance](/guide/performance)

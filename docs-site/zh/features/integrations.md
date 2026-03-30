@@ -223,14 +223,15 @@ class MyChannelAdapter {
 
 ### 文件位置
 
-渠道相关代码在 `server/services/channels/` 目录：
+渠道相关代码在 `server/services/connectors/` 目录：
 
 ```
-server/services/channels/
-├── feishu.js       # 飞书适配器
-├── dingtalk.js     # 钉钉适配器（开发中）
-├── wecom.js        # 企微适配器（开发中）
-└── telegram.js     # Telegram 适配器（开发中）
+server/services/connectors/
+├── feishu-ws.js       # 飞书 WebSocket 长连接
+├── webhook.js         # 通用 Webhook（钉钉 / 企微等）
+├── websocket.js       # 通用 WebSocket
+├── polling.js         # 轮询型
+└── _template.js.example  # 新连接器模板
 ```
 
 ## 多渠道联动

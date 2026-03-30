@@ -130,13 +130,13 @@ See [Collaboration flow](/features/collaboration-flow).
 
 ### Message history
 
-Persisted in SQLite (`data/im.db`) with FTS5 search.
+Persisted in SQLite (`data/xiajiao.db`) with FTS5 search.
 
 ## Security & privacy
 
 ### Where is data?
 
-On your disk: messages in `data/im.db`, memory per workspace, uploads in `public/uploads/`. No Xiajiao-hosted relay.
+On your disk: messages in `data/xiajiao.db`, memory per workspace, uploads in `public/uploads/`. No Xiajiao-hosted relay.
 
 ### API key safety?
 
@@ -166,11 +166,11 @@ No build step, tiny footprint, IM UI does not need a heavy component framework.
 
 ### MCP support?
 
-Tool definitions follow MCP-style JSON Schema and can be extended.
+Xiajiao acts as an MCP client. Connect external MCP servers (stdio or HTTP transport) in **Settings → MCP**; their tools auto-register as `mcp:{serverId}:{toolName}` and become available to Agents.
 
 ### Can I fork and extend?
 
-Yes—MIT, clear layout under `server/api`, `server/services`, `public/`. See GitHub `CONTRIBUTING.md` and [Developer guide](/guide/dev-guide).
+Yes—MIT, clear layout under `server/routes`, `server/services`, `public/`. See GitHub `CONTRIBUTING.md` and [Developer guide](/guide/dev-guide).
 
 ## Operations
 
@@ -224,11 +224,17 @@ Yes—Xiajiao + local Ollama. Install deps on a networked machine once, copy the
 
 ### Add an HTTP route
 
-Edit the relevant module under `server/api/` and register it from `server/index.js` (pattern depends on repo layout). Restart Node.
+Edit the relevant module under `server/routes/` and register it from `server/router.js`. Restart Node.
 
-### Add a built-in tool
+### Add a custom tool
 
-Register in `server/services/tools.js` (see [Developer guide](/guide/dev-guide)).
+Three methods:
+
+1. **HTTP custom tools (zero-code)**: Settings → HTTP Tools — configure any REST API as an Agent tool with `{{param}}` interpolation, no code needed
+2. **JS auto-register**: drop a `.js` file into `server/services/tools/` or `data/custom-tools/` — auto-registered on startup
+3. **MCP bridged**: connect external MCP servers in Settings → MCP
+
+See [Tool calling — Custom tools](/features/tool-calling#custom-tools) and [Developer guide](/guide/dev-guide).
 
 ### Database schema?
 

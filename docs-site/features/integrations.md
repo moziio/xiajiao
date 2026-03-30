@@ -221,11 +221,12 @@ class MyChannelAdapter {
 ### Code layout
 
 ```
-server/services/channels/
-├── feishu.js
-├── dingtalk.js    # WIP
-├── wecom.js       # WIP
-└── telegram.js    # WIP
+server/services/connectors/
+├── feishu-ws.js       # Feishu WebSocket long connection
+├── webhook.js         # Generic webhook (DingTalk / WeCom)
+├── websocket.js       # Generic WebSocket
+├── polling.js         # Polling-based
+└── _template.js.example  # Template for new connectors
 ```
 
 ## Multi-channel, one Agent

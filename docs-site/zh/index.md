@@ -25,7 +25,7 @@ features:
     linkText: 了解更多
   - icon: 🔧
     title: Tool Calling
-    details: 7 个内置工具（6 类能力）——网络搜索、知识库检索、记忆读写、跨 Agent 调用、渠道管理、定时任务。
+    details: 7 个内置工具 + 可扩展自定义工具 — HTTP 工具（零代码）、JS 自动注册、MCP 桥接。网络搜索、RAG、记忆、跨 Agent、渠道、定时任务及任意 REST API。
     link: /zh/features/tool-calling
     linkText: 了解更多
   - icon: 🧠
@@ -71,8 +71,8 @@ features:
     <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">外部服务</div>
   </div>
   <div style="text-align: center;">
-    <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">7</div>
-    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">内置工具</div>
+    <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">7+</div>
+    <div style="color: var(--vp-c-text-2); font-size: 0.9rem;">内置 + 自定义工具</div>
   </div>
   <div style="text-align: center;">
     <div style="font-size: 2rem; font-weight: bold; color: var(--vp-c-brand);">53</div>

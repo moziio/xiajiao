@@ -5,6 +5,28 @@ description: "Release history for Xiajiao IM: features, improvements, and fixes.
 
 # Changelog
 
+## v1.1.0 — 2026-03-24
+
+### New features
+
+- **HTTP custom tools** — zero-code HTTP API → Agent tool bridge. Configure any REST API as a callable tool in **Settings → HTTP Tools** with `{{param}}` interpolation, custom headers, body templates, and response extraction. No code, no restart.
+- **Tool auto-register architecture** — drop a `.js` file into `server/services/tools/` or `data/custom-tools/` and it auto-registers on startup. `toolRegistry.autoRegisterTools()` replaces manual `registerTool()` calls.
+- **Tool registry refactor** — centralized `server/services/tool-registry.js` manages global tool registration, per-agent allow/deny lists, and LLM schema conversion.
+- **Settings API for HTTP tools** — full CRUD + test endpoints for managing HTTP custom tools via REST API.
+- **HTTP tools management UI** — create, edit, delete, and test HTTP tools from the web frontend.
+
+### Improvements
+
+- **Dockerfile optimization** — switched base image from `node:22-alpine` to `node:22-slim` for better compatibility. Selective `COPY` of specific directories replaces `COPY . .` for smaller, more secure images. Added `NODE_ENV=production` default. Single volume `/app/data`.
+- **`.dockerignore` update** — explicitly include `data/channel-presets` in Docker builds.
+
+### Fixes
+
+- **Channel session agent sync** — fixed `agent_id` not syncing in sessions when channel configuration changes.
+- **External channel map refresh** — frontend now refreshes the external channel map after channel create/update/delete operations.
+
+---
+
 ## v1.0.0 — 2026-03-19
 
 First public release.
@@ -66,15 +88,15 @@ VitePress site with GitHub Actions deployment:
 
 ## Roadmap
 
-### Near term (v1.1 – v1.2)
+### Near term (v1.2 – v1.3)
 
 | Status | Item | Notes | Target |
 |--------|------|-------|--------|
-| In progress | Workflow engine | Branching, errors, loops, canvas | v1.1 |
-| In progress | Agent negotiation | Structured debates, voting, summaries | v1.1 |
+| In progress | Workflow engine | Branching, errors, loops, canvas | v1.2 |
+| In progress | Agent negotiation | Structured debates, voting, summaries | v1.2 |
 | Planned | More channels | WeCom, DingTalk, Telegram parity | v1.2 |
-| Planned | Search upgrades | Global history filters | v1.2 |
-| Planned | Agent import/export | Share SOUL.md + settings bundles | v1.2 |
+| Planned | Search upgrades | Global history filters | v1.3 |
+| Planned | Agent import/export | Share SOUL.md + settings bundles | v1.3 |
 
 ### Mid term (v1.3 – v2.0)
 

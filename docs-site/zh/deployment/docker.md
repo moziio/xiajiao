@@ -42,27 +42,31 @@ docker run -d -p 18800:18800 \
 
 | 属性 | 值 |
 |------|------|
-| 基础镜像 | `node:22-alpine` |
-| 构建方式 | `npm ci --production` |
-| 镜像大小 | 较小（基于 Alpine） |
+| 基础镜像 | `node:22-slim` |
+| 构建 | `npm ci --omit=dev` |
+| COPY 策略 | 选择性复制——仅 `server/`、`public/`、模板、预设、配置等生产所需目录 |
+| 镜像大小 | 较小（Debian slim，无开发依赖） |
 | 暴露端口 | 18800 |
 | 工作目录 | `/app` |
+| NODE_ENV | `production`（镜像内已设置） |
+| 数据卷 | `/app/data`（**单一**挂载点，承载全部持久化数据） |
 
-::: info 为什么镜像小？
-虾饺只有 6 个 npm 依赖，基于 Alpine 基础镜像。没有 Python、Java 等额外运行时。
+::: info 优化后的构建
+Dockerfile 使用选择性 `COPY`，而非 `COPY . .`——仅将生产必需文件打入镜像。配合 `node:22-slim` 基础镜像与 `NODE_ENV=production`，镜像更小、更安全。
 :::
 
 ## 持久化存储
 
-两个 Volume 确保数据不丢失：
+**主数据卷**为一个：
 
-| Volume | 容器路径 | 内容 | 重要性 |
-|--------|---------|------|--------|
-| `xiajiao-data` | `/app/data` | SQLite 数据库、Agent 工作区、SOUL 模板、记忆库 | **核心数据** |
-| `xiajiao-uploads` | `/app/public/uploads` | 用户上传的文件（图片等） | 用户文件 |
+| Volume | 挂载路径 | 内容 | 是否关键 |
+|--------|---------|------|----------|
+| `xiajiao-data` | `/app/data` | SQLite、工作区、SOUL 模板、记忆、HTTP 工具定义、自定义工具等 | **是** |
+
+上传文件位于 `public/uploads/`（不在 `data/` 下）。若需在重建容器后保留上传文件，请像上文「快速开始」那样为 `/app/public/uploads` **单独**挂载一个卷。
 
 ::: danger 必须挂载 Volume
-如果不挂载 Volume，容器删除后所有数据（消息、Agent 配置、记忆）将永久丢失。
+不挂载卷时，删除容器会**丢失**消息、Agent、记忆等数据。
 :::
 
 ### 使用 Bind Mount（映射到宿主机目录）

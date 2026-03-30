@@ -5,6 +5,28 @@ description: 虾饺 IM 的版本更新历史，记录每次发布的新功能、
 
 # 更新日志
 
+## v1.1.0 — 2026-03-24
+
+### 新功能
+
+- **HTTP 自定义工具** — 零代码将 HTTP API 桥接为 Agent 可调用的工具。在 **设置 → HTTP 工具** 中配置任意 REST API，支持 `{{param}}` 插值、自定义请求头、请求体模板与响应字段提取。无需写代码，无需重启。
+- **工具自动注册架构** — 将 `.js` 文件放入 `server/services/tools/` 或 `data/custom-tools/`，启动时自动注册。`toolRegistry.autoRegisterTools()` 取代手动 `registerTool()`。
+- **工具注册表重构** — 集中式 `server/services/tool-registry.js` 管理全局工具注册、按 Agent 的允许/拒绝列表，以及 LLM schema 转换。
+- **HTTP 工具的 Settings API** — 提供完整 CRUD 与测试端点，用于通过 REST 管理 HTTP 自定义工具。
+- **HTTP 工具管理界面** — 在 Web 前端创建、编辑、删除和测试 HTTP 工具。
+
+### 改进
+
+- **Dockerfile 优化** — 基础镜像由 `node:22-alpine` 改为 `node:22-slim` 以提升兼容性；用选择性 `COPY` 替代 `COPY . .`，仅复制生产所需目录，镜像更小更安全；镜像内默认 `NODE_ENV=production`；单一数据卷挂载点 `/app/data`。
+- **`.dockerignore` 更新** — 在 Docker 构建中显式包含 `data/channel-presets`。
+
+### 修复
+
+- **渠道会话与 Agent 同步** — 修复渠道配置变更时会话中 `agent_id` 未同步的问题。
+- **外部渠道映射刷新** — 创建/更新/删除渠道后，前端会刷新外部渠道映射。
+
+---
+
 ## v1.0.0 — 2026-03-19
 
 首个公开发布版本。

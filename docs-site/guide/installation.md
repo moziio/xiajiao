@@ -200,7 +200,7 @@ Everything lives under the project folder—no external database:
 ```
 xiajiao/
 ├── data/
-│   ├── im.db              # messages, channels, users
+│   ├── xiajiao.db              # messages, channels, users
 │   ├── agents.json        # agent list
 │   ├── workspace-xxx/     # per-agent workspace
 │   │   ├── SOUL.md
@@ -334,7 +334,7 @@ The target still needs Node.js 22+. Bundle a Node binary if the machine is fully
 ✅ Login with admin works
 ✅ Settings → Model management → at least one provider
 ✅ Create or use agent → message → AI reply
-✅ data/ exists with im.db
+✅ data/ exists with xiajiao.db
 ```
 
 ## Related docs

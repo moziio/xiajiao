@@ -55,7 +55,7 @@ description: 虾饺 IM 的技术架构详解——极简设计哲学、代码结
 │  │                             │                │
 │  │  ┌─────────┐ ┌───────────┐ │                │
 │  │  │ LLM 调用 │ │ Tool 调用  │ │                │
-│  │  │ (多模型)  │ │ (7 个工具) │ │                │
+│  │  │ (多模型)  │ │(7+自定义) │ │                │
 │  │  └─────────┘ └───────────┘ │                │
 │  │                             │                │
 │  │  ┌─────────┐ ┌───────────┐ │                │
@@ -91,22 +91,22 @@ xiajiao/
 │   ├── storage.js             # 数据层 — SQLite 操作 + Agent 管理
 │   ├── ws.js                  # WebSocket — 实时消息推送
 │   │
-│   ├── api/                   # REST API 路由
-│   │   ├── messages.js        # 消息 CRUD + 搜索
-│   │   ├── channels.js        # 频道 / 群组管理
-│   │   ├── agents.js          # Agent CRUD
-│   │   ├── settings.js        # 系统设置
-│   │   ├── uploads.js         # 文件上传
-│   │   └── ...
+│   ├── router.js              # 路由分发
+│   ├── routes/                # REST 路由模块
+│   │   └── settings.js        # 设置 + HTTP 工具 API
 │   │
 │   ├── services/              # 核心业务逻辑
-│   │   ├── llm.js             # LLM 调用 — 多 Provider、流式输出、Tool Calling 循环
-│   │   ├── tools.js           # 工具注册 + 调用分发
-│   │   ├── memory.js          # 记忆系统 — 三分类、embedding、去重
-│   │   ├── rag.js             # RAG — 分块、索引、混合检索、重排序
-│   │   ├── collaboration.js   # 协作链 — 编排、状态管理
-│   │   ├── schedule.js        # 定时任务 — Cron 调度
-│   │   └── search-engines.js  # 搜索引擎适配器
+│   │   ├── llm.js             # LLM — Provider、流式、工具循环
+│   │   ├── tool-registry.js   # 集中式工具注册 + ACL
+│   │   ├── http-tool-engine.js # HTTP 自定义工具（零代码 API 桥接）
+│   │   ├── mcp-manager.js     # MCP 服务连接
+│   │   ├── channel-engine.js  # 外部 IM 渠道管理
+│   │   ├── tools/             # 内置工具模块（自动扫描）
+│   │   ├── memory.js
+│   │   ├── rag.js
+│   │   ├── collab-flow.js     # 协作链状态机
+│   │   ├── schedule.js
+│   │   └── search-engines.js
 │   │
 │   └── test/                  # 单元测试 (node:test)
 │       ├── storage.test.js
@@ -125,9 +125,12 @@ xiajiao/
 │       └── highlight.min.js   # 代码高亮
 │
 ├── data/                      # 运行时数据（.gitignore 排除）
-│   ├── im.db                  # 主数据库
+│   ├── xiajiao.db                  # 主数据库
 │   ├── agents.json            # Agent 列表
-│   ├── workspace-xxx/         # Agent 独立工作区
+│   ├── http-tools.json        # HTTP 自定义工具定义
+│   ├── custom-tools/          # 用户 JS 工具模块（自动扫描）
+│   ├── channel-presets/       # 渠道连接器预设
+│   ├── workspace-xxx/       # Agent 独立工作区
 │   │   ├── SOUL.md            # 人格设定
 │   │   ├── memory.db          # 独立记忆库
 │   │   └── rag/               # RAG 文档和索引
@@ -474,46 +477,53 @@ LLM Reranking：用 LLM 对 10 个候选评分
 
 ## 扩展性
 
-### 添加新工具
+### 新工具 — 三种方式
 
-在 `server/services/tools.js` 中注册新工具：
+**方式一：HTTP 自定义工具（零代码）**
+
+在 **设置 → HTTP 工具** 中将任意 REST API 配置为工具。支持 `{{param}}` 插值、自定义请求头、请求体模板与响应提取（**点路径**，非 JSONPath）。无需写代码，无需重启。
+
+**方式二：JS 自动注册**
+
+将 `.js` 文件放入 `server/services/tools/`（内置）或 `data/custom-tools/`（用户自定义）：
 
 ```javascript
-const tools = {
-  web_search: { /* ... */ },
-  rag_query: { /* ... */ },
-  my_custom_tool: {
-    description: "我的自定义工具",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "查询内容" }
-      }
-    },
-    handler: async (params) => {
-      return { result: "工具执行结果" };
+// data/custom-tools/my_custom_tool.js
+export default {
+  description: "我的自定义工具",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "查询内容" }
     }
+  },
+  handler: async (params) => {
+    return { result: "done" };
   }
 };
 ```
 
-一个文件，一个对象，就是全部。不需要学框架概念、不需要配置中间件。
+**文件名即工具名**。工具注册表在启动时自动扫描上述两个目录。
+
+**方式三：MCP 桥接**
+
+在 **设置 → MCP** 中连接外部 MCP 服务（stdio 或 HTTP）。工具自动注册为 `mcp:{serverId}:{toolName}`。
 
 ### 添加新 API
 
-在 `server/api/` 中添加新文件，然后在 `index.js` 中注册路由。
+新增 `server/routes/*.js` 并在 `server/router.js` 中注册。
 
 ### 添加新搜索引擎
 
-在 `server/services/search-engines.js` 中添加新的搜索引擎适配器。已有 6 个引擎适配器可参考。
+扩展 `server/services/search-engines.js`。
 
 ### 添加新 LLM Provider
 
-只要兼容 OpenAI API 格式（`/v1/chat/completions`），直接在设置中配置即可。不需要改代码。
+兼容 OpenAI 的 `/v1/chat/completions` → 在设置中配置即可，无需改代码。
 
 ### 添加新渠道
 
-渠道接入在 `server/services/channels/` 中。实现 `onMessage` 和 `sendMessage` 两个方法即可对接新平台。
+在 `server/services/connectors/` 下实现连接器模块（可参考 `feishu-ws.js`、`webhook.js` 等）。
 
 ## 和其他项目对比
 

@@ -364,7 +364,7 @@ ws.onopen = () => {
 
 ## 数据库表结构
 
-虾饺使用 SQLite，所有表在 `data/im.db` 中。
+虾饺使用 SQLite，所有表在 `data/xiajiao.db` 中。
 
 ### 核心表
 

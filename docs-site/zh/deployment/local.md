@@ -185,7 +185,7 @@ pause
 ```
 xiajiao/
 ├── data/
-│   ├── im.db              # 主数据库（消息、频道、Agent 配置）
+│   ├── xiajiao.db              # 主数据库（消息、频道、Agent 配置）
 │   ├── agents.json         # Agent 列表
 │   ├── workspace-xxx/      # Agent 工作区
 │   │   ├── SOUL.md         # Agent 人格设定
@@ -241,7 +241,7 @@ SyntaxError: Unexpected token
 SQLITE_BUSY: database is locked
 ```
 
-确保没有其他进程在访问同一个 `data/im.db` 文件。
+确保没有其他进程在访问同一个 `data/xiajiao.db` 文件。
 
 ### Windows 上 npm install 失败
 

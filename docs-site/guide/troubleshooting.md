@@ -200,7 +200,7 @@ pm2 restart xiajiao
 WAL should mitigate. Verify:
 
 ```bash
-sqlite3 data/im.db "PRAGMA journal_mode;"
+sqlite3 data/xiajiao.db "PRAGMA journal_mode;"
 ```
 
 ## Diagnostic cheat sheet
@@ -209,7 +209,7 @@ sqlite3 data/im.db "PRAGMA journal_mode;"
 node -v
 curl -s http://localhost:18800 | head -c 100
 lsof -i :18800
-ls -lh data/im.db
+ls -lh data/xiajiao.db
 npm audit
 pm2 status
 docker logs xiajiao --tail 50

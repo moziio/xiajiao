@@ -82,22 +82,35 @@ server/
 ├── index.js
 ├── storage.js
 ├── ws.js
-├── api/
+├── routes/
+│   └── settings.js            # Settings + HTTP tool management API
 ├── services/
 │   ├── llm.js
-│   ├── tools.js
+│   ├── tool-registry.js       # Centralized tool registration + per-agent ACL
+│   ├── http-tool-engine.js    # HTTP custom tool engine (zero-code API bridge)
+│   ├── mcp-manager.js         # MCP server connections + tool discovery
+│   ├── channel-engine.js      # External channel (Feishu, etc.) management
 │   ├── memory.js
 │   ├── rag.js
+│   ├── tools/                 # Built-in tool modules (auto-scanned)
 │   └── ...
 └── test/
+
+data/
+├── custom-tools/              # User-defined JS tool modules (auto-scanned)
+└── http-tools.json            # HTTP custom tool definitions
 ```
 
 ### Which file to change?
 
 | Goal | Location |
 |------|----------|
-| New REST surface | `server/api/` + route registration in `index.js` |
-| New tool | `server/services/tools.js` |
+| New REST surface | `server/routes/` + route registration in `server/router.js` |
+| New built-in tool (JS) | Drop `.js` into `server/services/tools/` — auto-registered on startup |
+| New user tool (JS) | Drop `.js` into `data/custom-tools/` — auto-registered on startup |
+| New HTTP tool (zero-code) | Settings UI → HTTP Tools, or edit `data/http-tools.json` |
+| Tool registry / ACL | `server/services/tool-registry.js` |
+| MCP integration | `server/services/mcp-manager.js` |
 | LLM pipeline tweaks | `server/services/llm.js` |
 | Memory / RAG | `server/services/memory.js`, `rag.js` |
 | UI | `public/app.js`, `public/styles.css` |
@@ -192,7 +205,9 @@ Describe motivation, scope, and how you verified the change.
 |-------|------|----------|
 | Easy | Docs | Fixes, clarifications, translations |
 | Easy | UI | CSS tweaks, responsive fixes |
+| Easy | Tools | HTTP custom tool definitions (zero-code) |
 | Medium | Search | New engine adapter |
+| Medium | Tools | JS tool module in `data/custom-tools/` |
 | Medium | Tests | More cases |
 | Hard | Features | Workflow engine, deeper MCP work |
 
@@ -263,9 +278,9 @@ console.log('LLM chunk:', chunk);
 ### SQLite
 
 ```bash
-sqlite3 data/im.db ".tables"
-sqlite3 data/im.db "SELECT * FROM messages ORDER BY created_at DESC LIMIT 5;"
-sqlite3 data/im.db "SELECT * FROM settings;"
+sqlite3 data/xiajiao.db ".tables"
+sqlite3 data/xiajiao.db "SELECT * FROM messages ORDER BY created_at DESC LIMIT 5;"
+sqlite3 data/xiajiao.db "SELECT * FROM settings;"
 ```
 
 ### Memory DB

@@ -72,7 +72,7 @@ time ollama run llama3 "Hello world" --verbose
 
 ```bash
 # 验证 WAL 模式已开启
-sqlite3 data/im.db "PRAGMA journal_mode;"
+sqlite3 data/xiajiao.db "PRAGMA journal_mode;"
 # 应输出：wal
 ```
 
@@ -80,13 +80,13 @@ sqlite3 data/im.db "PRAGMA journal_mode;"
 
 ```bash
 # 回收空间，优化查询性能
-sqlite3 data/im.db "VACUUM;"
+sqlite3 data/xiajiao.db "VACUUM;"
 
 # 分析表统计信息，优化查询计划
-sqlite3 data/im.db "ANALYZE;"
+sqlite3 data/xiajiao.db "ANALYZE;"
 
 # 检查数据库完整性
-sqlite3 data/im.db "PRAGMA integrity_check;"
+sqlite3 data/xiajiao.db "PRAGMA integrity_check;"
 ```
 
 建议：数据量超过 100MB 时，每月执行一次 VACUUM。
@@ -95,7 +95,7 @@ sqlite3 data/im.db "PRAGMA integrity_check;"
 
 ```bash
 # 查看各表大小分布
-sqlite3 data/im.db "
+sqlite3 data/xiajiao.db "
 SELECT
   name,
   SUM(pgsize) as size_bytes,
@@ -253,9 +253,9 @@ curl -s -o /dev/null -w "%{time_total}s\n" \
 | 内存使用 | PM2 / htop | > 500MB | PM2 自动重启 |
 | CPU 使用 | PM2 / htop | > 80% 持续 5 分钟 | 检查是否有死循环 |
 | 磁盘空间 | df -h | < 1GB | 清理日志 + VACUUM |
-| 数据库大小 | ls -lh data/im.db | > 1GB | VACUUM + 归档旧消息 |
+| 数据库大小 | ls -lh data/xiajiao.db | > 1GB | VACUUM + 归档旧消息 |
 | 进程存活 | PM2 / systemd | 进程退出 | 自动重启 |
-| WAL 文件大小 | ls -lh data/im.db-wal | > 100MB | 重启应用触发 checkpoint |
+| WAL 文件大小 | ls -lh data/xiajiao.db-wal | > 100MB | 重启应用触发 checkpoint |
 
 ### PM2 监控脚本
 
@@ -265,7 +265,7 @@ cat > /opt/monitor-xiajiao.sh << 'SCRIPT'
 #!/bin/bash
 MEM=$(pm2 jlist | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['monit']['memory']//1024//1024)")
 DISK=$(df -h / | awk 'NR==2{print $5}' | tr -d '%')
-DB_SIZE=$(stat -f%z data/im.db 2>/dev/null || stat -c%s data/im.db)
+DB_SIZE=$(stat -f%z data/xiajiao.db 2>/dev/null || stat -c%s data/xiajiao.db)
 DB_MB=$((DB_SIZE/1024/1024))
 
 echo "Memory: ${MEM}MB | Disk: ${DISK}% | DB: ${DB_MB}MB"

@@ -40,24 +40,28 @@ Open `http://localhost:18800`.
 
 | Property | Value |
 |------|------|
-| Base | `node:22-alpine` |
-| Build | `npm ci --production` |
-| Size | Small (Alpine) |
+| Base | `node:22-slim` |
+| Build | `npm ci --omit=dev` |
+| COPY strategy | Selective — only `server/`, `public/`, templates, presets, config |
+| Size | Small (Debian slim, no dev deps) |
 | Port | 18800 |
 | Workdir | `/app` |
+| NODE_ENV | `production` (set in image) |
+| Volume | `/app/data` (single volume for all persistent data) |
 
-::: info Small image
-Six npm deps + Alpine—no Python/Java runtimes bundled.
+::: info Optimized build
+The Dockerfile uses selective `COPY` instead of `COPY . .` — only production-necessary files enter the image. Combined with `node:22-slim` base and `NODE_ENV=production`, the result is a small, secure image.
 :::
 
 ## Persistent volumes
 
-Two volumes matter:
+One primary volume:
 
 | Volume | Mount | Contents | Critical |
 |--------|---------|------|--------|
-| `xiajiao-data` | `/app/data` | SQLite, workspaces, SOUL templates, memory | **yes** |
-| `xiajiao-uploads` | `/app/public/uploads` | uploads | user files |
+| `xiajiao-data` | `/app/data` | SQLite, workspaces, SOUL templates, memory, HTTP tool definitions, custom tools | **yes** |
+
+Uploads live under `public/uploads/` (not under `data/`). If you need to persist uploads across container recreation, mount a separate volume for `/app/public/uploads` as shown in the quick start example above.
 
 ::: danger Mount volumes
 Without volumes, removing the container **deletes** messages, Agents, and memory.

@@ -13,13 +13,13 @@ Xiajiao is built on one principle: **your data stays on your machine.**
 
 | Data type | Location | Format |
 |-----------|----------|--------|
-| Chat messages | `data/im.db` | SQLite |
+| Chat messages | `data/xiajiao.db` | SQLite |
 | Agent config | `data/agents.json` | JSON |
 | Agent memory | `data/workspace-xxx/memory.db` | SQLite |
 | Agent persona | `data/workspace-xxx/SOUL.md` | Markdown |
 | RAG knowledge base | `data/workspace-xxx/rag/` | Files + SQLite |
 | Uploaded files | `public/uploads/` | Raw files |
-| LLM settings | `data/im.db` (settings table) | SQLite |
+| LLM settings | `data/xiajiao.db` (settings table) | SQLite |
 
 **All data stays 100% on your machine.** Xiajiao does not phone home—external traffic is only the LLM API calls you configure.
 
@@ -91,7 +91,7 @@ API keys live in the local SQLite `settings` table.
 
 | Property | Status |
 |----------|--------|
-| Location | Local `data/im.db` |
+| Location | Local `data/xiajiao.db` |
 | At-rest encryption | Plaintext in DB (protect the file) |
 | Transit | Sent only to the configured LLM provider |
 | Leak risk | Physical access to machine or DB file |
@@ -101,7 +101,7 @@ API keys live in the local SQLite `settings` table.
 1. **Tighten file permissions:**
 
 ```bash
-chmod 600 data/im.db
+chmod 600 data/xiajiao.db
 chmod 700 data/
 ```
 
@@ -224,7 +224,7 @@ MIT-licensed code lets you:
 1. **Read the source** (modular layout)
 2. **Audit dependencies** (six packages, hours of work)
 3. **Inspect network** (only LLM API calls)
-4. **Inspect data** (`sqlite3 data/im.db .dump`)
+4. **Inspect data** (`sqlite3 data/xiajiao.db .dump`)
 
 ### Verify for yourself
 
@@ -254,10 +254,10 @@ tar xzf xiajiao-backup-20260324.tar.gz
 
 ### Disaster recovery
 
-If `data/im.db` is damaged (rare):
+If `data/xiajiao.db` is damaged (rare):
 
 ```bash
-sqlite3 data/im.db ".recover" | sqlite3 data/im-recovered.db
+sqlite3 data/xiajiao.db ".recover" | sqlite3 data/im-recovered.db
 ```
 
 ## Compliance notes

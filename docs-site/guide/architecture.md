@@ -55,7 +55,7 @@ This is a practical architecture, not a showcase. For product behavior see [Tool
 │  │                            │              │
 │  │  ┌─────────┐ ┌───────────┐ │              │
 │  │  │ LLM     │ │ Tools     │ │              │
-│  │  │ (multi) │ │ (7 tools) │ │              │
+│  │  │ (multi) │ │(7+custom) │ │              │
 │  │  └─────────┘ └───────────┘ │              │
 │  │                            │              │
 │  │  ┌─────────┐ ┌───────────┐ │              │
@@ -91,20 +91,20 @@ xiajiao/
 │   ├── storage.js             # Data — SQLite + agent files
 │   ├── ws.js                  # WebSocket — live pushes
 │   │
-│   ├── api/                   # REST routes
-│   │   ├── messages.js
-│   │   ├── channels.js
-│   │   ├── agents.js
-│   │   ├── settings.js
-│   │   ├── uploads.js
-│   │   └── ...
+│   ├── router.js              # Route dispatch
+│   ├── routes/                # REST route modules
+│   │   └── settings.js        # Settings + HTTP tools API
 │   │
 │   ├── services/
 │   │   ├── llm.js             # LLM — providers, stream, tool loop
-│   │   ├── tools.js
+│   │   ├── tool-registry.js   # Centralized tool registration + ACL
+│   │   ├── http-tool-engine.js # HTTP custom tools (zero-code API bridge)
+│   │   ├── mcp-manager.js     # MCP server connections
+│   │   ├── channel-engine.js  # External IM channel management
+│   │   ├── tools/             # Built-in tool modules (auto-scanned)
 │   │   ├── memory.js
 │   │   ├── rag.js
-│   │   ├── collaboration.js
+│   │   ├── collab-flow.js     # Collaboration chain state machine
 │   │   ├── schedule.js
 │   │   └── search-engines.js
 │   │
@@ -125,8 +125,11 @@ xiajiao/
 │       └── highlight.min.js
 │
 ├── data/
-│   ├── im.db
+│   ├── xiajiao.db
 │   ├── agents.json
+│   ├── http-tools.json        # HTTP custom tool definitions
+│   ├── custom-tools/          # User JS tool modules (auto-scanned)
+│   ├── channel-presets/       # Channel connector presets
 │   ├── workspace-xxx/
 │   │   ├── SOUL.md
 │   │   ├── memory.db
@@ -382,28 +385,41 @@ User question
 
 ## Extensibility
 
-### New tool (`server/services/tools.js`)
+### New tool — three methods
+
+**Method 1: HTTP custom tools (zero-code)**
+
+Configure any REST API as a tool in **Settings → HTTP Tools**. Supports `{{param}}` interpolation, custom headers, body templates, and response extraction. No code, no restart.
+
+**Method 2: JS auto-register**
+
+Drop a `.js` file into `server/services/tools/` (built-in) or `data/custom-tools/` (user-defined):
 
 ```javascript
-const tools = {
-  my_custom_tool: {
-    description: "My custom tool",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Query text" }
-      }
-    },
-    handler: async (params) => {
-      return { result: "done" };
+// data/custom-tools/my_custom_tool.js
+export default {
+  description: "My custom tool",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "Query text" }
     }
+  },
+  handler: async (params) => {
+    return { result: "done" };
   }
 };
 ```
 
+File name becomes tool name. The tool registry auto-scans both directories on startup.
+
+**Method 3: MCP bridged**
+
+Connect external MCP servers (stdio or HTTP) in **Settings → MCP**. Tools auto-register as `mcp:{serverId}:{toolName}`.
+
 ### New API
 
-Add `server/api/*.js` and register in `index.js`.
+Add `server/routes/*.js` and register in `server/router.js`.
 
 ### New search engine
 
@@ -415,7 +431,7 @@ OpenAI-compatible `/v1/chat/completions` → configure in settings; no code chan
 
 ### New channel
 
-Implement `onMessage` / `sendMessage` under `server/services/channels/`.
+Implement a connector module under `server/services/connectors/` (see existing `feishu-ws.js`, `webhook.js` for patterns).
 
 ## Compared with other stacks
 

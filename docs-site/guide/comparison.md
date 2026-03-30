@@ -62,7 +62,7 @@ Xiajiao (虾饺) and other AI platforms are not the same category. Here is a bal
 | **Visual panel** | ✅ Collaboration-chain status | ✅ Workflow canvas | ✅ | ✅ |
 | **Persistent memory** | ✅ Three memory types | ❌ | Variables | ❌ |
 | **RAG knowledge base** | ✅ BM25 + vectors + LLM rerank | ✅ | ✅ | ✅ |
-| **Tool calling** | ✅ 7 built-in tools | ✅ Custom | ✅ 100+ plugins | ✅ |
+| **Tool calling** | ✅ 7 built-in + HTTP tools + JS + MCP | ✅ Custom | ✅ 100+ plugins | ✅ |
 | **Workflow canvas** | ❌ (collaboration chain instead) | ✅ Drag-and-drop | ✅ | ✅ |
 | **SOUL.md persona** | ✅ Markdown file | System prompt | Persona config | System prompt |
 | **Multiple models** | ✅ Any OpenAI-compatible API | ✅ | Limited | ✅ via OneAPI |
@@ -85,7 +85,7 @@ Xiajiao (虾饺) and other AI platforms are not the same category. Here is a bal
 |--|----------------|------|------|---------|
 | **Time to first success** | 5 minutes | 30 minutes | 10 minutes | 30 minutes |
 | **Fork and customize** | Easy (JS, 6 deps) | Medium (Python, complex) | Not possible | Medium (TS, complex) |
-| **Add custom tools** | Edit one file | API + config | Plugin development | API + config |
+| **Add custom tools** | HTTP tools (zero-code) / JS drop-in / MCP | API + config | Plugin development | API + config |
 | **Customize Agents** | Edit `.md` files | Web UI | Web UI | Web UI |
 | **Tests** | 53 unit tests | ✅ | N/A | ✅ |
 

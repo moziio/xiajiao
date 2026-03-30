@@ -199,12 +199,13 @@ Each Agent has its own allowlist:
 | | Xiajiao (虾饺) | Dify | Coze |
 |---|----------------|------|------|
 | Built-in tools | 7 | 10+ | 100+ plugins |
-| Custom tools | Extend via MCP | Code nodes | Plugin dev |
+| Custom tools | HTTP tools (zero-code) + JS auto-register + MCP | Code nodes | Plugin dev |
 | Visibility | Live tool trace | Yes | Partial |
 | Cross-Agent | `call_agent` | No | No |
 | Per-Agent ACL | Yes | Yes | Yes |
+| Extensibility | Three methods, no restart for HTTP tools | API + config | Plugin development |
 
-Xiajiao (虾饺) has fewer plugins than Coze but emphasizes **cross-Agent calls** and **fully visible** tool traces.
+Xiajiao (虾饺) has fewer plugins than Coze but emphasizes **cross-Agent calls**, **fully visible** tool traces, and **zero-code HTTP tool extension**.
 
 ## What it looks like in the UI
 
@@ -239,10 +240,46 @@ Each tool call appears in real time in the chat UI, so you can clearly see the A
 
 ## Custom tools
 
-Register tools in `server/services/tools.js`:
+Xiajiao offers **three ways** to extend tools beyond the seven built-ins:
+
+### Method 1: HTTP custom tools (zero-code)
+
+Configure any HTTP API as an Agent tool — no code, just fill a form in **Settings → HTTP Tools**.
+
+| Property | Description |
+|----------|-------------|
+| URL | Endpoint with `{{param}}` interpolation |
+| Method | GET / POST / PUT / DELETE |
+| Headers | Custom headers (e.g. `Authorization`) |
+| Body | JSON template with `{{param}}` placeholders |
+| Response extract | Dot-path expression to pick a result field (e.g. `fields.summary`) |
+
+**Example — JIRA ticket lookup:**
+
+```json
+{
+  "name": "jira_get_issue",
+  "description": "Look up a JIRA issue by key",
+  "url": "https://your-domain.atlassian.net/rest/api/3/issue/{{issueKey}}",
+  "method": "GET",
+  "headers": { "Authorization": "Basic {{token}}" },
+  "parameters": [
+    { "name": "issueKey", "type": "string", "description": "e.g. PROJ-123", "required": true },
+    { "name": "token", "type": "string", "description": "Base64 credentials" }
+  ],
+  "responseExtract": "fields.summary"
+}
+```
+
+Configure once, enable on any Agent — the LLM calls it like a built-in tool.
+
+### Method 2: JS auto-register (drop a file)
+
+Drop a `.js` file into `server/services/tools/` (built-in) or `data/custom-tools/` (user-defined). The tool registry scans both directories on startup and registers each module automatically.
 
 ```javascript
-my_tool: {
+// data/custom-tools/my_tool.js
+export default {
   description: "Query internal company systems",
   parameters: {
     type: "object",
@@ -256,10 +293,22 @@ my_tool: {
     const result = await internalAPI.query(system, query);
     return { data: result };
   }
-}
+};
 ```
 
-Enable the tool on the Agent; the LLM uses `description` and `parameters` to decide when to call it.
+File name becomes tool name: `my_tool.js` → tool `my_tool`. Restart to pick up new files.
+
+### Method 3: MCP bridged tools
+
+Connect to external MCP servers (stdio or HTTP) and their tools automatically appear as `mcp:{serverId}:{toolName}`.
+
+Configure MCP servers in **Settings → MCP**; Xiajiao discovers tools via JSON-RPC capability negotiation and registers them.
+
+::: tip Which method to choose?
+- **HTTP tools**: fastest — zero code, configure in UI, great for REST APIs
+- **JS auto-register**: most flexible — full Node.js power, async logic, custom auth
+- **MCP bridged**: for complex external services that already offer MCP servers
+:::
 
 ## Related docs
 

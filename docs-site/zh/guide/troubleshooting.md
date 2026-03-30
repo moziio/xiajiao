@@ -316,7 +316,7 @@ pm2 restart xiajiao
 
 ```bash
 # 检查 WAL 模式是否开启
-sqlite3 data/im.db "PRAGMA journal_mode;"
+sqlite3 data/xiajiao.db "PRAGMA journal_mode;"
 # 应该显示 "wal"
 ```
 
@@ -334,7 +334,7 @@ lsof -i :18800          # Linux/macOS
 netstat -ano | findstr :18800  # Windows
 
 # SQLite 数据库大小
-ls -lh data/im.db
+ls -lh data/xiajiao.db
 
 # 依赖漏洞扫描
 npm audit

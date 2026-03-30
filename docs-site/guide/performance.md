@@ -64,16 +64,16 @@ time ollama run llama3 "Hello world" --verbose
 WAL (write-ahead logging) is required for good concurrency:
 
 ```bash
-sqlite3 data/im.db "PRAGMA journal_mode;"
+sqlite3 data/xiajiao.db "PRAGMA journal_mode;"
 # expect: wal
 ```
 
 ### Maintenance
 
 ```bash
-sqlite3 data/im.db "VACUUM;"
-sqlite3 data/im.db "ANALYZE;"
-sqlite3 data/im.db "PRAGMA integrity_check;"
+sqlite3 data/xiajiao.db "VACUUM;"
+sqlite3 data/xiajiao.db "ANALYZE;"
+sqlite3 data/xiajiao.db "PRAGMA integrity_check;"
 ```
 
 Past ~100 MB DB size, consider monthly `VACUUM`.
@@ -81,7 +81,7 @@ Past ~100 MB DB size, consider monthly `VACUUM`.
 ### Table sizes
 
 ```bash
-sqlite3 data/im.db "
+sqlite3 data/xiajiao.db "
 SELECT name, SUM(pgsize) AS size_bytes,
   ROUND(SUM(pgsize)/1024.0/1024.0, 2) AS size_mb
 FROM dbstat GROUP BY name ORDER BY size_bytes DESC;
@@ -218,9 +218,9 @@ curl -s -o /dev/null -w "%{time_total}s\n" \
 | Memory | PM2 / htop | > 500 MB | Restart policy |
 | CPU | PM2 / htop | > 80% for 5 min | Inspect loops |
 | Disk | `df -h` | < 1 GB free | Logs + `VACUUM` |
-| Main DB | `ls -lh data/im.db` | > 1 GB | Archive + `VACUUM` |
+| Main DB | `ls -lh data/xiajiao.db` | > 1 GB | Archive + `VACUUM` |
 | Process | PM2 / systemd | Exits | Auto-restart |
-| WAL | `ls -lh data/im.db-wal` | > 100 MB | Restart to checkpoint |
+| WAL | `ls -lh data/xiajiao.db-wal` | > 100 MB | Restart to checkpoint |
 
 ### PM2 monitoring script
 
@@ -230,7 +230,7 @@ cat > /opt/monitor-xiajiao.sh << 'SCRIPT'
 #!/bin/bash
 MEM=$(pm2 jlist | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['monit']['memory']//1024//1024)")
 DISK=$(df -h / | awk 'NR==2{print $5}' | tr -d '%')
-DB_SIZE=$(stat -f%z data/im.db 2>/dev/null || stat -c%s data/im.db)
+DB_SIZE=$(stat -f%z data/xiajiao.db 2>/dev/null || stat -c%s data/xiajiao.db)
 DB_MB=$((DB_SIZE/1024/1024))
 
 echo "Memory: ${MEM}MB | Disk: ${DISK}% | DB: ${DB_MB}MB"

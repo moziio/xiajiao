@@ -204,7 +204,7 @@ node server/index.js
 ```
 xiajiao/
 ├── data/
-│   ├── im.db              # 主数据库（消息、频道、用户）
+│   ├── xiajiao.db              # 主数据库（消息、频道、用户）
 │   ├── agents.json         # Agent 列表配置
 │   ├── workspace-xxx/      # Agent 独立工作区
 │   │   ├── SOUL.md         # Agent 人格设定
@@ -343,7 +343,7 @@ npm start
 ✅ 用默认密码 admin 登录成功
 ✅ 设置 → 模型管理 → 添加至少一个 LLM Provider
 ✅ 创建 Agent → 发消息 → 收到 AI 回复
-✅ data/ 目录已创建且包含 im.db
+✅ data/ 目录已创建且包含 xiajiao.db
 ```
 
 ## 相关文档

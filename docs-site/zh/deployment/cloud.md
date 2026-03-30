@@ -348,7 +348,7 @@ pm2 logs xiajiao --err
 
 ```bash
 pm2 stop xiajiao
-cp /backups/xiajiao/latest/data/im.db /opt/xiajiao/data/im.db
+cp /backups/xiajiao/latest/data/xiajiao.db /opt/xiajiao/data/xiajiao.db
 pm2 start xiajiao
 ```
 
@@ -369,7 +369,7 @@ pm2 start xiajiao
 │  虾饺 IM     │  Node.js 进程 (PM2 守护)
 │  (18800)    │
 ├─────────────┤
-│  SQLite     │  数据库 (data/im.db)
+│  SQLite     │  数据库 (data/xiajiao.db)
 │  文件系统    │  Agent 工作区 (data/workspace-*)
 └─────────────┘
 ```

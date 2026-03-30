@@ -199,12 +199,13 @@ Agent 主动把重要信息写入持久记忆。
 |  | 虾饺 | Dify | Coze |
 |--|------|------|------|
 | 内置工具 | 7 个 | 10+ | 100+ 插件 |
-| 自定义工具 | 通过 MCP 协议扩展 | 代码节点 | 插件开发 |
+| 自定义工具 | HTTP 工具（零代码）+ JS 自动注册 + MCP | 代码节点 | 插件开发 |
 | 工具调用可见性 | ✅ 实时显示调用过程 | ✅ | 部分可见 |
 | 跨 Agent 调用 | ✅ `call_agent` | ❌ | ❌ |
-| 权限控制 | ✅ 按 Agent 配置 | ✅ | ✅ |
+| 按 Agent 权限（ACL） | ✅ | ✅ | ✅ |
+| 可扩展性 | 三种方式；HTTP 工具无需重启 | API + 配置 | 插件开发 |
 
-虾饺的工具数量不如 Coze 多，但胜在**跨 Agent 调用**和**完全透明的调用过程**。
+虾饺的工具插件数量不如 Coze 多，但强调**跨 Agent 调用**、**完全可见**的工具轨迹，以及**零代码 HTTP 工具**扩展。
 
 ## 工具调用的实际输出
 
@@ -237,12 +238,48 @@ Agent 主动把重要信息写入持久记忆。
 
 每个工具调用都在聊天界面实时显示进度，用户可以清晰看到 Agent 的"思考过程"。
 
-## 自定义工具开发
+## 自定义工具
 
-想添加自己的工具？只需在 `server/services/tools.js` 中注册：
+除 7 个内置工具外，虾饺提供**三种方式**扩展工具：
+
+### 方式一：HTTP 自定义工具（零代码）
+
+将任意 HTTP API 配置为 Agent 工具——无需写代码，在 **设置 → HTTP 工具** 中填表即可。
+
+| 属性 | 说明 |
+|------|------|
+| URL | 支持 `{{param}}` 插值的端点 |
+| 方法 | GET / POST / PUT / DELETE |
+| 请求头 | 自定义（如 `Authorization`） |
+| 请求体 | 含 `{{param}}` 占位符的 JSON 模板 |
+| 响应提取 | **点路径**表达式选取返回字段（如 `fields.summary`），**不是** JSONPath |
+
+**示例 — JIRA 工单查询：**
+
+```json
+{
+  "name": "jira_get_issue",
+  "description": "按工单号查询 JIRA Issue",
+  "url": "https://your-domain.atlassian.net/rest/api/3/issue/{{issueKey}}",
+  "method": "GET",
+  "headers": { "Authorization": "Basic {{token}}" },
+  "parameters": [
+    { "name": "issueKey", "type": "string", "description": "如 PROJ-123", "required": true },
+    { "name": "token", "type": "string", "description": "Base64 凭证" }
+  ],
+  "responseExtract": "fields.summary"
+}
+```
+
+配置一次后，可在任意 Agent 上启用；LLM 会像调用内置工具一样调用它。定义保存在 `data/http-tools.json`，界面在 **设置 → HTTP 工具**。
+
+### 方式二：JS 自动注册（丢文件）
+
+将 `.js` 文件放入 `server/services/tools/`（内置）或 `data/custom-tools/`（用户自定义）。工具注册表在启动时扫描这两个目录并自动注册各模块。
 
 ```javascript
-my_tool: {
+// data/custom-tools/my_tool.js
+export default {
   description: "查询公司内部系统",
   parameters: {
     type: "object",
@@ -256,10 +293,24 @@ my_tool: {
     const result = await internalAPI.query(system, query);
     return { data: result };
   }
-}
+};
 ```
 
-然后在 Agent 配置中启用这个工具。LLM 会根据工具的 `description` 和 `parameters` 自动判断何时调用。
+**文件名即工具名**：`my_tool.js` → 工具名 `my_tool`。新增文件后需**重启**服务以加载。
+
+集中管理见 `server/services/tool-registry.js`，支持按 Agent 的允许/拒绝列表（ACL）。
+
+### 方式三：MCP 桥接工具
+
+连接外部 MCP 服务器（stdio 或 HTTP），其工具会自动以 `mcp:{serverId}:{toolName}` 的形式注册。
+
+在 **设置 → MCP** 中配置 MCP 服务；虾饺通过 JSON-RPC 能力协商发现工具并完成注册。
+
+::: tip 该选哪种？
+- **HTTP 工具**：最快——零代码、界面配置，适合 REST API
+- **JS 自动注册**：最灵活——完整 Node.js 能力、异步逻辑、自定义鉴权
+- **MCP 桥接**：适合已提供 MCP 服务的复杂外部系统
+:::
 
 ## 相关文档
 

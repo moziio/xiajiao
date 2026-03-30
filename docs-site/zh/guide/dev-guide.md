@@ -79,33 +79,41 @@ async function searchMemory(agentId, text, topK = 10) {
 
 ```
 server/
-├── index.js          # 入口：HTTP 服务 + 路由分发
-├── storage.js        # 数据层：SQLite 操作 + Agent 文件管理
-├── ws.js             # WebSocket：实时消息推送
-├── api/              # REST API 路由处理
-│   ├── messages.js   # 消息 CRUD
-│   ├── channels.js   # 频道管理
-│   ├── agents.js     # Agent 管理
+├── index.js
+├── storage.js
+├── ws.js
+├── routes/
+│   └── settings.js            # 设置 + HTTP 工具管理 API
+├── services/
+│   ├── llm.js
+│   ├── tool-registry.js       # 集中式工具注册 + 按 Agent ACL
+│   ├── http-tool-engine.js    # HTTP 自定义工具引擎（零代码 API 桥接）
+│   ├── mcp-manager.js         # MCP 服务连接与工具发现
+│   ├── channel-engine.js      # 外部渠道（飞书等）管理
+│   ├── memory.js
+│   ├── rag.js
+│   ├── tools/                 # 内置工具模块（启动时自动扫描）
 │   └── ...
-├── services/         # 核心业务逻辑
-│   ├── llm.js        # LLM 调用（多 Provider + Tool Calling）
-│   ├── tools.js      # 工具注册 + 分发
-│   ├── memory.js     # 记忆系统
-│   ├── rag.js        # RAG 检索
-│   └── ...
-└── test/             # 单元测试
-    └── *.test.js
+└── test/
+
+data/
+├── custom-tools/              # 用户自定义 JS 工具模块（自动扫描）
+└── http-tools.json            # HTTP 自定义工具定义
 ```
 
 ### 改代码去哪个文件？
 
 | 想做什么 | 改哪个文件 |
 |---------|-----------|
-| 添加新的 REST API | `server/api/` 下新建文件 + `index.js` 注册路由 |
-| 添加新的工具 | `server/services/tools.js` |
+| 新增 REST 接口 | `server/routes/` + 在 `server/router.js` 中注册路由 |
+| 新增内置工具（JS） | 将 `.js` 放入 `server/services/tools/` — 启动时自动注册 |
+| 新增用户工具（JS） | 将 `.js` 放入 `data/custom-tools/` — 启动时自动注册 |
+| 新增 HTTP 工具（零代码） | 设置界面 → HTTP 工具，或直接编辑 `data/http-tools.json` |
+| 工具注册表 / ACL | `server/services/tool-registry.js` |
+| MCP 集成 | `server/services/mcp-manager.js` |
 | 修改 LLM 调用逻辑 | `server/services/llm.js` |
 | 修改记忆/RAG 逻辑 | `server/services/memory.js` / `rag.js` |
-| 修改前端 UI | `public/app.js` + `public/styles.css` |
+| 修改前端 UI | `public/app.js`、`public/styles.css` |
 | 添加新的搜索引擎 | `server/services/search-engines.js` |
 | 修改数据库 schema | `server/storage.js` |
 
@@ -218,9 +226,11 @@ git push origin feature/my-feature
 |------|------|------|
 | ⭐ 简单 | 文档 | 修正错误、补充说明、翻译 |
 | ⭐ 简单 | UI | 修复样式、响应式适配 |
-| ⭐⭐ 中等 | 工具 | 添加新的搜索引擎适配器 |
+| ⭐ 简单 | 工具 | HTTP 自定义工具定义（零代码） |
+| ⭐⭐ 中等 | 搜索 | 新增搜索引擎适配器 |
+| ⭐⭐ 中等 | 工具 | 在 `data/custom-tools/` 中新增 JS 工具模块 |
 | ⭐⭐ 中等 | 测试 | 补充测试用例 |
-| ⭐⭐⭐ 进阶 | 功能 | 工作流引擎、MCP 集成 |
+| ⭐⭐⭐ 进阶 | 功能 | 工作流引擎、更深入的 MCP 工作 |
 
 ## 实战：添加一个搜索引擎
 
@@ -292,9 +302,9 @@ console.log('LLM Response chunk:', chunk);
 ### 检查 SQLite 数据
 
 ```bash
-sqlite3 data/im.db ".tables"
-sqlite3 data/im.db "SELECT * FROM messages ORDER BY created_at DESC LIMIT 5;"
-sqlite3 data/im.db "SELECT * FROM settings;"
+sqlite3 data/xiajiao.db ".tables"
+sqlite3 data/xiajiao.db "SELECT * FROM messages ORDER BY created_at DESC LIMIT 5;"
+sqlite3 data/xiajiao.db "SELECT * FROM settings;"
 ```
 
 ### 检查 Agent 记忆
