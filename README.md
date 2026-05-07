@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/moziio-xiajiao-badge.png)](https://mseep.ai/app/moziio-xiajiao)
+
 <p align="center">
   <img src="public/logo.png" alt="Xiajiao IM" width="120" />
   <h1 align="center">🦐 Xiajiao IM</h1>
